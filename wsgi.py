@@ -4,11 +4,11 @@ from telegram import Bot, Update as BotUpdate
 from flask import Flask, request
 
 
-wsgi = Flask(__name__)
+application = Flask(__name__)
 bot = Bot(token=environ.get('BOT_TOKEN'))
 
 
-@wsgi.route('/hook', methods=['POST'])
+@application.route('/hook', methods=['POST'])
 def webhook_handler():
     if request.method == "POST":
         # retrieve the message in JSON and then transform it to Telegram object
@@ -25,7 +25,7 @@ def webhook_handler():
     return 'ok'
 
 
-@wsgi.route('/set_webhook', methods=['GET', 'POST'])
+@application.route('/set_webhook', methods=['GET', 'POST'])
 def set_webhook():
     s = bot.setWebhook('{}/hook'.format(environ.get('BOT_URL')))
     if s:
@@ -34,7 +34,6 @@ def set_webhook():
         return "webhook setup failed"
 
 
-@wsgi.route('/')
+@application.route('/')
 def index():
     return '.'
-
