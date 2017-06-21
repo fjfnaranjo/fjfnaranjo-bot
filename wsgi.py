@@ -12,7 +12,7 @@ bot = Bot(token=environ.get('BOT_TOKEN'))
 def webhook_handler():
     if request.method == "POST":
         # retrieve the message in JSON and then transform it to Telegram object
-        update = BotUpdate.de_json(request.get_json(force=True))
+        update = BotUpdate.de_json(request.get_json(force=True), bot)
 
         chat_id = update.message.chat.id
 
