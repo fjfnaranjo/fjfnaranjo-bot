@@ -34,7 +34,6 @@ class Bot:
         )
 
     def process_request(self, url_path, update):
-
         if url_path != '/' + BOT_WEBHOOK_TOKEN:
             raise BotTokenError("Not for me.")
 
