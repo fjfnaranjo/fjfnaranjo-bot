@@ -1,1 +1,2 @@
+gunicorn>=19.9.0<19.10
 python-telegram-bot>=11.1.0<11.2
