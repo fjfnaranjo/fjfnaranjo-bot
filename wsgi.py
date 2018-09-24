@@ -25,45 +25,32 @@ def application(environ, start_response):
     url_path = environ.get('RAW_URI', '/')
     response = Response('404 Not Found', [], [])
 
-    # Root URL
-    if url_path == '/':
-        response = prepare_text_response("I'm fjfnaranjo's bot.")
+    request_body_size = 0
+    try:
+        request_body_size = int(environ.get('CONTENT_LENGTH', 0))
+    except ValueError:
+        pass
 
-    # Healt check URL
-    elif url_path == '/ping':
-        response = prepare_text_response('pong')
+    request_body = environ['wsgi.input'].read(request_body_size)
 
-    # Register webhook request URL
-    elif url_path == '/register_webhook':
-        bot.update_webhook()
-        response = prepare_text_response('ok')
-
-    # Delegate response to bot library
-    else:
-
-        request_body_size = 0
-        try:
-            request_body_size = int(environ.get('CONTENT_LENGTH', 0))
-        except ValueError:
-            pass
-
-        request_body = environ['wsgi.input'].read(request_body_size)
-
-        try:
+    try:
+        response = prepare_text_response(
             bot.process_request(url_path, request_body)
-        except BotLibraryError as e:
-            raise e
-            response = prepare_text_response(
-                str(e),
-                status='500 Internal Server Error'
-            )
-        except BotJSONError as e:
-            response = prepare_text_response('', status='400 Bad Request')
-        except BotTokenError as e:
-            # Default value for response is 404 Not Found
-            pass
-        else:
-            response = Response('200 OK', [], [])
+        )
+    except BotLibraryError as e:
+        raise e
+        response = prepare_text_response(
+            str(e),
+            status='500 Internal Server Error'
+        )
+    except BotJSONError as e:
+        response = prepare_text_response(
+            str(e),
+            status='400 Bad Request'
+        )
+    except BotTokenError as e:
+        # Default value for response is 404 Not Found
+        pass
 
     start_response(response.status, response.headers)
     return iter(response.data)
