@@ -4,6 +4,7 @@ from telegram import Bot as TBot, Update
 from telegram.ext import Dispatcher
 
 from fjfnaranjobot import BOT_TOKEN, BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN
+from fjfnaranjobot.component.echo.handlers import echo_handler
 
 
 class BotLibraryError(Exception):
@@ -26,7 +27,7 @@ class Bot:
         self.register_handlers()
 
     def register_handlers(self):
-        pass
+        self.dispatcher.add_handler(echo_handler)
 
     def process_request(self, url_path, update):
 
