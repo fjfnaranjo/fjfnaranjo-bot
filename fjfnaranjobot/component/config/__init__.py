@@ -21,7 +21,7 @@ def config_set_handler_processor(bot, update):
     
 
 def config_get_handler_processor(bot, update):
-    _, key = update.message.text
+    _, key = update.message.text.split(' ')
     cur.execute('SELECT value FROM config WHERE key=?', (key, ))
     result = cur.fetchone()
     value = result[0]
