@@ -28,9 +28,9 @@ class Bot:
         self.register_handlers()
 
     def register_handlers(self):
-        self.dispatcher.add_handler(echo_handler)
         self.dispatcher.add_handler(config_set_handler)
         self.dispatcher.add_handler(config_get_handler)
+        self.dispatcher.add_handler(echo_handler)
 
     def process_request(self, url_path, update):
 
