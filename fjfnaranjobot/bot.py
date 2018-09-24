@@ -4,7 +4,7 @@ from telegram import Bot as TBot, Update
 from telegram.ext import Dispatcher
 
 from fjfnaranjobot import BOT_TOKEN, BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN
-from fjfnaranjobot.component.echo.handlers import echo_handler
+from fjfnaranjobot.component.echo import echo_handler
 
 
 class BotLibraryError(Exception):
