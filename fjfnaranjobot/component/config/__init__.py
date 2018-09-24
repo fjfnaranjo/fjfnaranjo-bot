@@ -24,11 +24,11 @@ def config_get_handler_processor(bot, update):
     _, key = update.message.text.split(' ')
     cur.execute('SELECT value FROM config WHERE key=?', (key, ))
     result = cur.fetchone()
-    value = result[0]
-    if value is None:
+    if result is None:
         logger.info(f"Replying with 'no value' message for config '{key}'.")
         update.message.reply_text(f"No value for config '{key}'.")
     else:
+        value = result[0]
         logger.info(f"Replying with '{value}' for config '{key}'.")
         update.message.reply_text(value)
 
