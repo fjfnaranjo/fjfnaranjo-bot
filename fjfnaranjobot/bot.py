@@ -43,7 +43,9 @@ class Bot:
             return 'pong'
     
         # Register webhook request URL
-        elif url_path == '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook')):
+        elif url_path == (
+            '/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook'))
+        ):
             self.bot.set_webhook(
                 url=self.webhook_url
             )
