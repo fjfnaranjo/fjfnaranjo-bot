@@ -18,6 +18,7 @@ def config_set_handler_processor(bot, update):
     _, key, value = update.message.text.split(' ')
     logger.info(f"Setting config '{key}' to '{value}'.")
     cur.execute('INSERT INTO config VALUES (?, ?)', (key, value))
+    conn.commit()
     
 
 def config_get_handler_processor(bot, update):
