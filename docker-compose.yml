@@ -1,11 +1,20 @@
 version: "3"
 services:
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - "${BOT_NGINX}:/etc/nginx/conf.d/default.conf"
+      - "${BOT_CERT_DIR}:/botcert:ro"
+    ports:
+      - "${BOT_PORT}:443"
+    links:
+      - fjfnaranjo-bot
   fjfnaranjo-bot:
     build: .
-    ports:
-      - "${BOT_PORT}:9090"
     volumes:
-      - "${BOT_APP_DIR}:/bot"
-      - "${BOT_CERT_DIR}:/cert"
+      - botdata:/botdata
     working_dir: /bot
-    command: uwsgi --http 0.0.0.0:9090 --wsgi-file wsgi.py
+    env_file: .env
+    command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file wsgi.py --master --processes 1 --threads 2 --chdir /bot
+volumes:
+  botdata:

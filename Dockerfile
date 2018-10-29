@@ -10,9 +10,7 @@ RUN apk add --no-cache \
 	libffi-dev \
 	openssl-dev
 
-COPY requirements.txt /tmp/requirements.txt
+COPY . /bot
 
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
-
-RUN rm /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -r /bot/requirements.txt
 
