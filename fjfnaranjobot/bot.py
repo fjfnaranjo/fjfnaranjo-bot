@@ -35,7 +35,7 @@ class Bot:
     def process_request(self, url_path, update):
 
         # Root URL
-        if url_path == '/':
+        if url_path == '' or url_path == '/':
             return "I'm fjfnaranjo's bot."
     
         # Healt check URL

@@ -22,7 +22,7 @@ def application(environ, start_response):
         ]
         return Response(status, response_headers, [data])
 
-    url_path = environ.get('RAW_URI', '/')
+    url_path = environ.get('PATH_INFO', '')
     response = Response('404 Not Found', [], [])
 
     request_body_size = 0
