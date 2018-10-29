@@ -1,0 +1,11 @@
+version: "3"
+services:
+  fjfnaranjo-bot:
+    build: .
+    ports:
+      - "${BOT_PORT}:9090"
+    volumes:
+      - "${BOT_APP_DIR}:/bot"
+      - "${BOT_CERT_DIR}:/cert"
+    working_dir: /bot
+    command: uwsgi --http 0.0.0.0:9090 --wsgi-file wsgi.py
