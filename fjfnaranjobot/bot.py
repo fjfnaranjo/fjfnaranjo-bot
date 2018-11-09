@@ -51,6 +51,16 @@ class Bot:
             )
             return 'ok'
 
+        # Register webhook request URL
+        elif url_path == (
+            '/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook_self'))
+        ):
+            self.bot.set_webhook(
+                url=self.webhook_url,
+                certificate='/'.join(('/', 'botcert', 'example.key'))
+            )
+            return 'ok (self)'
+
         # Healt check URL
         elif url_path != '/' + BOT_WEBHOOK_TOKEN:
             raise BotTokenError()
