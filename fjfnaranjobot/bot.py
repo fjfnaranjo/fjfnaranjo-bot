@@ -57,7 +57,7 @@ class Bot:
         ):
             self.bot.set_webhook(
                 url=self.webhook_url,
-                certificate='/botcert/example.key'
+                certificate=open('/botcert/YOURPUBLIC.pem', 'rb')
             )
             return 'ok (self)'
 

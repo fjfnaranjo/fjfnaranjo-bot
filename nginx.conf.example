@@ -3,9 +3,9 @@ upstream fjfnaranjo-bot {
 }
 server {
     listen      443 ssl;
-    server_name           example.com;
-    ssl_certificate       /botcert/example.crt;
-    ssl_certificate_key   /botcert/example.key;
+    server_name           YOURDOMAIN.EXAMPLE;
+    ssl_certificate       /botcert/YOURPUBLIC.pem;
+    ssl_certificate_key   /botcert/YOURPRIVATE.key;
     location / {
         include uwsgi_params;
         uwsgi_pass fjfnaranjo-bot;
