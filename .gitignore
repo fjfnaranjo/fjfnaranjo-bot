@@ -104,5 +104,4 @@ ENV/
 /.project
 /.pydevproject
 /nginx.conf
-/pysrc
 /certs
