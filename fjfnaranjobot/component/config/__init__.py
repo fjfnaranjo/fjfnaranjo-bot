@@ -12,7 +12,7 @@ logger = getLogger(__name__)
 
 
 
-def config_set_handler_processor(bot, update):
+def config_set_handler_processor(bot, update):  #noqa
     _, key, value = update.message.text.split(' ')
     logger.info(f"Setting config '{key}' to '{value}'.")
     conn = connect(join(BOT_DATA_DIR, 'bot.db'))
@@ -21,7 +21,7 @@ def config_set_handler_processor(bot, update):
     conn.commit()
     
 
-def config_get_handler_processor(bot, update):
+def config_get_handler_processor(bot, update):  #noqa
     _, key = update.message.text.split(' ')
     conn = connect(join(BOT_DATA_DIR, 'bot.db'))
     cur = conn.cursor()
