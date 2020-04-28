@@ -1,4 +1,4 @@
-python-telegram-bot>=11.1.0<11.2
-boto3>=1.9.47<1.10
-pytest>=4.0.0<4.1
-mock>=2.0.0<2.1
+python-telegram-bot~=12.6
+boto3~=1.12
+pytest~=5.4
+mock~=4.0
