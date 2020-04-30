@@ -1,7 +1,7 @@
 from collections import namedtuple
-from logging import basicConfig, getLogger, INFO
+from logging import INFO, basicConfig, getLogger
 
-from fjfnaranjobot.bot import Bot, BotLibraryError, BotJSONError, BotTokenError
+from fjfnaranjobot.bot import Bot, BotJSONError, BotLibraryError, BotTokenError
 
 
 basicConfig(level=INFO)
@@ -16,7 +16,7 @@ def application(environ, start_response):
         data = bytes(text, enconding)
         status = status
         response_headers = [
-            ('Content-type','text/plain'),
+            ('Content-type', 'text/plain'),
             ('Content-Length', str(len(data)))
         ]
         return Response(status, response_headers, [data])
@@ -25,7 +25,7 @@ def application(environ, start_response):
 
     url_path = environ.get('PATH_INFO', '')
 
-    if len(url_path)==0:
+    if len(url_path) == 0:
         logger.error('Received empty path in WSGI request.')
         response = prepare_text_response(
             str(''),

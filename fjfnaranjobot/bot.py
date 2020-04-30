@@ -1,11 +1,18 @@
-from json import loads, JSONDecodeError
+from importlib import import_module
+from json import JSONDecodeError, loads
+from os import environ
 
-from telegram import Bot as TBot, Update
+from telegram import Bot as TBot
+from telegram import Update
 from telegram.ext import Dispatcher
 
-from fjfnaranjobot import BOT_TOKEN, BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN
-from fjfnaranjobot.component.echo import echo_handler
-from fjfnaranjobot.component.config import config_set_handler, config_get_handler
+
+BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,echo')
+BOT_TOKEN = environ.get('BOT_TOKEN')
+BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
+BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
+BOT_DATA_DIR = environ.get('BOT_DATA_DIR', '')
+BOT_COMPONENT_DIR = environ.get('BOT_COMPONENT_DIR')
 
 
 class BotLibraryError(Exception):
@@ -25,23 +32,39 @@ class Bot:
         self.bot = TBot(BOT_TOKEN)
         self.dispatcher = Dispatcher(self.bot, None, workers=0)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
-        self.register_handlers()
-
-    def register_handlers(self):
-        self.dispatcher.add_handler(config_set_handler)
-        self.dispatcher.add_handler(config_get_handler)
-        self.dispatcher.add_handler(echo_handler)
+        for component in BOT_COMPONENTS.split(','):
+            try:
+                info = import_module(
+                    'fjfnaranjobot.components.'
+                    f'{component}.info'
+                )
+                try:
+                    inits = info.inits
+                except AttributeError:
+                    pass
+                else:
+                    for init in inits:
+                        init()
+                try:
+                    handlers = info.handlers
+                except AttributeError:
+                    pass
+                else:
+                    for handler in handlers:
+                        self.dispatcher.add_handler(handler)
+            except ModuleNotFoundError:
+                pass
 
     def process_request(self, url_path, update):
 
         # Root URL
         if url_path == '' or url_path == '/':
             return "I'm fjfnaranjo's bot."
-    
+
         # Healt check URL
         elif url_path == '/ping':
             return 'pong'
-    
+
         # Register webhook request URL
         elif url_path == (
             '/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook'))
