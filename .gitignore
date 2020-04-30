@@ -106,3 +106,4 @@ ENV/
 /nginx.conf
 /certs
 /botdata-dev
+/.settings
