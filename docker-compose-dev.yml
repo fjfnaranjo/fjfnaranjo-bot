@@ -13,11 +13,11 @@ services:
     build: .
     volumes:
       - .:/bot
-      - botdata-dev:/botdata
+      - ./botdata-dev:/botdata
       - "${BOT_CERT_DIR}:/botcert:ro"
     working_dir: /bot
     env_file: .env
-    command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file wsgi.py --chdir /bot --py-autoreload 1
+    command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --chdir /bot --py-autoreload 1
     user: "${UID}:${UID}"
 volumes:
   botdata-dev:
