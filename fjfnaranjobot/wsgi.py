@@ -17,7 +17,7 @@ def application(environ, start_response):
         status = status
         response_headers = [
             ('Content-type', 'text/plain'),
-            ('Content-Length', str(len(data)))
+            ('Content-Length', str(len(data))),
         ]
         return Response(status, response_headers, [data])
 
@@ -27,10 +27,7 @@ def application(environ, start_response):
 
     if len(url_path) == 0:
         logger.error('Received empty path in WSGI request.')
-        response = prepare_text_response(
-            str(''),
-            status='500 Internal Server Error'
-        )
+        response = prepare_text_response(str(''), status='500 Internal Server Error')
 
     else:
         request_body_size = int(environ.get('CONTENT_LENGTH', 0))
@@ -43,16 +40,10 @@ def application(environ, start_response):
             )
         except BotLibraryError as e:
             logger.exception('Error from bot library', exc_info=e)
-            response = prepare_text_response(
-                str(e),
-                status='500 Internal Server Error'
-            )
+            response = prepare_text_response(str(e), status='500 Internal Server Error')
         except BotJSONError as e:
             logger.exception('Error from bot library (json)', exc_info=e)
-            response = prepare_text_response(
-                str(e),
-                status='400 Bad Request'
-            )
+            response = prepare_text_response(str(e), status='400 Bad Request')
         except BotTokenError as e:
             logger.exception('Error from bot library (token)', exc_info=e)
             response = Response('404 Not Found', [], [])

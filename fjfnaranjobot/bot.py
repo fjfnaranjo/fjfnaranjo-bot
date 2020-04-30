@@ -34,10 +34,7 @@ class Bot:
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         for component in BOT_COMPONENTS.split(','):
             try:
-                info = import_module(
-                    'fjfnaranjobot.components.'
-                    f'{component}.info'
-                )
+                info = import_module('fjfnaranjobot.components.' f'{component}.info')
                 try:
                     inits = info.inits
                 except AttributeError:
@@ -66,21 +63,14 @@ class Bot:
             return 'pong'
 
         # Register webhook request URL
-        elif url_path == (
-            '/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook'))
-        ):
-            self.bot.set_webhook(
-                url=self.webhook_url
-            )
+        elif url_path == ('/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook'))):
+            self.bot.set_webhook(url=self.webhook_url)
             return 'ok'
 
         # Register webhook request URL
-        elif url_path == (
-            '/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook_self'))
-        ):
+        elif url_path == ('/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook_self'))):
             self.bot.set_webhook(
-                url=self.webhook_url,
-                certificate=open('/botcert/YOURPUBLIC.pem', 'rb')
+                url=self.webhook_url, certificate=open('/botcert/YOURPUBLIC.pem', 'rb')
             )
             return 'ok (self)'
 
@@ -96,9 +86,7 @@ class Bot:
             raise BotJSONError("Sent content isn't JSON.") from e
 
         try:
-            self.dispatcher.process_update(
-                Update.de_json(update_json, self.bot)
-            )
+            self.dispatcher.process_update(Update.de_json(update_json, self.bot))
         except Exception as e:
             raise BotLibraryError("Error in bot library.") from e
 
@@ -109,5 +97,5 @@ class Bot:
             listen=host,
             port=port,
             url_path=BOT_WEBHOOK_TOKEN,
-            webhook_url=self.webhook_url
+            webhook_url=self.webhook_url,
         )
