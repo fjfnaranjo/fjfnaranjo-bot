@@ -4,7 +4,7 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 
-def config_set(_bot, update):
+def config_set(update, _context):
     _, key, value = update.message.text.split(' ')
     set_key(key, value)
     shown_value = value[:10]
@@ -12,7 +12,7 @@ def config_set(_bot, update):
     update.message.reply_text('ok')
 
 
-def config_get(_bot, update):
+def config_get(update, _context):
     _, key = update.message.text.split(' ')
     result = get_key(key)
     if result is None:

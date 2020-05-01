@@ -28,7 +28,7 @@ class BotTokenError(Exception):
 class Bot:
     def __init__(self):
         self.bot = TBot(BOT_TOKEN)
-        self.dispatcher = Dispatcher(self.bot, None, workers=0)
+        self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
 
     def _init_components(self):

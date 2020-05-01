@@ -1,13 +1,11 @@
-from unittest.mock import patch, sentinel
+from unittest.mock import MagicMock
 
 
 from fjfnaranjobot.components.echo.use_cases import echo
 
 
-@patch('telegram.update.Update')
-@patch('telegram.bot.Bot')
-def test_echo_handler_processor(bot, update):
+def test_echo_handler_processor():
+    update = MagicMock()
     update.message.text = 'msg'
-    update.message.chat_id = sentinel.chat_id
-    echo(bot, update)
-    bot.send_message.assert_called_once_with(chat_id=sentinel.chat_id, text='msg')
+    echo(update, None)
+    update.message.reply_text.assert_called_once_with('msg')
