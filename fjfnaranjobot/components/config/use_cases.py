@@ -20,7 +20,7 @@ def init_config():
     setup_conn.close()
 
 
-def config_set(bot, update):
+def config_set(_bot, update):
     _, key, value = update.message.text.split(' ')
     logger.info(f"Setting config '{key}' to '{value}'.")
     conn = connect(join(BOT_DATA_DIR, 'bot.db'))
@@ -29,7 +29,7 @@ def config_set(bot, update):
     conn.commit()
 
 
-def config_get(bot, update):
+def config_get(_bot, update):
     _, key = update.message.text.split(' ')
     conn = connect(join(BOT_DATA_DIR, 'bot.db'))
     cur = conn.cursor()
