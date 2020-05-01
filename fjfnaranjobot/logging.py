@@ -16,7 +16,7 @@ valid_log_levels = {
 }
 
 
-_configured = False
+state = {'configured': False}
 
 
 def configure_logging():
@@ -43,10 +43,9 @@ def configure_logging():
 
 
 def getLogger(name, level=None):
-    global _configured
-    if not _configured:
+    if not state['configured']:
         configure_logging()
-        _configured = True
+        state['configured'] = True
     logger = loggingGetLogger(f'app.{name}')
     if level is not None:
         logger.setLevel(level)
