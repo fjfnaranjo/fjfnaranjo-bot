@@ -1,44 +1,26 @@
-from os import environ
-from os.path import join
-from sqlite3 import connect
-
+from fjfnaranjobot.config import set_key, get_key
 from fjfnaranjobot.logging import getLogger
-
-
-BOT_DATA_DIR = environ.get('BOT_DATA_DIR', '')
-
 
 logger = getLogger(__name__)
 
 
-def init_config():
-    logger.info("Initializing settings database.")
-    setup_conn = connect(join(BOT_DATA_DIR, 'bot.db'))
-    setup_cur = setup_conn.cursor()
-    setup_cur.execute('CREATE TABLE IF NOT EXISTS config (key PRIMARY KEY, value)')
-    setup_cur.close()
-    setup_conn.close()
-
-
 def config_set(_bot, update):
     _, key, value = update.message.text.split(' ')
-    logger.info(f"Setting config '{key}' to '{value}'.")
-    conn = connect(join(BOT_DATA_DIR, 'bot.db'))
-    cur = conn.cursor()
-    cur.execute('INSERT INTO config VALUES (?, ?)', (key, value))
-    conn.commit()
+    set_key(key, value)
+    shown_value = value[:10]
+    logger.info(f"Stored '{shown_value}' (cropped to 10 chars) with key '{key}'.")
+    update.message.reply_text('ok')
 
 
 def config_get(_bot, update):
     _, key = update.message.text.split(' ')
-    conn = connect(join(BOT_DATA_DIR, 'bot.db'))
-    cur = conn.cursor()
-    cur.execute('SELECT value FROM config WHERE key=?', (key,))
-    result = cur.fetchone()
+    result = get_key(key)
     if result is None:
-        logger.info(f"Replying with 'no value' message for config '{key}'.")
-        update.message.reply_text(f"No value for config '{key}'.")
+        logger.info(f"Replying with 'no value' message for key '{key}'.")
+        update.message.reply_text(f"No value for key '{key}'.")
     else:
-        value = result[0]
-        logger.info(f"Replying with '{value}' for config '{key}'.")
-        update.message.reply_text(value)
+        shown_value = result[:10]
+        logger.info(
+            f"Replying with '{shown_value}' (cropped to 10 chars) for key '{key}'."
+        )
+        update.message.reply_text(result)
