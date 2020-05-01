@@ -30,6 +30,8 @@ class Bot:
         self.bot = TBot(BOT_TOKEN)
         self.dispatcher = Dispatcher(self.bot, None, workers=0)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
+
+    def _init_components(self):
         for component in BOT_COMPONENTS.split(','):
             try:
                 info = import_module('fjfnaranjobot.components.' f'{component}.info')
@@ -77,7 +79,7 @@ class Bot:
             raise BotTokenError()
 
         # Delegate response to bot library
-
+        self._init_components()
         try:
             update_json = loads(update)
         except JSONDecodeError as e:
