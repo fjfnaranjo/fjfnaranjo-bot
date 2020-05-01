@@ -8,8 +8,8 @@ services:
     ports:
       - "${BOT_PORT}:443"
     links:
-      - fjfnaranjo-bot
-  fjfnaranjo-bot:
+      - bot
+  bot:
     build: .
     volumes:
       - botdata:/botdata

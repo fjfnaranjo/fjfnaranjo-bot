@@ -1,5 +1,5 @@
 upstream fjfnaranjo-bot {
-    server fjfnaranjo-bot:8001;
+    server bot:8001;
 }
 server {
     listen      443 ssl;
