@@ -19,5 +19,3 @@ services:
     env_file: .env
     command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --chdir /bot --py-autoreload 1
     user: "${UID}:${UID}"
-volumes:
-  botdata-dev:
