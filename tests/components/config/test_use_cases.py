@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock
 from fjfnaranjobot.components.config.use_cases import config_set, config_get
 
 
-class ConfigTests(TestCase):
+class ConfigModuleTests(TestCase):
     @patch('fjfnaranjobot.components.config.use_cases.set_key')
     def test_config_set(self, set_key):
         update = MagicMock()
