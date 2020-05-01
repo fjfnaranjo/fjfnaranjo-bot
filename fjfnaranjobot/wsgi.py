@@ -1,10 +1,9 @@
 from collections import namedtuple
-from logging import INFO, basicConfig, getLogger
 
 from fjfnaranjobot.bot import Bot, BotJSONError, BotLibraryError, BotTokenError
+from fjfnaranjobot.logging import getLogger
 
 
-basicConfig(level=INFO)
 logger = getLogger(__name__)
 
 

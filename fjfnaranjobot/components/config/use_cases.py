@@ -1,8 +1,11 @@
-from logging import getLogger
+from os import environ
 from os.path import join
 from sqlite3 import connect
 
-from fjfnaranjobot.bot import BOT_DATA_DIR
+from fjfnaranjobot.logging import getLogger
+
+
+BOT_DATA_DIR = environ.get('BOT_DATA_DIR', '')
 
 
 logger = getLogger(__name__)

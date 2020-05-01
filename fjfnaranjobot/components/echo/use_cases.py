@@ -1,4 +1,4 @@
-from logging import getLogger
+from fjfnaranjobot.logging import getLogger
 
 
 logger = getLogger(__name__)

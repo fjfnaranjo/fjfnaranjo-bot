@@ -7,12 +7,10 @@ from telegram import Update
 from telegram.ext import Dispatcher
 
 
-BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,echo')
 BOT_TOKEN = environ.get('BOT_TOKEN')
 BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
 BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
-BOT_DATA_DIR = environ.get('BOT_DATA_DIR', '')
-BOT_COMPONENT_DIR = environ.get('BOT_COMPONENT_DIR')
+BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,echo')
 
 
 class BotLibraryError(Exception):
