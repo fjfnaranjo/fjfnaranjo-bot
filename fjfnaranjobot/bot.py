@@ -65,14 +65,14 @@ class Bot:
             self.bot.set_webhook(url=self.webhook_url)
             return 'ok'
 
-        # Register webhook request URL
+        # Register webhook request URL (using self signed cert)
         elif url_path == ('/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook_self'))):
             self.bot.set_webhook(
                 url=self.webhook_url, certificate=open('/botcert/YOURPUBLIC.pem', 'rb')
             )
             return 'ok (self)'
 
-        # Healt check URL
+        # Don't allow other URLs unless preceded by token
         elif url_path != '/' + BOT_WEBHOOK_TOKEN:
             raise BotTokenError()
 
