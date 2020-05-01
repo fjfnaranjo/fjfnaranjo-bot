@@ -19,7 +19,7 @@ valid_log_levels = {
 state = {'configured': False}
 
 
-def configure_logging():
+def _configure_logging():
     if not access(BOT_LOGFILE, W_OK):
         raise ValueError('Invalid file name in BOT_LOGFILE var.')
     if BOT_LOGLEVEL not in valid_log_levels:
@@ -44,7 +44,7 @@ def configure_logging():
 
 def getLogger(name, level=None):
     if not state['configured']:
-        configure_logging()
+        _configure_logging()
         state['configured'] = True
     logger = loggingGetLogger(f'app.{name}')
     if level is not None:
