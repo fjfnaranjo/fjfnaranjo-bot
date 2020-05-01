@@ -16,19 +16,7 @@ valid_log_levels = {
 }
 
 
-class LoggingConfigured:
-    _configured = False
-
-    def __new__(cls):
-        raise RuntimeError('LoggingState is a singleton.')
-
-    @classmethod
-    def __bool__(cls):
-        return cls._configured
-
-    @classmethod
-    def configure(cls):
-        cls._configured = True
+_configured = False
 
 
 def configure_logging():
@@ -55,9 +43,10 @@ def configure_logging():
 
 
 def getLogger(name, level=None):
-    if not LoggingConfigured:
+    global _configured
+    if not _configured:
         configure_logging()
-        LoggingConfigured.configure()
+        _configured = True
     logger = loggingGetLogger(f'app.{name}')
     if level is not None:
         logger.setLevel(level)
