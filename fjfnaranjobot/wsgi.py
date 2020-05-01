@@ -29,7 +29,8 @@ def application(environ, start_response):
         response = prepare_text_response(str(''), status='500 Internal Server Error')
 
     else:
-        request_body_size = int(environ.get('CONTENT_LENGTH', 0))
+        content_length = environ.get('CONTENT_LENGTH', '')
+        request_body_size = int(content_length) if len(content_length) > 0 else 0
         request_body = environ['wsgi.input'].read(request_body_size)
 
         try:
