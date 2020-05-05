@@ -9,7 +9,7 @@ from fjfnaranjobot.logging import getLogger, state
 FAKE_LEVEL = 99
 
 
-class LoggerTests(TestCase):
+class LoggingTests(TestCase):
     def test_logger_no_default_name(self):
         with raises(TypeError):
             getLogger()
