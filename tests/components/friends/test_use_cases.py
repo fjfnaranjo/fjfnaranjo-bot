@@ -69,7 +69,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
         message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Added', message)
         self.assertIn(str(FIRST_FRIEND_USERID), message)
-        add_friend.assert_called_once_with(str(FIRST_FRIEND_USERID))
+        add_friend.assert_called_once_with(FIRST_FRIEND_USERID)
 
     @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
     @patch(f'{MODULE_PATH}.add_friend')
@@ -82,7 +82,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
         message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Added', message)
         self.assertIn(str(SECOND_FRIEND_USERID), message)
-        add_friend.assert_called_once_with(str(SECOND_FRIEND_USERID))
+        add_friend.assert_called_once_with(SECOND_FRIEND_USERID)
 
     @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
     @patch(f'{MODULE_PATH}.add_friend')
@@ -93,9 +93,8 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
             friends(self.update, None)
         self.update.message.reply_text.assert_called_once()
         message = self.update.message.reply_text.call_args[0][0]
-        self.assertIn('Added', message)
+        self.assertIn('already', message)
         self.assertIn(str(FIRST_FRIEND_USERID), message)
-        add_friend.assert_called_once_with(str(FIRST_FRIEND_USERID))
 
     @patch(f'{MODULE_PATH}.get_friends', return_value=[])
     @patch(f'{MODULE_PATH}.del_friend')
@@ -106,9 +105,8 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
             friends(self.update, None)
         self.update.message.reply_text.assert_called_once()
         message = self.update.message.reply_text.call_args[0][0]
-        self.assertIn('Removed', message)
+        self.assertIn('isn', message)
         self.assertIn(str(FIRST_FRIEND_USERID), message)
-        del_friend.assert_called_once_with(str(FIRST_FRIEND_USERID))
 
     @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
     @patch(f'{MODULE_PATH}.del_friend')
@@ -119,9 +117,8 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
             friends(self.update, None)
         self.update.message.reply_text.assert_called_once()
         message = self.update.message.reply_text.call_args[0][0]
-        self.assertIn('Removed', message)
+        self.assertIn('isn', message)
         self.assertIn(str(SECOND_FRIEND_USERID), message)
-        del_friend.assert_called_once_with(str(SECOND_FRIEND_USERID))
 
     @patch(
         f'{MODULE_PATH}.get_friends',
@@ -137,7 +134,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
         message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Removed', message)
         self.assertIn(str(SECOND_FRIEND_USERID), message)
-        del_friend.assert_called_once_with(str(SECOND_FRIEND_USERID))
+        del_friend.assert_called_once_with(SECOND_FRIEND_USERID)
 
     @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
     @patch(f'{MODULE_PATH}.del_friend')
@@ -150,4 +147,4 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
         message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Removed', message)
         self.assertIn(str(FIRST_FRIEND_USERID), message)
-        del_friend.assert_called_once_with(str(FIRST_FRIEND_USERID))
+        del_friend.assert_called_once_with(FIRST_FRIEND_USERID)
