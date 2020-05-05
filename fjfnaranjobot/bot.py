@@ -5,12 +5,13 @@ from os import environ
 from telegram import Bot as TBot
 from telegram import Update
 from telegram.ext import Dispatcher
+from telegram.ext.dispatcher import DEFAULT_GROUP
 
 
 BOT_TOKEN = environ.get('BOT_TOKEN')
 BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
 BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
-BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,echo')
+BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,echo,friends')
 
 
 class BotLibraryError(Exception):
@@ -48,7 +49,8 @@ class Bot:
                     pass
                 else:
                     for handler in handlers:
-                        self.dispatcher.add_handler(handler)
+                        group = getattr(info, 'group', DEFAULT_GROUP)
+                        self.dispatcher.add_handler(handler, group)
             except ModuleNotFoundError:
                 pass
 

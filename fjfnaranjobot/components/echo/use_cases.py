@@ -1,3 +1,5 @@
+from telegram.ext.dispatcher import DispatcherHandlerStop
+
 from fjfnaranjobot.logging import getLogger
 
 
@@ -9,3 +11,4 @@ def echo(update, _context):
     shown_text = text[:10]
     logger.info(f"Echoing '{shown_text}' (cropped to 10 chars) back.")
     update.message.reply_text(text)
+    raise DispatcherHandlerStop()

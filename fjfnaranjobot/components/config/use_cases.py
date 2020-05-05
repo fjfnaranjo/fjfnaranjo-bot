@@ -1,17 +1,23 @@
+from telegram.ext import DispatcherHandlerStop
+
+from fjfnaranjobot.auth import only_owner
 from fjfnaranjobot.config import set_key, get_key
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
 
+@only_owner
 def config_set(update, _context):
     _, key, value = update.message.text.split(' ')
     set_key(key, value)
     shown_value = value[:10]
     logger.info(f"Stored '{shown_value}' (cropped to 10 chars) with key '{key}'.")
     update.message.reply_text('ok')
+    raise DispatcherHandlerStop()
 
 
+@only_owner
 def config_get(update, _context):
     _, key = update.message.text.split(' ')
     result = get_key(key)
@@ -24,3 +30,4 @@ def config_get(update, _context):
             f"Replying with '{shown_value}' (cropped to 10 chars) for key '{key}'."
         )
         update.message.reply_text(result)
+    raise DispatcherHandlerStop()
