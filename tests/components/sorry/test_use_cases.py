@@ -1,13 +1,13 @@
-from unittest import TestCase
 from unittest.mock import MagicMock
 
 from telegram.ext import DispatcherHandlerStop
 from pytest import raises
 
 from fjfnaranjobot.components.sorry.use_cases import sorry
+from tests.base import BotTestCase
 
 
-class SorryUseCasesTests(TestCase):
+class SorryUseCasesTests(BotTestCase):
     def test_sorry_handler_processor(self):
         update = MagicMock()
         with raises(DispatcherHandlerStop):

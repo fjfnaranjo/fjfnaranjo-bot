@@ -1,11 +1,11 @@
 from contextlib import contextmanager
-from unittest import TestCase
 from unittest.mock import patch
 
 from fjfnaranjobot.auth import get_friends, CFG_KEY, add_friend, del_friend
+from tests.base import BotTestCase
 
 
-class AuthTests(TestCase):
+class AuthTests(BotTestCase):
     @contextmanager
     def _with_owner_and_friends(self, owner_id, friends_list):
         with patch('fjfnaranjobot.auth.BOT_OWNER_ID', owner_id):

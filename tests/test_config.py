@@ -1,11 +1,11 @@
 from os import remove
 from os.path import join, isfile
-from unittest import TestCase
 
 from fjfnaranjobot.config import BOT_DATA_DIR, BOT_DB, state, get_key, set_key
+from tests.base import BotTestCase
 
 
-class ConfigTests(TestCase):
+class ConfigTests(BotTestCase):
     def setUp(self):
         state['initialized'] = False
         db_file = join(BOT_DATA_DIR, BOT_DB)

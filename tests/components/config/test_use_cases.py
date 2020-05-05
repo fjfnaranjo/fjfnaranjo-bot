@@ -1,13 +1,13 @@
-from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 from telegram.ext import DispatcherHandlerStop
 from pytest import raises
 
 from fjfnaranjobot.components.config.use_cases import config_set, config_get
+from tests.base import BotTestCase
 
 
-class ConfigUseCasesTests(TestCase):
+class ConfigUseCasesTests(BotTestCase):
     @patch('fjfnaranjobot.components.config.use_cases.set_key')
     def test_config_set(self, set_key):
         update = MagicMock()

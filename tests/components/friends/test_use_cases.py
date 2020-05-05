@@ -1,10 +1,10 @@
-from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 from telegram.ext import DispatcherHandlerStop
 from pytest import raises
 
 from fjfnaranjobot.components.friends.use_cases import friends
+from tests.base import BotTestCase
 
 
 MODULE_PATH = 'fjfnaranjobot.components.friends.use_cases'
@@ -12,7 +12,7 @@ MODULE_PATH = 'fjfnaranjobot.components.friends.use_cases'
 # friends
 
 
-class FriendsUseCasesTests(TestCase):
+class FriendsUseCasesTests(BotTestCase):
     def _update_with_no_user(self, update):
         update.effective_user = None
         return update

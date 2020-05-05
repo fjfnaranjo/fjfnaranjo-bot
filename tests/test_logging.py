@@ -1,15 +1,15 @@
-from unittest import TestCase
 from unittest.mock import patch
 
 from pytest import raises
 
 from fjfnaranjobot.logging import getLogger, state
+from tests.base import BotTestCase
 
 
 FAKE_LEVEL = 99
 
 
-class LoggingTests(TestCase):
+class LoggingTests(BotTestCase):
     def test_logger_no_default_name(self):
         with raises(TypeError):
             getLogger()
