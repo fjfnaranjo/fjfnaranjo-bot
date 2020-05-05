@@ -4,12 +4,31 @@ from json import dumps as to_json
 
 from fjfnaranjobot.config import get_key, set_key
 from fjfnaranjobot.logging import getLogger
+from fjfnaranjobot.utils import EnvValueError
 
 
 logger = getLogger(__name__)
 
-BOT_OWNER_ID = int(environ.get('BOT_OWNER_ID'))
+BOT_OWNER_ID = environ.get('BOT_OWNER_ID')
 CFG_KEY = 'auth.friends'
+
+
+class FriendMustBeIntError(Exception):
+    pass
+
+
+def get_owner_id():
+    try:
+        return int(BOT_OWNER_ID)
+    except ValueError:
+        raise EnvValueError('Invalid id in BOT_OWNER_ID var.')
+
+
+def ensure_int(string):
+    try:
+        return int(string)
+    except ValueError:
+        raise FriendMustBeIntError('Error parsing id suplied by user.')
 
 
 def _parse_command(update):
@@ -68,12 +87,17 @@ def only_owner(f):
         if user is None:
             _report_no_user(update, 'only_owner')
             return
-        if user.id != BOT_OWNER_ID:
+        if user.id != get_owner_id():
             _report_user(update, user, 'only_owner')
             return
         return f(update, *args, **kwargs)
 
     return wrapper
+
+
+def get_friends():
+    friends = get_key(CFG_KEY)
+    return [] if friends is None else [int(id_) for id_ in from_json(friends)]
 
 
 def only_friends(f):
@@ -83,8 +107,8 @@ def only_friends(f):
         if user is None:
             _report_no_user(update, 'only_friends')
             return
-        friends = from_json(get_key(CFG_KEY))
-        if user.id != BOT_OWNER_ID and friends is not None and user.id not in friends:
+        friends = get_friends()
+        if user.id != get_owner_id() and friends is not None and user.id not in friends:
             _report_user(update, user, 'only_friends')
             return
         return f(update, *args, **kwargs)
@@ -92,20 +116,17 @@ def only_friends(f):
     return wrapper
 
 
-def get_friends():
-    friends = get_key(CFG_KEY)
-    return [] if friends is None else from_json(friends)
-
-
 def add_friend(id_):
+    id_int = ensure_int(id_)
     friends = get_friends()
-    if id_ not in friends and id_ != BOT_OWNER_ID:
-        friends.append(id_)
+    if id_int not in friends and id_int != get_owner_id():
+        friends.append(id_int)
         set_key(CFG_KEY, to_json(friends))
 
 
 def del_friend(id_):
+    id_int = ensure_int(id_)
     friends = get_friends()
-    if id_ in friends:
-        friends.remove(id_)
+    if id_int in friends:
+        friends.remove(id_int)
         set_key(CFG_KEY, to_json(friends))

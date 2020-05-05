@@ -2,10 +2,11 @@ from os import environ, access, W_OK
 
 from logging import getLogger as loggingGetLogger, INFO, DEBUG, WARNING, ERROR, CRITICAL
 from logging.config import dictConfig
+from fjfnaranjobot.utils import EnvValueError
 
 
-BOT_LOGFILE = environ.get('BOT_LOGFILE')
-BOT_LOGLEVEL = environ.get('BOT_LOGLEVEL', 'INFO')
+_BOT_LOGFILE = environ.get('BOT_LOGFILE')
+_BOT_LOGLEVEL = environ.get('BOT_LOGLEVEL', 'INFO')
 
 valid_log_levels = {
     'DEBUG': DEBUG,
@@ -20,10 +21,10 @@ state = {'configured': False}
 
 
 def _configure_logging():
-    if not access(BOT_LOGFILE, W_OK):
-        raise ValueError('Invalid file name in BOT_LOGFILE var.')
-    if BOT_LOGLEVEL not in valid_log_levels:
-        raise ValueError('Invalid level in BOT_LOGLEVEL var.')
+    if not access(_BOT_LOGFILE, W_OK):
+        raise EnvValueError('Invalid file name in BOT_LOGFILE var.')
+    if _BOT_LOGLEVEL not in valid_log_levels:
+        raise EnvValueError('Invalid level in BOT_LOGLEVEL var.')
     dictConfig(
         {
             'version': 1,
@@ -34,10 +35,10 @@ def _configure_logging():
                 'app': {
                     'class': 'logging.FileHandler',
                     'formatter': 'app',
-                    'filename': BOT_LOGFILE,
+                    'filename': _BOT_LOGFILE,
                 },
             },
-            'loggers': {'app': {'level': BOT_LOGLEVEL, 'handlers': ['app']}},
+            'loggers': {'app': {'level': _BOT_LOGLEVEL, 'handlers': ['app']}},
         }
     )
 

@@ -1,0 +1,2 @@
+class EnvValueError(Exception):
+    pass

@@ -1,6 +1,12 @@
 from telegram.ext import DispatcherHandlerStop
 
-from fjfnaranjobot.auth import get_friends, add_friend, del_friend, only_owner
+from fjfnaranjobot.auth import (
+    get_friends,
+    add_friend,
+    del_friend,
+    only_owner,
+    ensure_int,
+)
 from fjfnaranjobot.logging import getLogger
 
 
@@ -13,27 +19,20 @@ def _friends_list(update):
     if len(all_friends) == 0:
         update.message.reply_text("You don't have any friend.")
     else:
-        friend_list = ", ".join(all_friends)
+        friend_list = ", ".join([str(id_) for id_ in all_friends])
         update.message.reply_text(f"Your friends are: {friend_list}")
-
-
-def _ensure_int(string):
-    try:
-        return int(string)
-    except ValueError:
-        raise
 
 
 def _friend_add(update, id_):
     logger.info(f"Adding @{id_} as a friend.")
-    _ensure_int(id_)
+    ensure_int(id_)
     add_friend(id_)
     update.message.reply_text(f"Added ${id_} as a friend.")
 
 
 def _friend_del(update, id_):
     logger.info(f"Removing @{id_} as a friend.")
-    _ensure_int(id_)
+    ensure_int(id_)
     del_friend(id_)
     update.message.reply_text(f"Removed ${id_} as a friend.")
 

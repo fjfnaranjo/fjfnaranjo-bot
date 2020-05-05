@@ -1,184 +1,153 @@
-from unittest.mock import patch, MagicMock
-
-from telegram.ext import DispatcherHandlerStop
-from pytest import raises
+from unittest.mock import patch
 
 from fjfnaranjobot.components.friends.use_cases import friends
-from tests.base import BotTestCase
+from tests.base import BotUseCaseTestCase, FIRST_FRIEND_USERID, SECOND_FRIEND_USERID
 
 
 MODULE_PATH = 'fjfnaranjobot.components.friends.use_cases'
-# get_friends, add_friend, del_friend, only_owner
-# friends
 
 
-class FriendsUseCasesTests(BotTestCase):
-    def _update_with_no_user(self, update):
-        update.effective_user = None
-        return update
-
-    def _update_with_user_bot(self, update):
-        update.effective_user.is_bot = True
-        update.effective_user.id = 999
-        return update
-
-    def _update_with_user_friend(self, update, id_):
-        update.effective_user.is_bot = False
-        update.effective_user.id = id_
-        return update
-
-    def _update_with_user_owner(self, update):
-        update.effective_user.is_bot = False
-        update.effective_user.id = 99
-        return update
-
+class FriendsUseCasesTests(BotUseCaseTestCase):
     def test_friends_no_user(self):
-        update = MagicMock()
-        self._update_with_no_user(update)
-        returned = friends(update, None)
+        self._user_is_none()
+        returned = friends(self.update, None)
         assert returned is None
 
     def test_friends_bot_user(self):
-        update = MagicMock()
-        self._update_with_user_bot(update)
-        returned = friends(update, None)
+        self._user_is_bot()
+        returned = friends(self.update, None)
         assert returned is None
 
-    @patch(f'{MODULE_PATH}.get_friends', return_value=['2'])
+    @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
     def test_friends_friend_user(self, _get_friends):
-        update = MagicMock()
-        self._update_with_user_friend(update, 2)
-        returned = friends(update, None)
+        self._user_is_friend(FIRST_FRIEND_USERID)
+        returned = friends(self.update, None)
         assert returned is None
 
     @patch(f'{MODULE_PATH}.get_friends', return_value=[])
     def test_friends_no_friends(self, _get_friends):
-        update = MagicMock()
-        update.message.text = f'cmd'
-        self._update_with_user_owner(update)
-        with raises(DispatcherHandlerStop):
-            friends(update, None)
-        update.message.reply_text.assert_called_once()
-        message = update.message.reply_text.call_args[0][0]
+        self._set_msg('cmd')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('You don\'t have', message)
 
-    @patch(f'{MODULE_PATH}.get_friends', return_value=['2'])
+    @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
     def test_friends_one_friend(self, _get_friends):
-        update = MagicMock()
-        update.message.text = f'cmd'
-        self._update_with_user_owner(update)
-        with raises(DispatcherHandlerStop):
-            friends(update, None)
-        update.message.reply_text.assert_called_once()
-        message = update.message.reply_text.call_args[0][0]
-        self.assertIn(': 2', message)
+        self._set_msg('cmd')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
+        self.assertIn(str(FIRST_FRIEND_USERID), message)
 
-    @patch(f'{MODULE_PATH}.get_friends', return_value=['2', '3'])
+    @patch(
+        f'{MODULE_PATH}.get_friends',
+        return_value=[FIRST_FRIEND_USERID, SECOND_FRIEND_USERID],
+    )
     def test_friends_many_friends(self, _get_friends):
-        update = MagicMock()
-        update.message.text = f'cmd'
-        self._update_with_user_owner(update)
-        with raises(DispatcherHandlerStop):
-            friends(update, None)
-        update.message.reply_text.assert_called_once()
-        message = update.message.reply_text.call_args[0][0]
-        self.assertIn('2', message)
-        self.assertIn('3', message)
+        self._set_msg('cmd')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
+        self.assertIn(str(FIRST_FRIEND_USERID), message)
+        self.assertIn(str(SECOND_FRIEND_USERID), message)
 
     @patch(f'{MODULE_PATH}.get_friends', return_value=[])
     @patch(f'{MODULE_PATH}.add_friend')
     def test_friends_add_no_friends(self, add_friend, _get_friends):
-        update = MagicMock()
-        update.message.text = f'cmd add 2'
-        self._update_with_user_owner(update)
-        with raises(DispatcherHandlerStop):
-            friends(update, None)
-        update.message.reply_text.assert_called_once()
-        message = update.message.reply_text.call_args[0][0]
+        self._set_msg(f'cmd add {FIRST_FRIEND_USERID}')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Added', message)
-        self.assertIn('2', message)
-        add_friend.assert_called_once_with('2')
+        self.assertIn(str(FIRST_FRIEND_USERID), message)
+        add_friend.assert_called_once_with(str(FIRST_FRIEND_USERID))
 
-    @patch(f'{MODULE_PATH}.get_friends', return_value=[2])
+    @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
     @patch(f'{MODULE_PATH}.add_friend')
     def test_friends_add_some_friends(self, add_friend, _get_friends):
-        update = MagicMock()
-        update.message.text = f'cmd add 3'
-        self._update_with_user_owner(update)
-        with raises(DispatcherHandlerStop):
-            friends(update, None)
-        update.message.reply_text.assert_called_once()
-        message = update.message.reply_text.call_args[0][0]
+        self._set_msg(f'cmd add {SECOND_FRIEND_USERID}')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Added', message)
-        self.assertIn('3', message)
-        add_friend.assert_called_once_with('3')
+        self.assertIn(str(SECOND_FRIEND_USERID), message)
+        add_friend.assert_called_once_with(str(SECOND_FRIEND_USERID))
 
-    @patch(f'{MODULE_PATH}.get_friends', return_value=[2])
+    @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
     @patch(f'{MODULE_PATH}.add_friend')
     def test_friends_add_already_friend(self, add_friend, _get_friends):
-        update = MagicMock()
-        update.message.text = f'cmd add 2'
-        self._update_with_user_owner(update)
-        with raises(DispatcherHandlerStop):
-            friends(update, None)
-        update.message.reply_text.assert_called_once()
-        message = update.message.reply_text.call_args[0][0]
+        self._set_msg(f'cmd add {FIRST_FRIEND_USERID}')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Added', message)
-        self.assertIn('2', message)
-        add_friend.assert_called_once_with('2')
+        self.assertIn(str(FIRST_FRIEND_USERID), message)
+        add_friend.assert_called_once_with(str(FIRST_FRIEND_USERID))
 
     @patch(f'{MODULE_PATH}.get_friends', return_value=[])
     @patch(f'{MODULE_PATH}.del_friend')
     def test_friends_del_no_friends(self, del_friend, _get_friends):
-        update = MagicMock()
-        update.message.text = f'cmd del 2'
-        self._update_with_user_owner(update)
-        with raises(DispatcherHandlerStop):
-            friends(update, None)
-        update.message.reply_text.assert_called_once()
-        message = update.message.reply_text.call_args[0][0]
+        self._set_msg(f'cmd del {FIRST_FRIEND_USERID}')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Removed', message)
-        self.assertIn('2', message)
-        del_friend.assert_called_once_with('2')
+        self.assertIn(str(FIRST_FRIEND_USERID), message)
+        del_friend.assert_called_once_with(str(FIRST_FRIEND_USERID))
 
-    @patch(f'{MODULE_PATH}.get_friends', return_value=[2])
+    @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
     @patch(f'{MODULE_PATH}.del_friend')
     def test_friends_del_not_friends(self, del_friend, _get_friends):
-        update = MagicMock()
-        update.message.text = f'cmd del 3'
-        self._update_with_user_owner(update)
-        with raises(DispatcherHandlerStop):
-            friends(update, None)
-        update.message.reply_text.assert_called_once()
-        message = update.message.reply_text.call_args[0][0]
+        self._set_msg(f'cmd del {SECOND_FRIEND_USERID}')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Removed', message)
-        self.assertIn('3', message)
-        del_friend.assert_called_once_with('3')
+        self.assertIn(str(SECOND_FRIEND_USERID), message)
+        del_friend.assert_called_once_with(str(SECOND_FRIEND_USERID))
 
-    @patch(f'{MODULE_PATH}.get_friends', return_value=[2, 3])
+    @patch(
+        f'{MODULE_PATH}.get_friends',
+        return_value=[FIRST_FRIEND_USERID, SECOND_FRIEND_USERID],
+    )
     @patch(f'{MODULE_PATH}.del_friend')
     def test_friends_del_some_friends(self, del_friend, _get_friends):
-        update = MagicMock()
-        update.message.text = f'cmd del 3'
-        self._update_with_user_owner(update)
-        with raises(DispatcherHandlerStop):
-            friends(update, None)
-        update.message.reply_text.assert_called_once()
-        message = update.message.reply_text.call_args[0][0]
+        self._set_msg(f'cmd del {SECOND_FRIEND_USERID}')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Removed', message)
-        self.assertIn('3', message)
-        del_friend.assert_called_once_with('3')
+        self.assertIn(str(SECOND_FRIEND_USERID), message)
+        del_friend.assert_called_once_with(str(SECOND_FRIEND_USERID))
 
-    @patch(f'{MODULE_PATH}.get_friends', return_value=[2])
+    @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
     @patch(f'{MODULE_PATH}.del_friend')
     def test_friends_del_last_friend(self, del_friend, _get_friends):
-        update = MagicMock()
-        update.message.text = f'cmd del 2'
-        self._update_with_user_owner(update)
-        with raises(DispatcherHandlerStop):
-            friends(update, None)
-        update.message.reply_text.assert_called_once()
-        message = update.message.reply_text.call_args[0][0]
+        self._set_msg(f'cmd del {FIRST_FRIEND_USERID}')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
         self.assertIn('Removed', message)
-        self.assertIn('2', message)
-        del_friend.assert_called_once_with('2')
+        self.assertIn(str(FIRST_FRIEND_USERID), message)
+        del_friend.assert_called_once_with(str(FIRST_FRIEND_USERID))

@@ -1,46 +1,41 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-from telegram.ext import DispatcherHandlerStop
-from pytest import raises
 
 from fjfnaranjobot.components.config.use_cases import config_set, config_get
-from tests.base import BotTestCase
+from tests.base import BotUseCaseTestCase
 
 
-class ConfigUseCasesTests(BotTestCase):
-    @patch('fjfnaranjobot.components.config.use_cases.set_key')
+MODULE_PATH = 'fjfnaranjobot.components.config.use_cases'
+
+
+class ConfigUseCasesTests(BotUseCaseTestCase):
+    @patch(f'{MODULE_PATH}.set_key')
     def test_config_set(self, set_key):
-        update = MagicMock()
-        update.message.text = f'cmd key val'
-        update.effective_user.is_bot = False
-        update.effective_user.id = 99
-        with raises(DispatcherHandlerStop):
-            config_set(update, None)
+        self._user_is_owner()
+        self._set_msg('cmd key val')
+        with self._raises_dispatcher_stop():
+            config_set(self.update, None)
         set_key.assert_called_once_with('key', 'val')
-        update.message.reply_text.assert_called_once_with('ok')
+        self.update.message.reply_text.assert_called_once_with('ok')
 
-    @patch('fjfnaranjobot.components.config.use_cases.get_key')
+    @patch(f'{MODULE_PATH}.get_key')
     def test_config_get_missing(self, get_key):
-        update = MagicMock()
-        update.message.text = f'cmd key'
-        update.effective_user.is_bot = False
-        update.effective_user.id = 99
+        self._user_is_owner()
+        self._set_msg('cmd key')
         get_key.return_value = None
-        with raises(DispatcherHandlerStop):
-            config_get(update, None)
+        with self._raises_dispatcher_stop():
+            config_get(self.update, None)
         get_key.assert_called_once_with('key')
-        update.message.reply_text.assert_called_once()
-        message_contents = update.message.reply_text.call_args[0][0]
+        self.update.message.reply_text.assert_called_once()
+        message_contents = self.update.message.reply_text.call_args[0][0]
         assert 'No value' in message_contents
 
-    @patch('fjfnaranjobot.components.config.use_cases.get_key')
+    @patch(f'{MODULE_PATH}.get_key')
     def test_config_get_exists(self, get_key):
-        update = MagicMock()
-        update.message.text = f'cmd key'
-        update.effective_user.is_bot = False
-        update.effective_user.id = 99
+        self._user_is_owner()
+        self._set_msg('cmd key')
         get_key.return_value = 'result'
-        with raises(DispatcherHandlerStop):
-            config_get(update, None)
+        with self._raises_dispatcher_stop():
+            config_get(self.update, None)
         get_key.assert_called_once_with('key')
-        update.message.reply_text.assert_called_once_with('result')
+        self.update.message.reply_text.assert_called_once_with('result')

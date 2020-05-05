@@ -1,12 +1,13 @@
 from os import remove
 from os.path import join, isfile
+from unittest import TestCase
 
-from fjfnaranjobot.config import BOT_DATA_DIR, BOT_DB, state, get_key, set_key
-from tests.base import BotTestCase
+from fjfnaranjobot.config import BOT_DATA_DIR, BOT_DB, get_key, set_key, state
 
 
-class ConfigTests(BotTestCase):
+class ConfigTests(TestCase):
     def setUp(self):
+        TestCase.setUp(self)
         state['initialized'] = False
         db_file = join(BOT_DATA_DIR, BOT_DB)
         if isfile(db_file):
@@ -28,3 +29,5 @@ class ConfigTests(BotTestCase):
     def test_retrieve_value_dont_exists(self):
         val = get_key('key')
         assert None == val
+
+    # TODO: Independent access to DB
