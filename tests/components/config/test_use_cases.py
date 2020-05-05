@@ -7,7 +7,7 @@ from pytest import raises
 from fjfnaranjobot.components.config.use_cases import config_set, config_get
 
 
-class ConfigModuleTests(TestCase):
+class ConfigUseCasesTests(TestCase):
     @patch('fjfnaranjobot.components.config.use_cases.set_key')
     def test_config_set(self, set_key):
         update = MagicMock()

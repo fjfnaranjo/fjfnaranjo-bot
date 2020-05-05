@@ -7,7 +7,7 @@ from pytest import raises
 from fjfnaranjobot.components.sorry.use_cases import sorry
 
 
-class SorryTests(TestCase):
+class SorryUseCasesTests(TestCase):
     def test_sorry_handler_processor(self):
         update = MagicMock()
         with raises(DispatcherHandlerStop):
