@@ -3,7 +3,7 @@
 all:
 
 isort:
-	@isort -c
+	@isort -y
 
 test:
 	@pytest
