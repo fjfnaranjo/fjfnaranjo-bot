@@ -19,11 +19,9 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f requirements.dev.txt ]; then pip install -r requirements.dev.txt; fi
     - name: Check styles with Black
-      run: |
-        black -S --check fjfnaranjobot tests
+      run: black -S --check fjfnaranjobot tests
     - name: Test with pytest
-      run: |
-        pytest
+      run: pytest
       env:
         BOT_DATA_DIR: botdata-dev
         BOT_DB: bot.test.db
