@@ -1,6 +1,5 @@
 from os import environ
 
-
 _BOT_DATA_DIR_DEFAULT = ''
 
 

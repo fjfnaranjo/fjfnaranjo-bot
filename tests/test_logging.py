@@ -1,11 +1,11 @@
-from os.path import join, isfile
+from os.path import isfile, join
 from tempfile import mktemp
 from unittest import TestCase
 from unittest.mock import patch
 
 from pytest import raises
 
-from fjfnaranjobot.logging import getLogger, get_log_path, reset_state
+from fjfnaranjobot.logging import get_log_path, getLogger, reset_state
 from fjfnaranjobot.utils import EnvValueError
 
 MODULE_PATH = 'fjfnaranjobot.logging'

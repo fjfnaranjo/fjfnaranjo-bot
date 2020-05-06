@@ -1,11 +1,10 @@
 from contextlib import contextmanager
-from os import remove
-from os import environ, makedirs
-from os.path import join, isdir, isfile, split
+from os import environ, makedirs, remove
+from os.path import isdir, isfile, join, split
 from sqlite3 import connect
 
 from fjfnaranjobot.logging import getLogger
-from fjfnaranjobot.utils import get_bot_data_dir, EnvValueError
+from fjfnaranjobot.utils import EnvValueError, get_bot_data_dir
 
 _BOT_DB_DEFAULT_NAME = 'bot.db'
 

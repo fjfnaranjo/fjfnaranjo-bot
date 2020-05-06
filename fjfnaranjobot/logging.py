@@ -1,11 +1,10 @@
 from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 from logging import getLogger as loggingGetLogger
 from logging.config import dictConfig
-from os import environ, remove, makedirs
-from os.path import join, isfile, split, isdir
+from os import environ, makedirs, remove
+from os.path import isdir, isfile, join, split
 
-from fjfnaranjobot.utils import EnvValueError
-from fjfnaranjobot.utils import get_bot_data_dir
+from fjfnaranjobot.utils import EnvValueError, get_bot_data_dir
 
 _BOT_LOGFILE_DEFAULT = 'bot.log'
 _BOT_LOGLEVEL_DEFAULT = 'INFO'

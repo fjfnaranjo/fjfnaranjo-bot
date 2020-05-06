@@ -1,4 +1,4 @@
-from os.path import isfile, join
+from os.path import join
 from tempfile import mktemp
 from unittest import TestCase
 from unittest.mock import patch
@@ -6,13 +6,12 @@ from unittest.mock import patch
 from pytest import raises
 
 from fjfnaranjobot.config import (
+    EnvValueError,
     get_db_path,
     get_key,
-    set_key,
     reset_state,
-    EnvValueError,
+    set_key,
 )
-
 
 MODULE_PATH = 'fjfnaranjobot.config'
 BOT_DB_NAME_DEFAULT = 'bot.db'
