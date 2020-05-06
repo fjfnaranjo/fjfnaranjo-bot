@@ -18,10 +18,6 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f requirements.dev.txt ]; then pip install -r requirements.ci.txt; fi
-    - name: Create data dir
-      run: mkdir botdata-dev
-    - name: Create log file
-      run: touch botdata-dev/bot.pytest.log
     - name: Check styles with Black
       run: black -S --check fjfnaranjobot tests
     - name: Check imports with isort
@@ -30,6 +26,6 @@ jobs:
       run: pytest
       env:
         BOT_DATA_DIR: botdata-dev
-        BOT_DB: bot.test.db
-        BOT_LOGFILE: botdata-dev/bot.pytest.log
+        BOT_DB_NAME: bot.test.db
+        BOT_LOGFILE: bot.pytest.log
         BOT_OWNER_ID: 11
