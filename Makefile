@@ -12,6 +12,5 @@ cov:
 	@pytest --cov=fjfnaranjobot --cov-report html tests/
 
 black:
-	@black -S fjfnaranjobot
-	@black -S tests
+	@black -S fjfnaranjobot tests
 
