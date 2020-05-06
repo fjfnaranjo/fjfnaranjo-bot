@@ -3,7 +3,6 @@ from collections import namedtuple
 from fjfnaranjobot.bot import Bot, BotJSONError, BotLibraryError, BotTokenError
 from fjfnaranjobot.logging import getLogger
 
-
 logger = getLogger(__name__)
 
 

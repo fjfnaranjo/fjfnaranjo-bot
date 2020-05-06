@@ -2,7 +2,6 @@ from telegram.ext.dispatcher import DispatcherHandlerStop
 
 from fjfnaranjobot.logging import getLogger
 
-
 logger = getLogger(__name__)
 
 

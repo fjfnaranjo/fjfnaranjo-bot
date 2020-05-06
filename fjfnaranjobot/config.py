@@ -5,7 +5,6 @@ from sqlite3 import connect
 
 from fjfnaranjobot.logging import getLogger
 
-
 BOT_DATA_DIR = environ.get('BOT_DATA_DIR', '')
 BOT_DB = environ.get('BOT_DB', 'bot.db')
 

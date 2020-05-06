@@ -1,10 +1,6 @@
 from telegram.ext import CommandHandler
 
-from fjfnaranjobot.components.config.use_cases import (
-    config_set,
-    config_get,
-)
-
+from fjfnaranjobot.components.config.use_cases import config_get, config_set
 
 group = 10
 

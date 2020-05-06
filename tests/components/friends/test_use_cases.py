@@ -1,8 +1,7 @@
 from unittest.mock import patch
 
 from fjfnaranjobot.components.friends.use_cases import friends
-from tests.base import BotUseCaseTestCase, FIRST_FRIEND_USERID, SECOND_FRIEND_USERID
-
+from tests.base import FIRST_FRIEND_USERID, SECOND_FRIEND_USERID, BotUseCaseTestCase
 
 MODULE_PATH = 'fjfnaranjobot.components.friends.use_cases'
 

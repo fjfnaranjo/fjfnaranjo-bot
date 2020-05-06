@@ -6,7 +6,6 @@ from pytest import raises
 from fjfnaranjobot.logging import getLogger, state
 from fjfnaranjobot.utils import EnvValueError
 
-
 MODULE_PATH = 'fjfnaranjobot.logging'
 
 FAKE_LEVEL = 99

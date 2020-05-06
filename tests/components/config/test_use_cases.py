@@ -1,9 +1,7 @@
 from unittest.mock import patch
 
-
-from fjfnaranjobot.components.config.use_cases import config_set, config_get
+from fjfnaranjobot.components.config.use_cases import config_get, config_set
 from tests.base import BotUseCaseTestCase
-
 
 MODULE_PATH = 'fjfnaranjobot.components.config.use_cases'
 

@@ -1,14 +1,13 @@
 from telegram.ext import DispatcherHandlerStop
 
 from fjfnaranjobot.auth import (
-    get_friends,
     add_friend,
     del_friend,
-    only_owner,
     ensure_int,
+    get_friends,
+    only_owner,
 )
 from fjfnaranjobot.logging import getLogger
-
 
 logger = getLogger(__name__)
 

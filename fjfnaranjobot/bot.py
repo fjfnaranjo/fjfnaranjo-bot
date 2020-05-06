@@ -7,7 +7,6 @@ from telegram import Update
 from telegram.ext import Dispatcher
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
-
 BOT_TOKEN = environ.get('BOT_TOKEN')
 BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
 BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')

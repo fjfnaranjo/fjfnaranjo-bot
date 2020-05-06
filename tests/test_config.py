@@ -1,5 +1,5 @@
 from os import remove
-from os.path import join, isfile
+from os.path import isfile, join
 from unittest import TestCase
 
 from fjfnaranjobot.config import BOT_DATA_DIR, BOT_DB, get_key, set_key, state

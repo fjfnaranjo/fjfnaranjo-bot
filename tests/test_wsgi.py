@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 
 from fjfnaranjobot.wsgi import application
 
-
 MODULE_PATH = 'fjfnaranjobot.wsgi'
 
 

@@ -1,11 +1,10 @@
-from os import environ
-from json import loads as from_json
 from json import dumps as to_json
+from json import loads as from_json
+from os import environ
 
 from fjfnaranjobot.config import get_key, set_key
 from fjfnaranjobot.logging import getLogger
 from fjfnaranjobot.utils import EnvValueError
-
 
 logger = getLogger(__name__)
 

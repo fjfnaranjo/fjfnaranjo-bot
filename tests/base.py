@@ -5,7 +5,6 @@ from unittest.mock import MagicMock
 from pytest import raises
 from telegram.ext import DispatcherHandlerStop
 
-
 OWNER_USERID = 11
 FIRST_FRIEND_USERID = 21
 SECOND_FRIEND_USERID = 22

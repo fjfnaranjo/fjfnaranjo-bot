@@ -2,18 +2,17 @@ from contextlib import contextmanager
 from unittest import TestCase
 from unittest.mock import patch
 
-from fjfnaranjobot.auth import get_friends, CFG_KEY, add_friend, del_friend
+from fjfnaranjobot.auth import CFG_KEY, add_friend, del_friend, get_friends
 from tests.base import (
-    OWNER_USERID,
-    JSON_ONE_FRIEND,
-    JSON_TWO_FRIENDS,
-    JSON_FIRST_FRIEND,
-    JSON_SECOND_FRIEND,
-    JSON_NO_FRIENDS,
     FIRST_FRIEND_USERID,
+    JSON_FIRST_FRIEND,
+    JSON_NO_FRIENDS,
+    JSON_ONE_FRIEND,
+    JSON_SECOND_FRIEND,
+    JSON_TWO_FRIENDS,
+    OWNER_USERID,
     SECOND_FRIEND_USERID,
 )
-
 
 MODULE_PATH = 'fjfnaranjobot.auth'
 
