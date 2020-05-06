@@ -52,10 +52,7 @@ def reset_state():
 
 @contextmanager
 def _cursor():
-    try:
-        conn = connect(get_db_path())
-    except OSError as e:
-        raise BotDBOSError(e)
+    conn = connect(get_db_path())
     cur = conn.cursor()
     yield cur
     conn.commit()
