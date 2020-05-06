@@ -2,6 +2,9 @@
 
 all:
 
+isort:
+	@isort -c
+
 test:
 	@pytest
 
