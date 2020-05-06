@@ -1,12 +1,14 @@
 from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 from logging import getLogger as loggingGetLogger
 from logging.config import dictConfig
-from os import W_OK, access, environ
+from os import environ, remove, makedirs
+from os.path import join, isfile, split, isdir
 
 from fjfnaranjobot.utils import EnvValueError
+from fjfnaranjobot.utils import get_bot_data_dir
 
-_BOT_LOGFILE = environ.get('BOT_LOGFILE')
-_BOT_LOGLEVEL = environ.get('BOT_LOGLEVEL', 'INFO')
+_BOT_LOGFILE_DEFAULT = 'bot.log'
+_BOT_LOGLEVEL_DEFAULT = 'INFO'
 
 valid_log_levels = {
     'DEBUG': DEBUG,
@@ -17,36 +19,67 @@ valid_log_levels = {
 }
 
 
-state = {'configured': False}
+_state = {'initialized': False}
+
+
+def get_log_path():
+    return join(get_bot_data_dir(), environ.get('BOT_LOGFILE', _BOT_LOGFILE_DEFAULT))
 
 
 def _configure_logging():
-    if not access(_BOT_LOGFILE, W_OK):
-        raise EnvValueError('Invalid file name in BOT_LOGFILE var.')
-    if _BOT_LOGLEVEL not in valid_log_levels:
+    log_path = get_log_path()
+    log_level = environ.get('BOT_LOGLEVEL', _BOT_LOGLEVEL_DEFAULT)
+    log_dir, _ = split(log_path)
+    if not isdir(log_dir):
+        try:
+            makedirs(log_dir)
+        except:
+            raise EnvValueError('Invalid dir name in BOT_LOGFILE var.')
+    new_file = False
+    if not isfile(log_path):
+        try:
+            with open(log_path, 'wb'):
+                pass
+            new_file = True
+        except OSError:
+            raise EnvValueError('Invalid file name in BOT_LOGFILE var.')
+    if log_level not in valid_log_levels:
         raise EnvValueError('Invalid level in BOT_LOGLEVEL var.')
     dictConfig(
         {
             'version': 1,
             'formatters': {
-                'app': {'format': '{asctime} {levelname} [{name}] {msg}', 'style': '{'},
+                'app': {
+                    'format': '{asctime} {levelname} [{name}] {msg}',
+                    'style': '{',
+                },
             },
             'handlers': {
                 'app': {
                     'class': 'logging.FileHandler',
                     'formatter': 'app',
-                    'filename': _BOT_LOGFILE,
+                    'filename': log_path,
                 },
             },
-            'loggers': {'app': {'level': _BOT_LOGLEVEL, 'handlers': ['app']}},
+            'loggers': {'app': {'level': log_level, 'handlers': ['app']}},
         }
     )
+    if new_file:
+        loggingGetLogger('app').info('Log created.')
+    _state['initialized'] = True
+
+
+def reset_state():
+    _state['initialized'] = False
+    log_path = get_log_path()
+    if isfile(log_path):
+        remove(log_path)
+    _configure_logging()
 
 
 def getLogger(name, level=None):
-    if not state['configured']:
+    if not _state['initialized']:
         _configure_logging()
-        state['configured'] = True
     logger = loggingGetLogger(f'app.{name}')
     if level is not None:
         logger.setLevel(level)

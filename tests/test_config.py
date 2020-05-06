@@ -1,32 +1,69 @@
-from os import remove
 from os.path import isfile, join
+from tempfile import mktemp
 from unittest import TestCase
+from unittest.mock import patch
 
-from fjfnaranjobot.config import BOT_DATA_DIR, BOT_DB, get_key, set_key, state
+from pytest import raises
+
+from fjfnaranjobot.config import (
+    get_db_path,
+    get_key,
+    set_key,
+    reset_state,
+    EnvValueError,
+)
+
+
+MODULE_PATH = 'fjfnaranjobot.config'
+BOT_DB_NAME_DEFAULT = 'bot.db'
+BOT_DB_NAME_TEST = 'bot.a.test.name.db'
+DB_TEST_FILE = mktemp()
 
 
 class ConfigTests(TestCase):
-    def setUp(self):
-        TestCase.setUp(self)
-        state['initialized'] = False
-        db_file = join(BOT_DATA_DIR, BOT_DB)
-        if isfile(db_file):
-            remove(db_file)
+    @patch.dict(f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': 'dir'}, True)
+    def test_get_db_path_join_and_default(self):
+        assert get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
 
-    def test_init_config_get(self):
-        get_key('key')
-        assert isfile(join(BOT_DATA_DIR, BOT_DB))
+    @patch.dict(
+        f'{MODULE_PATH}.environ',
+        {'BOT_DATA_DIR': 'dir', 'BOT_DB_NAME': BOT_DB_NAME_TEST},
+    )
+    def test_get_db_path_join_and_env(self):
+        assert get_db_path() == join('dir', BOT_DB_NAME_TEST)
 
-    def test_init_config_set(self):
-        set_key('key', 'val')
-        assert isfile(join(BOT_DATA_DIR, BOT_DB))
+    @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
+    def test_reset_state_creates_new(self, _get_db_path):
+        with open(DB_TEST_FILE, 'wb') as temp_file:
+            temp_file.write(b'notempty')
+        reset_state()
+        with open(DB_TEST_FILE, 'rb') as temp_file:
+            assert temp_file.read() != b'notempty'
 
-    def test_store_retrieve_value(self):
+    @patch(f'{MODULE_PATH}.get_db_path', return_value='/dev/not-a-valid-dir/a')
+    def test_reset_state_invalid_db_dir_name(self, _get_db_path):
+        with raises(EnvValueError) as e:
+            reset_state()
+        assert 'BOT_DB_NAME' in str(e)
+        assert 'dir' in str(e)
+
+    @patch(f'{MODULE_PATH}.get_db_path', return_value='/dev/not-a-valid-name')
+    def test_reset_state_invalid_db_file_name(self, _get_db_path):
+        with raises(EnvValueError) as e:
+            reset_state()
+        assert 'BOT_DB_NAME' in str(e)
+        assert 'file' in str(e)
+
+    @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
+    def test_store_set_get_value(self, _get_db_path):
+        reset_state()
         set_key('key', 'val')
         val = get_key('key')
         assert 'val' == val
 
-    def test_retrieve_value_dont_exists(self):
+    @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
+    def test_retrieve_get_value_dont_exists(self, _get_db_path):
+        reset_state()
         val = get_key('key')
         assert None == val
 
