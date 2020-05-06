@@ -66,11 +66,16 @@ def set_key(key, value):
         f"Setting configuration key '{key}' to value '{shown_value}' (cropped to 10 chars)."
     )
     with _cursor() as cur:
-        cur.execute(
-            'INSERT INTO config VALUES (?, ?) '
-            'ON CONFLICT(key) DO UPDATE SET value=? WHERE key=?',
-            (key, value, value, key,),
-        )
+        cur.execute('SELECT value FROM config WHERE key=?', (key,))
+        exists = cur.fetchone()
+        if exists is None:
+            cur.execute(
+                'INSERT INTO config VALUES (?, ?) ', (key, value),
+            )
+        else:
+            cur.execute(
+                'UPDATE config SET key=?, value=? WHERE key=?', (key, value, key),
+            )
 
 
 def get_key(key):

@@ -66,4 +66,12 @@ class ConfigTests(TestCase):
         val = get_key('key')
         assert None == val
 
+    @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
+    def test_store_set_existing_get_value(self, _get_db_path):
+        reset_state()
+        set_key('key', 'val')
+        set_key('key', 'val2')
+        val = get_key('key')
+        assert 'val2' == val
+
     # TODO: Independent access to DB
