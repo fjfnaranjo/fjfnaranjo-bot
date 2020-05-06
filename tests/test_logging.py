@@ -1,5 +1,6 @@
+from os import chmod
 from os.path import isfile, join
-from tempfile import mktemp
+from tempfile import mkdtemp, mkstemp
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -11,7 +12,8 @@ from fjfnaranjobot.utils import EnvValueError
 MODULE_PATH = 'fjfnaranjobot.logging'
 BOT_LOGFILE_DEFAULT = 'bot.log'
 BOT_LOGFILE_TEST = 'bot.a.test.name.log'
-LOGFILE_TEST_FILE = mktemp()
+LOGFILE_TEST_FILE = mkstemp()[1]
+LOGFILE_TEST_DIR = mkdtemp()
 FAKE_LEVEL = 99
 
 
@@ -35,15 +37,18 @@ class LoggingTests(TestCase):
         with open(LOGFILE_TEST_FILE, 'rb') as temp_file:
             assert temp_file.read() != b'notempty'
 
-    @patch(f'{MODULE_PATH}.get_log_path', return_value='/dev/not-a-valid-dir/a')
+    @patch(f'{MODULE_PATH}.get_log_path', return_value=join(LOGFILE_TEST_FILE, 'dir'))
     def test_reset_state_invalid_log_dir_name(self, _get_log_path):
         with raises(EnvValueError) as e:
             reset_state()
         assert 'BOT_LOGFILE' in str(e)
         assert 'dir' in str(e)
 
-    @patch(f'{MODULE_PATH}.get_log_path', return_value='/dev/not-a-valid-name')
+    @patch(
+        f'{MODULE_PATH}.get_log_path', return_value=join(LOGFILE_TEST_DIR, 'file'),
+    )
     def test_reset_state_invalid_db_file_name(self, _get_log_path):
+        chmod(LOGFILE_TEST_DIR, 0)
         with raises(EnvValueError) as e:
             reset_state()
         assert 'BOT_LOGFILE' in str(e)

@@ -1,5 +1,6 @@
+from os import chmod
 from os.path import join
-from tempfile import mktemp
+from tempfile import mkdtemp, mkstemp
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -16,7 +17,8 @@ from fjfnaranjobot.config import (
 MODULE_PATH = 'fjfnaranjobot.config'
 BOT_DB_NAME_DEFAULT = 'bot.db'
 BOT_DB_NAME_TEST = 'bot.a.test.name.db'
-DB_TEST_FILE = mktemp()
+DB_TEST_FILE = mkstemp()[1]
+DB_TEST_DIR = mkdtemp()
 
 
 class ConfigTests(TestCase):
@@ -39,15 +41,18 @@ class ConfigTests(TestCase):
         with open(DB_TEST_FILE, 'rb') as temp_file:
             assert temp_file.read() != b'notempty'
 
-    @patch(f'{MODULE_PATH}.get_db_path', return_value='/dev/not-a-valid-dir/a')
+    @patch(f'{MODULE_PATH}.get_db_path', return_value=join(DB_TEST_FILE, 'dir'))
     def test_reset_state_invalid_db_dir_name(self, _get_db_path):
         with raises(EnvValueError) as e:
             reset_state()
         assert 'BOT_DB_NAME' in str(e)
         assert 'dir' in str(e)
 
-    @patch(f'{MODULE_PATH}.get_db_path', return_value='/dev/not-a-valid-name')
+    @patch(
+        f'{MODULE_PATH}.get_db_path', return_value=join(DB_TEST_DIR, 'file'),
+    )
     def test_reset_state_invalid_db_file_name(self, _get_db_path):
+        chmod(DB_TEST_DIR, 0)
         with raises(EnvValueError) as e:
             reset_state()
         assert 'BOT_DB_NAME' in str(e)
