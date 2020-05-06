@@ -23,6 +23,24 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
         returned = friends(self.update, None)
         assert returned is None
 
+    def test_friends_invalid_syntax_usage(self):
+        self._set_msg('cmd add add add')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
+        self.assertIn('Invalid syntax', message)
+
+    def test_friends_invalid_syntax_subcommand(self):
+        self._set_msg('cmd invalid 0')
+        self._user_is_owner()
+        with self._raises_dispatcher_stop():
+            friends(self.update, None)
+        self.update.message.reply_text.assert_called_once()
+        message = self.update.message.reply_text.call_args[0][0]
+        self.assertIn('Unknown sub-command', message)
+
     @patch(f'{MODULE_PATH}.get_friends', return_value=[])
     def test_friends_no_friends(self, _get_friends):
         self._set_msg('cmd')

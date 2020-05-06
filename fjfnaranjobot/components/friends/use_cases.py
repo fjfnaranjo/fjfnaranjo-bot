@@ -60,5 +60,5 @@ def friends(update, _context):
             update.message.reply_text(f"Unknown sub-command. Options are: add, del")
     else:
         logger.info(f"Invalid syntax for /friends command. Usage sent.")
-        update.message.reply_text(f"Invalid systax. Use: /friends [|add id|del id] .")
+        update.message.reply_text(f"Invalid syntax. Use: /friends [|add id|del id] .")
     raise DispatcherHandlerStop()
