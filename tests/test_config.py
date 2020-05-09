@@ -8,6 +8,7 @@ from pytest import raises
 
 from fjfnaranjobot.config import (
     EnvValueError,
+    InvalidKeyError,
     get_db_path,
     get_key,
     reset_state,
@@ -57,6 +58,42 @@ class ConfigTests(TestCase):
             reset_state()
         assert 'BOT_DB_NAME' in str(e)
         assert 'file' in str(e)
+
+    @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
+    def test_store_get_value_key_ok(self, _get_db_path):
+        for key in ['key', 'key.key']:
+            with self.subTest(key=key):
+                get_key(key)
+
+    @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
+    def test_store_get_value_key_invalid(self, _get_db_path):
+        for key in [
+            '.key',
+            'key.',
+            'key key',
+            '!a_invalid_key',
+        ]:
+            with self.subTest(key=key):
+                with raises(InvalidKeyError):
+                    get_key(key)
+
+    @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
+    def test_store_set_value_key_ok(self, _get_db_path):
+        for key in ['key', 'key.key']:
+            with self.subTest(key=key):
+                set_key(key, 'val')
+
+    @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
+    def test_store_set_value_key_invalid(self, _get_db_path):
+        for key in [
+            '.key',
+            'key.',
+            'key key',
+            '!a_invalid_key',
+        ]:
+            with self.subTest(key=key):
+                with raises(InvalidKeyError):
+                    set_key(key, 'val')
 
     @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
     def test_store_set_get_value(self, _get_db_path):

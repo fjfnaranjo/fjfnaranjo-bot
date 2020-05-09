@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from os import environ, makedirs, remove
 from os.path import isdir, isfile, join, split
+from re import compile
 from sqlite3 import connect
 
 from fjfnaranjobot.logging import getLogger
@@ -13,7 +14,7 @@ logger = getLogger(__name__)
 _state = {'initialized': False}
 
 
-class BotDBOSError(OSError):
+class InvalidKeyError(Exception):
     pass
 
 
@@ -59,8 +60,15 @@ def _cursor():
     conn.close()
 
 
+def _validate_key(key):
+    validator = compile(r'^([a-zA-Z]+\.)*([a-zA-Z]+)+$')
+    if validator.fullmatch(key) is None:
+        raise InvalidKeyError(f"No valid value for key {key}.")
+
+
 def set_key(key, value):
     _ensure_db()
+    _validate_key(key)
     shown_value = value[:10]
     logger.debug(
         f"Setting configuration key '{key}' to value '{shown_value}' (cropped to 10 chars)."
@@ -80,6 +88,7 @@ def set_key(key, value):
 
 def get_key(key):
     _ensure_db()
+    _validate_key(key)
     logger.debug(f"Getting configuration value for key '{key}'.")
     with _cursor() as cur:
         cur.execute('SELECT value FROM config WHERE key=?', (key,))
