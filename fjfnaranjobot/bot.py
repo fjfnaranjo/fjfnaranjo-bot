@@ -7,6 +7,8 @@ from telegram import Update
 from telegram.ext import Dispatcher
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
+from fjfnaranjobot.scheduler import start_scheduling
+
 BOT_TOKEN = environ.get('BOT_TOKEN')
 BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
 BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
@@ -30,18 +32,13 @@ class Bot:
         self.bot = TBot(BOT_TOKEN)
         self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
+        self._init_handlers()
+        self._init_events()
 
-    def _init_components(self):
+    def _init_handlers(self):
         for component in BOT_COMPONENTS.split(','):
             try:
-                info = import_module('fjfnaranjobot.components.' f'{component}.info')
-                try:
-                    inits = info.inits
-                except AttributeError:
-                    pass
-                else:
-                    for init in inits:
-                        init()
+                info = import_module(f'fjfnaranjobot.components.{component}.handlers')
                 try:
                     handlers = info.handlers
                 except AttributeError:
@@ -52,6 +49,14 @@ class Bot:
                         self.dispatcher.add_handler(handler, group)
             except ModuleNotFoundError:
                 pass
+
+    def _init_events(self):
+        for component in BOT_COMPONENTS.split(','):
+            try:
+                import_module(f'fjfnaranjobot.components.{component}.events')
+            except ModuleNotFoundError:
+                pass
+        start_scheduling()
 
     def process_request(self, url_path, update):
 
@@ -80,7 +85,6 @@ class Bot:
             raise BotTokenError()
 
         # Delegate response to bot library
-        self._init_components()
         try:
             update_json = loads(update)
         except JSONDecodeError as e:
