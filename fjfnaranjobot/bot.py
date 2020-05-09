@@ -33,7 +33,6 @@ class Bot:
         self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         self._init_handlers()
-        self._init_events()
 
     def _init_handlers(self):
         for component in BOT_COMPONENTS.split(','):
