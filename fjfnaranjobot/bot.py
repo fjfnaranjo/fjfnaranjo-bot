@@ -7,8 +7,6 @@ from telegram import Update
 from telegram.ext import Dispatcher
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
-from fjfnaranjobot.scheduler import start_scheduling
-
 BOT_TOKEN = environ.get('BOT_TOKEN')
 BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
 BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
@@ -48,14 +46,6 @@ class Bot:
                         self.dispatcher.add_handler(handler, group)
             except ModuleNotFoundError:
                 pass
-
-    def _init_events(self):
-        for component in BOT_COMPONENTS.split(','):
-            try:
-                import_module(f'fjfnaranjobot.components.{component}.events')
-            except ModuleNotFoundError:
-                pass
-        start_scheduling()
 
     def process_request(self, url_path, update):
 
