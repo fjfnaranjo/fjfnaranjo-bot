@@ -11,6 +11,7 @@ services:
       - bot
   bot:
     build: .
+    image: fjfnaranjo-bot
     volumes:
       - .:/bot
       - ./botdata-dev:/botdata
@@ -18,4 +19,14 @@ services:
     working_dir: /bot
     env_file: .env
     command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --chdir /bot --py-autoreload 1
+    user: "${UID}:${UID}"
+  scheduler:
+    build: .
+    image: fjfnaranjo-bot
+    volumes:
+      - .:/bot
+      - ./botdata-dev:/botdata
+    working_dir: /bot
+    env_file: .env
+    command: python3 -m fjfnaranjobot.scheduler
     user: "${UID}:${UID}"

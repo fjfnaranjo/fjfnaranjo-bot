@@ -11,10 +11,19 @@ services:
       - bot
   bot:
     build: .
+    image: fjfnaranjo-bot
     volumes:
       - botdata:/botdata
     working_dir: /bot
     env_file: .env
     command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --master --processes 1 --threads 2 --chdir /bot
+  scheduler:
+    build: .
+    image: fjfnaranjo-bot
+    volumes:
+      - botdata:/botdata
+    working_dir: /bot
+    env_file: .env
+    command: python3 -m fjfnaranjobot.scheduler
 volumes:
   botdata:
