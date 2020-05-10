@@ -107,3 +107,4 @@ ENV/
 /certs
 /botdata-dev
 /.settings
+/.exports
