@@ -1,4 +1,4 @@
-.PHONY: all test cov black
+.PHONY: all isort test cov black docs
 
 all:
 
@@ -14,3 +14,5 @@ cov:
 black:
 	@black -S fjfnaranjobot tests
 
+docs:
+	$(MAKE) -C $@ html

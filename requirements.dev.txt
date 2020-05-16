@@ -1,1 +1,2 @@
 pytest-cov~=2.8
+Sphinx~=3.0
