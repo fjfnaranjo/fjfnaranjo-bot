@@ -108,3 +108,4 @@ ENV/
 /botdata-dev
 /.settings
 /.exports
+/.dbeaver
