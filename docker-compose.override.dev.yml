@@ -1,0 +1,22 @@
+version: "3"
+services:
+  bot:
+    volumes:
+      - .:/bot
+      - ./botdata-dev:/botdata
+      - "${BOT_CERT_DIR}:/botcert:ro"
+    user: "${UID}:${UID}"
+  celery-worker:
+    volumes:
+      - .:/bot
+      - ./botdata-dev:/botdata
+    user: "${UID}:${UID}"
+  rabbitmq:
+    volumes:
+      - rabbitmq-data-dev:/var/lib/rabbitmq
+  redis:
+    volumes:
+      - redis-data-dev:/data
+volumes:
+  rabbitmq-data-dev: 
+  redis-data-dev:

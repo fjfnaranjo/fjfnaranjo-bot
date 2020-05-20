@@ -1,33 +1,4 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# dotenv
-.env
-
-# virtualenv
-.venv
-venv/
-ENV/
-
-# git
-/.git
-/.gitignore
-
-# root
-docker-compose*
-environment
-LICENSE
-nginx*
-README.md
-
-# fjfnaranjo-bot
-/.project
-/.pydevproject
-/nginx.conf
-/pysrc
-/certs
-/botdata-dev
-/.settings
-/.exports
+**
+!/fjfnaranjobot
+!/requirements.txt
+**/__pycache__/

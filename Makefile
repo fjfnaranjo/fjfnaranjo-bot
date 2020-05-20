@@ -1,4 +1,4 @@
-.PHONY: all isort test cov black docs
+.PHONY: all isort test cov black docs up down restart
 
 all:
 
@@ -16,3 +16,11 @@ black:
 
 docs:
 	$(MAKE) -C $@ html
+
+up:
+	@docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml up -d
+
+down:
+	@docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml down
+
+restart: down up

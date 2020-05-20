@@ -12,18 +12,21 @@ services:
   bot:
     build: .
     image: fjfnaranjo-bot
-    volumes:
-      - botdata:/botdata
     working_dir: /bot
     env_file: .env
-    command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --master --processes 1 --threads 2 --chdir /bot
-  scheduler:
+    command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --chdir /bot --py-autoreload 1
+    user: "${UID}:${UID}"
+  celery-worker:
     build: .
     image: fjfnaranjo-bot
     volumes:
-      - botdata:/botdata
+      - .:/bot
+      - ./botdata-dev:/botdata
     working_dir: /bot
     env_file: .env
-    command: python3 -m fjfnaranjobot.scheduler
-volumes:
-  botdata:
+    command: celery -A tasks worker --loglevel=info
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    hostname: rabbitmq
+  redis:
+    image: redis:6.0-alpine

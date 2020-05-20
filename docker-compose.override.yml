@@ -1,0 +1,19 @@
+version: "3"
+services:
+  bot:
+    volumes:
+      - bot-data:/botdata
+    command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --master --processes 1 --threads 2 --chdir /bot
+  celery-worker:
+    volumes:
+      - bot-data:/botdata
+  rabbitmq:
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+  redis:
+    volumes:
+      - redis-data:/data
+volumes:
+  bot-data:
+  rabbitmq-data: 
+  redis-data:
