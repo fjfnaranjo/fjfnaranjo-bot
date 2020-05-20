@@ -25,7 +25,4 @@ jobs:
     - name: Test with pytest
       run: pytest
       env:
-        BOT_DATA_DIR: botdata-dev
-        BOT_DB_NAME: bot.test.db
-        BOT_LOGFILE: bot.pytest.log
         BOT_OWNER_ID: 11

@@ -105,7 +105,6 @@ ENV/
 /.pydevproject
 /nginx.conf
 /certs
-/botdata-dev
+/botdata
 /.settings
-/.exports
 /.dbeaver
