@@ -5,7 +5,8 @@ from unittest.mock import patch
 
 from fjfnaranjobot.logging import get_log_path, getLogger, reset_state
 from fjfnaranjobot.utils import EnvValueError
-from tests.base import BotTestCase
+
+from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.logging'
 BOT_LOGFILE_DEFAULT = 'bot.log'

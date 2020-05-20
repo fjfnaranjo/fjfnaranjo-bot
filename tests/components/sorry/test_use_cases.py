@@ -1,5 +1,6 @@
 from fjfnaranjobot.components.sorry.use_cases import sorry
-from tests.base import BotUseCaseTestCase
+
+from ...base import BotUseCaseTestCase
 
 
 class SorryUseCasesTests(BotUseCaseTestCase):

@@ -1,5 +1,6 @@
 from fjfnaranjobot.utils import get_bot_data_dir
-from tests.base import BotTestCase
+
+from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.utils'
 BOT_DATA_DIR_DEFAULT = 'botdata'

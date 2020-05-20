@@ -11,7 +11,8 @@ from fjfnaranjobot.config import (
     reset_state,
     set_key,
 )
-from tests.base import BotTestCase
+
+from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.config'
 BOT_DB_NAME_DEFAULT = 'bot.db'

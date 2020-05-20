@@ -3,7 +3,8 @@ from unittest.mock import MagicMock, patch
 
 from fjfnaranjobot.wsgi import BotJSONError, BotLibraryError, BotTokenError, application
 from fjfnaranjobot.wsgi import logger as wsgi_logger
-from tests.base import BotTestCase
+
+from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.wsgi'
 

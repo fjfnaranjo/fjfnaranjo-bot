@@ -15,7 +15,8 @@ from fjfnaranjobot.auth import (
     only_real,
 )
 from fjfnaranjobot.utils import EnvValueError
-from tests.base import (
+
+from .base import (
     FIRST_FRIEND_USERID,
     JSON_FIRST_FRIEND,
     JSON_NO_FRIENDS,
