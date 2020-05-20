@@ -3,14 +3,12 @@ services:
   bot:
     volumes:
       - .:/bot
-      - ./botdata-dev:/botdata
       - "${BOT_CERT_DIR}:/botcert:ro"
-    user: "${UID}:${UID}"
+    user: "${CONTAINER_UID}:${CONTAINER_UID}"
   celery-worker:
     volumes:
       - .:/bot
-      - ./botdata-dev:/botdata
-    user: "${UID}:${UID}"
+    user: "${CONTAINER_UID}:${CONTAINER_UID}"
   rabbitmq:
     volumes:
       - rabbitmq-data-dev:/var/lib/rabbitmq

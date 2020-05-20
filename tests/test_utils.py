@@ -4,7 +4,7 @@ from unittest.mock import patch
 from fjfnaranjobot.utils import get_bot_data_dir
 
 MODULE_PATH = 'fjfnaranjobot.utils'
-BOT_DATA_DIR_DEFAULT = ''
+BOT_DATA_DIR_DEFAULT = 'botdata'
 BOT_DATA_DIR_TEST = '/bot/data/test'
 
 

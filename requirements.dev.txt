@@ -1,3 +1,4 @@
 pytest-cov~=2.8
 Sphinx~=3.0
 flower~=0.9
+python-dotenv~=0.13
