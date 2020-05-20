@@ -11,7 +11,6 @@ RUN apk add --no-cache \
 		libffi-dev \
 		openssl \
 		openssl-dev \
-		uwsgi-python3 \
 	&& pip3 install --no-cache-dir -r /bot/requirements.txt \
 	&& apk del \
 		python3-dev \

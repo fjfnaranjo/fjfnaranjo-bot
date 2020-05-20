@@ -2,3 +2,4 @@ python-telegram-bot~=12.6
 boto3~=1.12
 celery~=4.4
 redis~=3.5
+uWSGI~=2.0
