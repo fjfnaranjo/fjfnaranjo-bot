@@ -10,8 +10,8 @@ Response = namedtuple('Response', ['status', 'headers', 'data'])
 
 
 def application(environ, start_response):
-    def prepare_text_response(text, status='200 OK', enconding='ascii'):
-        data = bytes(text, enconding)
+    def prepare_text_response(text, status='200 OK'):
+        data = bytes(text, 'utf8')
         status = status
         response_headers = [
             ('Content-type', 'text/plain'),

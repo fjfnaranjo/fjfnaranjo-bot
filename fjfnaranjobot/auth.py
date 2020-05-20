@@ -8,7 +8,6 @@ from fjfnaranjobot.utils import EnvValueError
 
 logger = getLogger(__name__)
 
-BOT_OWNER_ID = environ.get('BOT_OWNER_ID')
 CFG_KEY = 'auth.friends'
 
 
@@ -18,8 +17,10 @@ class FriendMustBeIntError(Exception):
 
 def get_owner_id():
     try:
-        return int(BOT_OWNER_ID)
-    except ValueError:
+        return int(environ['BOT_OWNER_ID'])
+    except KeyError:
+        raise EnvValueError('BOT_OWNER_ID var must be defined.')
+    except (TypeError, ValueError):
         raise EnvValueError('Invalid id in BOT_OWNER_ID var.')
 
 
@@ -83,9 +84,6 @@ def only_owner(f):
     @only_real
     def wrapper(update, *args, **kwargs):
         user = update.effective_user
-        if user is None:
-            _report_no_user(update, 'only_owner')
-            return
         if user.id != get_owner_id():
             _report_user(update, user, 'only_owner')
             return
@@ -103,9 +101,6 @@ def only_friends(f):
     @only_real
     def wrapper(update, *args, **kwargs):
         user = update.effective_user
-        if user is None:
-            _report_no_user(update, 'only_friends')
-            return
         friends = get_friends()
         if user.id != get_owner_id() and friends is not None and user.id not in friends:
             _report_user(update, user, 'only_friends')

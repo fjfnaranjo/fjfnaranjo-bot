@@ -1,10 +1,7 @@
 from os import chmod
 from os.path import join
 from tempfile import mkdtemp, mkstemp
-from unittest import TestCase
 from unittest.mock import patch
-
-from pytest import raises
 
 from fjfnaranjobot.config import (
     EnvValueError,
@@ -14,6 +11,7 @@ from fjfnaranjobot.config import (
     reset_state,
     set_key,
 )
+from tests.base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.config'
 BOT_DB_NAME_DEFAULT = 'bot.db'
@@ -22,17 +20,19 @@ DB_TEST_FILE = mkstemp()[1]
 DB_TEST_DIR = mkdtemp()
 
 
-class ConfigTests(TestCase):
-    @patch.dict(f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': 'dir'}, True)
+class ConfigTests(BotTestCase):
     def test_get_db_path_join_and_default(self):
-        assert get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
+        with self._with_mocked_environ(
+            f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': 'dir'}, ['BOT_DB_NAME'],
+        ):
+            assert get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
 
-    @patch.dict(
-        f'{MODULE_PATH}.environ',
-        {'BOT_DATA_DIR': 'dir', 'BOT_DB_NAME': BOT_DB_NAME_TEST},
-    )
     def test_get_db_path_join_and_env(self):
-        assert get_db_path() == join('dir', BOT_DB_NAME_TEST)
+        with self._with_mocked_environ(
+            f'{MODULE_PATH}.environ',
+            {'BOT_DATA_DIR': 'dir', 'BOT_DB_NAME': BOT_DB_NAME_TEST},
+        ):
+            assert get_db_path() == join('dir', BOT_DB_NAME_TEST)
 
     @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
     def test_reset_state_creates_new(self, _get_db_path):
@@ -44,29 +44,29 @@ class ConfigTests(TestCase):
 
     @patch(f'{MODULE_PATH}.get_db_path', return_value=join(DB_TEST_FILE, 'dir'))
     def test_reset_state_invalid_db_dir_name(self, _get_db_path):
-        with raises(EnvValueError) as e:
+        with self.assertRaises(EnvValueError) as e:
             reset_state()
-        assert 'BOT_DB_NAME' in str(e)
-        assert 'dir' in str(e)
+        assert 'BOT_DB_NAME' in str(e.exception)
+        assert 'dir' in str(e.exception)
 
     @patch(
         f'{MODULE_PATH}.get_db_path', return_value=join(DB_TEST_DIR, 'file'),
     )
     def test_reset_state_invalid_db_file_name(self, _get_db_path):
         chmod(DB_TEST_DIR, 0)
-        with raises(EnvValueError) as e:
+        with self.assertRaises(EnvValueError) as e:
             reset_state()
-        assert 'BOT_DB_NAME' in str(e)
-        assert 'file' in str(e)
+        assert 'BOT_DB_NAME' in str(e.exception)
+        assert 'file' in str(e.exception)
 
     @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
-    def test_store_get_value_key_ok(self, _get_db_path):
+    def test_get_key_valid(self, _get_db_path):
         for key in ['key', 'key.key']:
             with self.subTest(key=key):
                 get_key(key)
 
     @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
-    def test_store_get_value_key_invalid(self, _get_db_path):
+    def test_get_key_invalid(self, _get_db_path):
         for key in [
             '.key',
             'key.',
@@ -74,17 +74,17 @@ class ConfigTests(TestCase):
             '!a_invalid_key',
         ]:
             with self.subTest(key=key):
-                with raises(InvalidKeyError):
+                with self.assertRaises(InvalidKeyError):
                     get_key(key)
 
     @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
-    def test_store_set_value_key_ok(self, _get_db_path):
+    def test_set_key_valid(self, _get_db_path):
         for key in ['key', 'key.key']:
             with self.subTest(key=key):
                 set_key(key, 'val')
 
     @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
-    def test_store_set_value_key_invalid(self, _get_db_path):
+    def test_set_key_invalid(self, _get_db_path):
         for key in [
             '.key',
             'key.',
@@ -92,28 +92,26 @@ class ConfigTests(TestCase):
             '!a_invalid_key',
         ]:
             with self.subTest(key=key):
-                with raises(InvalidKeyError):
+                with self.assertRaises(InvalidKeyError):
                     set_key(key, 'val')
 
     @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
-    def test_store_set_get_value(self, _get_db_path):
+    def test_set_get_key(self, _get_db_path):
         reset_state()
         set_key('key', 'val')
         val = get_key('key')
         assert 'val' == val
 
     @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
-    def test_retrieve_get_value_dont_exists(self, _get_db_path):
+    def test_get_key_dont_exists(self, _get_db_path):
         reset_state()
         val = get_key('key')
         assert None == val
 
     @patch(f'{MODULE_PATH}.get_db_path', return_value=DB_TEST_FILE)
-    def test_store_set_existing_get_value(self, _get_db_path):
+    def test_set_key_get_value(self, _get_db_path):
         reset_state()
         set_key('key', 'val')
         set_key('key', 'val2')
         val = get_key('key')
         assert 'val2' == val
-
-    # TODO: Independent access to DB

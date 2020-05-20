@@ -1,8 +1,8 @@
 from contextlib import contextmanager
+from os import environ
 from unittest import TestCase
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-from pytest import raises
 from telegram.ext import DispatcherHandlerStop
 
 OWNER_USERID = 11
@@ -22,7 +22,25 @@ JSON_THREE_FRIENDS = (
 )
 
 
-class BotUseCaseTestCase(TestCase):
+class BotTestCase(TestCase):
+    @contextmanager
+    def _with_mocked_environ(self, path, edit_keys=None, delete_keys=None):
+        if edit_keys is None:
+            edit_keys = {}
+        if delete_keys is None:
+            delete_keys = []
+        if not hasattr(self, '_environ'):
+            self._environ = environ.copy()
+        for key in delete_keys:
+            if key in self._environ:
+                del self._environ[key]
+        for key in edit_keys:
+            self._environ[key] = edit_keys[key]
+        with patch.dict(path, self._environ.copy(), True):
+            yield
+
+
+class BotUseCaseTestCase(BotTestCase):
     def setUp(self):
         TestCase.setUp(self)
         self.update = MagicMock()
@@ -51,5 +69,5 @@ class BotUseCaseTestCase(TestCase):
 
     @contextmanager
     def _raises_dispatcher_stop(self):
-        with raises(DispatcherHandlerStop):
+        with self.assertRaises(DispatcherHandlerStop):
             yield

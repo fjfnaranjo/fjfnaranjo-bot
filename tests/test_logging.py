@@ -1,13 +1,11 @@
 from os import chmod
 from os.path import isfile, join
 from tempfile import mkdtemp, mkstemp
-from unittest import TestCase
 from unittest.mock import patch
-
-from pytest import raises
 
 from fjfnaranjobot.logging import get_log_path, getLogger, reset_state
 from fjfnaranjobot.utils import EnvValueError
+from tests.base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.logging'
 BOT_LOGFILE_DEFAULT = 'bot.log'
@@ -17,17 +15,19 @@ LOGFILE_TEST_DIR = mkdtemp()
 FAKE_LEVEL = 99
 
 
-class LoggingTests(TestCase):
-    @patch.dict(f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': 'dir'}, True)
+class LoggingTests(BotTestCase):
     def test_get_log_path_join_and_default(self):
-        assert get_log_path() == join('dir', BOT_LOGFILE_DEFAULT)
+        with self._with_mocked_environ(
+            f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': 'dir'}, ['BOT_LOGFILE']
+        ):
+            assert get_log_path() == join('dir', BOT_LOGFILE_DEFAULT)
 
-    @patch.dict(
-        f'{MODULE_PATH}.environ',
-        {'BOT_DATA_DIR': 'dir', 'BOT_LOGFILE': BOT_LOGFILE_TEST},
-    )
     def test_get_log_path_join_and_env(self):
-        assert get_log_path() == join('dir', BOT_LOGFILE_TEST)
+        with self._with_mocked_environ(
+            f'{MODULE_PATH}.environ',
+            {'BOT_DATA_DIR': 'dir', 'BOT_LOGFILE': BOT_LOGFILE_TEST},
+        ):
+            assert get_log_path() == join('dir', BOT_LOGFILE_TEST)
 
     @patch(f'{MODULE_PATH}.get_log_path', return_value=LOGFILE_TEST_FILE)
     def test_reset_state_creates_new(self, _get_log_path):
@@ -39,32 +39,34 @@ class LoggingTests(TestCase):
 
     @patch(f'{MODULE_PATH}.get_log_path', return_value=join(LOGFILE_TEST_FILE, 'dir'))
     def test_reset_state_invalid_log_dir_name(self, _get_log_path):
-        with raises(EnvValueError) as e:
+        with self.assertRaises(EnvValueError) as e:
             reset_state()
-        assert 'BOT_LOGFILE' in str(e)
-        assert 'dir' in str(e)
+        assert 'BOT_LOGFILE' in str(e.exception)
+        assert 'dir' in str(e.exception)
 
     @patch(
         f'{MODULE_PATH}.get_log_path', return_value=join(LOGFILE_TEST_DIR, 'file'),
     )
     def test_reset_state_invalid_db_file_name(self, _get_log_path):
         chmod(LOGFILE_TEST_DIR, 0)
-        with raises(EnvValueError) as e:
+        with self.assertRaises(EnvValueError) as e:
             reset_state()
-        assert 'BOT_LOGFILE' in str(e)
-        assert 'file' in str(e)
+        assert 'BOT_LOGFILE' in str(e.exception)
+        assert 'file' in str(e.exception)
 
-    @patch.dict(f'{MODULE_PATH}.environ', {'BOT_LOGLEVEL': f'{FAKE_LEVEL}'}, True)
     @patch(f'{MODULE_PATH}.get_log_path', return_value=LOGFILE_TEST_FILE)
     def test_logger_no_valid_log_level(self, _get_log_path):
-        with raises(EnvValueError) as e:
-            reset_state()
-            getLogger('fbtest')
-        assert 'BOT_LOGLEVEL' in str(e)
+        with self._with_mocked_environ(
+            f'{MODULE_PATH}.environ', {'BOT_LOGLEVEL': f'{FAKE_LEVEL}'}
+        ):
+            with self.assertRaises(EnvValueError) as e:
+                reset_state()
+                getLogger('fbtest')
+            assert 'BOT_LOGLEVEL' in str(e.exception)
 
     @patch(f'{MODULE_PATH}.get_log_path', return_value=LOGFILE_TEST_FILE)
     def test_logger_no_default_name(self, _get_log_path):
-        with raises(TypeError):
+        with self.assertRaises(TypeError):
             getLogger()
 
     @patch(f'{MODULE_PATH}.get_log_path', return_value=LOGFILE_TEST_FILE)

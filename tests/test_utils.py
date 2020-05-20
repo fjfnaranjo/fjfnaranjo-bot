@@ -1,18 +1,20 @@
-from unittest import TestCase
-from unittest.mock import patch
-
 from fjfnaranjobot.utils import get_bot_data_dir
+from tests.base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.utils'
 BOT_DATA_DIR_DEFAULT = 'botdata'
 BOT_DATA_DIR_TEST = '/bot/data/test'
 
 
-class UtilsTests(TestCase):
-    @patch.dict(f'{MODULE_PATH}.environ', {}, True)
+class UtilsTests(BotTestCase):
     def test_get_bot_data_dir_default(self):
-        assert get_bot_data_dir() == BOT_DATA_DIR_DEFAULT
+        with self._with_mocked_environ(
+            f'{MODULE_PATH}.environ', None, ['BOT_DATA_DIR']
+        ):
+            assert get_bot_data_dir() == BOT_DATA_DIR_DEFAULT
 
-    @patch.dict(f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': BOT_DATA_DIR_TEST})
     def test_get_bot_data_dir_env(self):
-        assert get_bot_data_dir() == BOT_DATA_DIR_TEST
+        with self._with_mocked_environ(
+            f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': BOT_DATA_DIR_TEST}
+        ):
+            assert get_bot_data_dir() == BOT_DATA_DIR_TEST

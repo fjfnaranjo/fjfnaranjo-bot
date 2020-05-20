@@ -6,8 +6,3 @@ logger = getLogger(__name__)
 
 
 app = Celery('tasks')
-
-
-@app.task
-def add(x, y):
-    return x + y
