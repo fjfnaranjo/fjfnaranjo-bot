@@ -22,3 +22,6 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self._user_is_owner()
         config_set_handler(self._update)
         assert config_set.called
+
+
+# TODO: Test auth control
