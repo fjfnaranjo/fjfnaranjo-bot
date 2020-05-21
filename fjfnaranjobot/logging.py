@@ -4,7 +4,7 @@ from logging.config import dictConfig
 from os import environ, makedirs, remove
 from os.path import isdir, isfile, join, split
 
-from fjfnaranjobot.utils import EnvValueError, get_bot_data_dir
+from fjfnaranjobot.bot import EnvValueError, get_bot_data_dir
 
 _BOT_LOGFILE_DEFAULT = 'bot.log'
 _BOT_LOGLEVEL_DEFAULT = 'INFO'

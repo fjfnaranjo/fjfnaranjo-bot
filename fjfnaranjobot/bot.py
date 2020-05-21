@@ -12,6 +12,8 @@ BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
 BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
 BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,sorry,friends')
 
+_BOT_DATA_DIR_DEFAULT = 'botdata'
+
 
 class BotLibraryError(Exception):
     pass
@@ -23,6 +25,14 @@ class BotJSONError(Exception):
 
 class BotTokenError(Exception):
     pass
+
+
+class EnvValueError(Exception):
+    pass
+
+
+def get_bot_data_dir():
+    return environ.get('BOT_DATA_DIR', _BOT_DATA_DIR_DEFAULT)
 
 
 class Bot:

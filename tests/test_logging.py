@@ -3,8 +3,8 @@ from os.path import isfile, join
 from tempfile import mkdtemp, mkstemp
 from unittest.mock import patch
 
+from fjfnaranjobot.bot import EnvValueError
 from fjfnaranjobot.logging import _get_log_path, getLogger, reset
-from fjfnaranjobot.utils import EnvValueError
 
 from .base import BotTestCase
 
