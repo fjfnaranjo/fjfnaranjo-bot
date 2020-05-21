@@ -42,7 +42,7 @@ def _ensure_db():
     _state['initialized'] = True
 
 
-def reset_state(create=True):
+def reset(create=True):
     _state['initialized'] = False
     if isfile(_get_db_path()):
         remove(_get_db_path())

@@ -11,7 +11,7 @@ from fjfnaranjobot.config import (
     _get_db_path,
     cursor,
     get_key,
-    reset_state,
+    reset,
     set_key,
 )
 
@@ -55,51 +55,51 @@ class ConfigTests(BotTestCase):
         ):
             assert _get_db_path() == join('dir', BOT_DB_NAME_TEST)
 
-    def test_reset_state_only_reset(self):
+    def test_reset_only_reset(self):
         self._get_db_path_mock.return_value = self._db_test_file
         remove(self._db_test_file)
-        reset_state(False)
+        reset(False)
         assert not isfile(self._db_test_file)
 
-    def test_reset_state_creates_new(self):
+    def test_reset_creates_new(self):
         self._get_db_path_mock.return_value = self._db_test_file
         remove(self._db_test_file)
-        reset_state()
+        reset()
         assert isfile(self._db_test_file)
 
-    def test_reset_state_replaces_existent(self):
+    def test_reset_replaces_existent(self):
         self._get_db_path_mock.return_value = self._db_test_file
         with open(self._db_test_file, 'wb') as temp_file:
             temp_file.write(b'notempty')
-        reset_state()
+        reset()
         with open(self._db_test_file, 'rb') as temp_file:
             assert temp_file.read() != b'notempty'
 
-    def test_reset_state_invalid_db_dir_name(self):
+    def test_reset_invalid_db_dir_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_file, 'impossibledir')
         with self.assertRaises(EnvValueError) as e:
-            reset_state()
+            reset()
         assert 'BOT_DB_NAME' in str(e.exception)
         assert 'dir' in str(e.exception)
 
-    def test_reset_state_invalid_db_file_name(self):
+    def test_reset_invalid_db_file_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_dir, 'dontexists')
         chmod(self._db_test_dir, 0)
         with self.assertRaises(EnvValueError) as e:
-            reset_state()
+            reset()
         assert 'BOT_DB_NAME' in str(e.exception)
         assert 'file' in str(e.exception)
 
     def test_cursor_creates_new(self):
         self._get_db_path_mock.return_value = self._db_test_file
-        reset_state(False)
+        reset(False)
         with cursor() as cur:
             cur.execute('CREATE TABLE dummy (key PRIMARY KEY)')
         assert isfile(self._db_test_file)
 
     def test_cursor_invalid_db_dir_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_file, 'impossibledir')
-        reset_state(False)
+        reset(False)
         with self.assertRaises(EnvValueError) as e:
             with cursor() as cur:
                 cur.execute('CREATE TABLE dummy (key PRIMARY KEY)')
@@ -108,7 +108,7 @@ class ConfigTests(BotTestCase):
 
     def test_cursor_invalid_db_file_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_dir, 'dontexists')
-        reset_state(False)
+        reset(False)
         chmod(self._db_test_dir, 0)
         with self.assertRaises(EnvValueError) as e:
             with cursor() as cur:
@@ -118,7 +118,7 @@ class ConfigTests(BotTestCase):
 
     def test_cursor_persist(self):
         self._get_db_path_mock.return_value = self._db_test_file
-        reset_state()
+        reset()
         with cursor() as cur:
             cur.execute('CREATE TABLE dummy (key PRIMARY KEY)')
             cur.execute('INSERT INTO dummy VALUES (123)')
@@ -161,18 +161,18 @@ class ConfigTests(BotTestCase):
                     set_key(key, 'val')
 
     def test_set_key_get_key_persist(self):
-        reset_state()
+        reset()
         set_key('key', 'val')
         val = get_key('key')
         assert 'val' == val
 
     def test_get_key_dont_exists(self):
-        reset_state()
+        reset()
         val = get_key('key')
         assert None == val
 
     def test_set_key_replaces_old_value(self):
-        reset_state()
+        reset()
         set_key('key', 'val')
         set_key('key', 'val2')
         val = get_key('key')
