@@ -68,7 +68,7 @@ def _configure_logging():
     _state['initialized'] = True
 
 
-def reset_state():
+def reset():
     _state['initialized'] = False
     log_path = get_log_path()
     if isfile(log_path):
