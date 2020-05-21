@@ -1,4 +1,4 @@
-.PHONY: all isort test cov black docs up down restart
+.PHONY: all isort test cov cov-full black docs up down restart
 
 all:
 
@@ -10,6 +10,9 @@ test:
 
 cov:
 	@pytest --cov=fjfnaranjobot --cov-report html tests/
+
+cov-full:
+	@pytest --cov=fjfnaranjobot --cov=tests --cov-report html tests/
 
 black:
 	@black -S fjfnaranjobot tests
