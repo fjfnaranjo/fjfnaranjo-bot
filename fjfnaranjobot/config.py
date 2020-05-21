@@ -18,14 +18,14 @@ class InvalidKeyError(Exception):
     pass
 
 
-def get_db_path():
+def _get_db_path():
     return join(get_bot_data_dir(), environ.get('BOT_DB_NAME', _BOT_DB_DEFAULT_NAME))
 
 
 def _ensure_db():
     if _state['initialized']:
         return
-    db_path = get_db_path()
+    db_path = _get_db_path()
     db_dir, _ = split(db_path)
     if not isdir(db_dir):
         try:
@@ -44,8 +44,8 @@ def _ensure_db():
 
 def reset_state(create=True):
     _state['initialized'] = False
-    if isfile(get_db_path()):
-        remove(get_db_path())
+    if isfile(_get_db_path()):
+        remove(_get_db_path())
     if create:
         _ensure_db()
 
@@ -53,7 +53,7 @@ def reset_state(create=True):
 @contextmanager
 def cursor():
     _ensure_db()
-    conn = connect(get_db_path())
+    conn = connect(_get_db_path())
     cur = conn.cursor()
     yield cur
     conn.commit()
@@ -69,7 +69,7 @@ def _validate_key(key):
 @contextmanager
 def _config_cursor():
     _ensure_db()
-    conn = connect(get_db_path())
+    conn = connect(_get_db_path())
     cur = conn.cursor()
     cur.execute('CREATE TABLE IF NOT EXISTS config (key PRIMARY KEY, value)')
     yield cur

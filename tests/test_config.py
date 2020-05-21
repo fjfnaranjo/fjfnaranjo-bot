@@ -8,8 +8,8 @@ from unittest.mock import patch
 from fjfnaranjobot.config import (
     EnvValueError,
     InvalidKeyError,
+    _get_db_path,
     cursor,
-    get_db_path,
     get_key,
     reset_state,
     set_key,
@@ -27,7 +27,7 @@ class ConfigTests(BotTestCase):
         BotTestCase.setUp(self)
         self._db_test_file = mkstemp()[1]
         self._db_test_dir = mkdtemp()
-        self._get_db_path_patcher = patch(f'{MODULE_PATH}.get_db_path')
+        self._get_db_path_patcher = patch(f'{MODULE_PATH}._get_db_path')
         self._get_db_path_mock = self._get_db_path_patcher.start()
         self._get_db_path_mock.return_value = self._db_test_file
 
@@ -46,14 +46,14 @@ class ConfigTests(BotTestCase):
         with self._with_mocked_environ(
             f'{MODULE_PATH}.environ', None, ['BOT_DB_NAME',]
         ):
-            assert get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
+            assert _get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
 
     @patch(f'{MODULE_PATH}.get_bot_data_dir', return_value='dir')
     def test_get_db_path_join_and_env(self, _get_bot_data_dir):
         with self._with_mocked_environ(
             f'{MODULE_PATH}.environ', {'BOT_DB_NAME': BOT_DB_NAME_TEST},
         ):
-            assert get_db_path() == join('dir', BOT_DB_NAME_TEST)
+            assert _get_db_path() == join('dir', BOT_DB_NAME_TEST)
 
     def test_reset_state_only_reset(self):
         self._get_db_path_mock.return_value = self._db_test_file

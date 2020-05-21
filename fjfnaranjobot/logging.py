@@ -21,12 +21,12 @@ valid_log_levels = {
 _state = {'initialized': False}
 
 
-def get_log_path():
+def _get_log_path():
     return join(get_bot_data_dir(), environ.get('BOT_LOGFILE', _BOT_LOGFILE_DEFAULT))
 
 
 def _configure_logging():
-    log_path = get_log_path()
+    log_path = _get_log_path()
     log_level = environ.get('BOT_LOGLEVEL', _BOT_LOGLEVEL_DEFAULT)
     log_dir, _ = split(log_path)
     if not isdir(log_dir):
@@ -70,7 +70,7 @@ def _configure_logging():
 
 def reset():
     _state['initialized'] = False
-    log_path = get_log_path()
+    log_path = _get_log_path()
     if isfile(log_path):
         remove(log_path)
     _configure_logging()
