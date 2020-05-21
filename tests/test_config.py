@@ -10,9 +10,9 @@ from fjfnaranjobot.config import (
     InvalidKeyError,
     _get_db_path,
     cursor,
-    get_key,
+    get_config,
     reset,
-    set_key,
+    set_config,
 )
 
 from .base import BotTestCase
@@ -128,12 +128,12 @@ class ConfigTests(BotTestCase):
         assert 1 == len(data)
         assert 123 == data[0][0]
 
-    def test_get_key_valid(self):
+    def test_get_config_valid(self):
         for key in ['key', 'key.key']:
             with self.subTest(key=key):
-                get_key(key)
+                get_config(key)
 
-    def test_get_key_invalid(self):
+    def test_get_config_invalid(self):
         for key in [
             '.key',
             'key.',
@@ -142,14 +142,14 @@ class ConfigTests(BotTestCase):
         ]:
             with self.subTest(key=key):
                 with self.assertRaises(InvalidKeyError):
-                    get_key(key)
+                    get_config(key)
 
-    def test_set_key_valid(self):
+    def test_set_config_valid(self):
         for key in ['key', 'key.key']:
             with self.subTest(key=key):
-                set_key(key, 'val')
+                set_config(key, 'val')
 
-    def test_set_key_invalid(self):
+    def test_set_config_invalid(self):
         for key in [
             '.key',
             'key.',
@@ -158,22 +158,22 @@ class ConfigTests(BotTestCase):
         ]:
             with self.subTest(key=key):
                 with self.assertRaises(InvalidKeyError):
-                    set_key(key, 'val')
+                    set_config(key, 'val')
 
-    def test_set_key_get_key_persist(self):
+    def test_set_config_get_config_persist(self):
         reset()
-        set_key('key', 'val')
-        val = get_key('key')
+        set_config('key', 'val')
+        val = get_config('key')
         assert 'val' == val
 
-    def test_get_key_dont_exists(self):
+    def test_get_config_dont_exists(self):
         reset()
-        val = get_key('key')
+        val = get_config('key')
         assert None == val
 
-    def test_set_key_replaces_old_value(self):
+    def test_set_config_replaces_old_value(self):
         reset()
-        set_key('key', 'val')
-        set_key('key', 'val2')
-        val = get_key('key')
+        set_config('key', 'val')
+        set_config('key', 'val2')
+        val = get_config('key')
         assert 'val2' == val

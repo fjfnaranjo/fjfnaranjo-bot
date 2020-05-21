@@ -77,7 +77,7 @@ def _config_cursor():
     conn.close()
 
 
-def set_key(key, value):
+def set_config(key, value):
     _validate_key(key)
     shown_value = value[:10]
     logger.debug(
@@ -96,7 +96,7 @@ def set_key(key, value):
             )
 
 
-def get_key(key):
+def get_config(key):
     _validate_key(key)
     logger.debug(f"Getting configuration value for key '{key}'.")
     with _config_cursor() as cur:
