@@ -45,25 +45,6 @@ class BotUseCaseTestCase(BotTestCase):
         TestCase.setUp(self)
         self.update = MagicMock()
 
-    def _user_is_none(self):
-        self.update.effective_user = None
-
-    def _user_is_bot(self):
-        self.update.effective_user.is_bot = True
-        self.update.effective_user.id = BOT_USERID
-
-    def _user_is_unknown(self):
-        self.update.effective_user.is_bot = False
-        self.update.effective_user.id = UNKNOWN_USERID
-
-    def _user_is_friend(self, id_=FIRST_FRIEND_USERID):
-        self.update.effective_user.is_bot = False
-        self.update.effective_user.id = id_
-
-    def _user_is_owner(self):
-        self.update.effective_user.is_bot = False
-        self.update.effective_user.id = OWNER_USERID
-
     def _set_msg(self, msg):
         self.update.message.text = msg
 
@@ -71,3 +52,24 @@ class BotUseCaseTestCase(BotTestCase):
     def _raises_dispatcher_stop(self):
         with self.assertRaises(DispatcherHandlerStop):
             yield
+
+
+# class BotHandlerTestCase(BotTestCase):
+#     def _user_is_none(self):
+#         self.update.effective_user = None
+#
+#     def _user_is_bot(self):
+#         self.update.effective_user.is_bot = True
+#         self.update.effective_user.id = BOT_USERID
+#
+#     def _user_is_unknown(self):
+#         self.update.effective_user.is_bot = False
+#         self.update.effective_user.id = UNKNOWN_USERID
+#
+#     def _user_is_friend(self, id_=FIRST_FRIEND_USERID):
+#         self.update.effective_user.is_bot = False
+#         self.update.effective_user.id = id_
+#
+#     def _user_is_owner(self):
+#         self.update.effective_user.is_bot = False
+#         self.update.effective_user.id = OWNER_USERID

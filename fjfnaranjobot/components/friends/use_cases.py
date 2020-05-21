@@ -1,12 +1,6 @@
 from telegram.ext import DispatcherHandlerStop
 
-from fjfnaranjobot.auth import (
-    add_friend,
-    del_friend,
-    ensure_int,
-    get_friends,
-    only_owner,
-)
+from fjfnaranjobot.auth import add_friend, del_friend, ensure_int, get_friends
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -45,7 +39,6 @@ def _friend_del(update, id_):
         update.message.reply_text(f"@{id_int} isn't a friend.")
 
 
-@only_owner
 def friends(update, _context):
     command_parts = update.message.text.split(' ')
     if len(command_parts) == 1:

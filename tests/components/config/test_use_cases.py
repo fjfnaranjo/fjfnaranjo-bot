@@ -10,7 +10,6 @@ MODULE_PATH = 'fjfnaranjobot.components.config.use_cases'
 class ConfigUseCasesTests(BotUseCaseTestCase):
     @patch(f'{MODULE_PATH}.set_config')
     def test_config_set(self, set_config):
-        self._user_is_owner()
         self._set_msg('cmd key val')
         with self._raises_dispatcher_stop():
             config_set(self.update, None)
@@ -19,7 +18,6 @@ class ConfigUseCasesTests(BotUseCaseTestCase):
 
     @patch(f'{MODULE_PATH}.get_config')
     def test_config_get_missing(self, get_config):
-        self._user_is_owner()
         self._set_msg('cmd key')
         get_config.return_value = None
         with self._raises_dispatcher_stop():
@@ -31,7 +29,6 @@ class ConfigUseCasesTests(BotUseCaseTestCase):
 
     @patch(f'{MODULE_PATH}.get_config')
     def test_config_get_exists(self, get_config):
-        self._user_is_owner()
         self._set_msg('cmd key')
         get_config.return_value = 'result'
         with self._raises_dispatcher_stop():

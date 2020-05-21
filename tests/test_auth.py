@@ -51,7 +51,7 @@ class AuthTests(BotTestCase):
         with self._with_mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': 'a'}):
             with self.assertRaises(EnvValueError) as e:
                 get_owner_id()
-                assert 'Invalid id' in str(e)
+            assert 'Invalid id' in str(e.exception)
 
     def test_get_owner_id_env(self):
         with self._with_mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': '1'}):
@@ -70,35 +70,32 @@ class AuthTests(BotTestCase):
         with self.assertRaises(FriendMustBeIntError):
             ensure_int('one')
 
-    def test_only_any_logs_none_command(self):
-        @only_real
-        def noop(_update):
-            return True
+    def test_only_all_logs_none_command(self):
+        all_auth_filters = (only_real, only_owner, only_friends)
+        for auth_filter in all_auth_filters:
+            with self.subTest(auth_filter=auth_filter):
+                noop = auth_filter(lambda _update: True)
+                update_mock = MagicMock()
+                update_mock.message.text = 'cmd foo bar'
+                update_mock.effective_user = None
+                with self.assertLogs(logger) as logs:
+                    assert noop(update_mock) is None
+                assert 'Command text: \'cmd' in logs.output[0]
 
-        update_mock = MagicMock()
-        update_mock.message.text = 'cmd foo bar'
-        update_mock.effective_user = None
-        with self.assertLogs(logger) as logs:
-            assert noop(update_mock) is None
-        assert 'Command text: \'cmd' in logs.output[0]
-
-    def test_only_any_logs_command(self):
-        @only_real
-        def noop(_update):
-            return True
-
-        update_mock = MagicMock()
-        update_mock.message = None
-        update_mock.effective_user = None
-        with self.assertLogs(logger) as logs:
-            assert noop(update_mock) is None
-        assert 'Command text: \'unknown\'' in logs.output[0]
+    def test_only_all_logs_command(self):
+        all_auth_filters = (only_real, only_owner, only_friends)
+        for auth_filter in all_auth_filters:
+            with self.subTest(auth_filter=auth_filter):
+                noop = auth_filter(lambda _update: True)
+                update_mock = MagicMock()
+                update_mock.message = None
+                update_mock.effective_user = None
+                with self.assertLogs(logger) as logs:
+                    assert noop(update_mock) is None
+                assert 'Command text: \'unknown\'' in logs.output[0]
 
     def test_only_real_user_is_none(self):
-        @only_real
-        def noop(_update):
-            return True
-
+        noop = only_real(lambda _update: True)
         update_mock = MagicMock()
         update_mock.effective_user = None
         with self.assertLogs(logger) as logs:
@@ -106,10 +103,7 @@ class AuthTests(BotTestCase):
         assert 'Message received with no user' in logs.output[0]
 
     def test_only_real_user_is_bot(self):
-        @only_real
-        def noop(_update):
-            return True
-
+        noop = only_real(lambda _update: True)
         update_mock = MagicMock()
         update_mock.effective_user.is_bot = True
         with self.assertLogs(logger) as logs:
@@ -117,20 +111,14 @@ class AuthTests(BotTestCase):
         assert 'Bot with username' in logs.output[0]
 
     def test_only_real_user_ok(self):
-        @only_real
-        def noop(_update):
-            return True
-
+        noop = only_real(lambda _update: True)
         update_mock = MagicMock()
         update_mock.effective_user.is_bot = False
         assert noop(update_mock) is True
 
     @patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USERID)
     def test_only_owner_ok(self, _get_owner_id):
-        @only_owner
-        def noop(_update):
-            return True
-
+        noop = only_owner(lambda _update: True)
         update_mock = MagicMock()
         update_mock.effective_user.id = OWNER_USERID
         update_mock.effective_user.is_bot = False
@@ -138,10 +126,7 @@ class AuthTests(BotTestCase):
 
     @patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USERID)
     def test_only_owner_no_owner(self, _get_owner_id):
-        @only_owner
-        def noop(_update):
-            return True
-
+        noop = only_owner(lambda _update: True)
         update_mock = MagicMock()
         update_mock.effective_user.id = UNKNOWN_USERID
         update_mock.effective_user.is_bot = False
@@ -151,10 +136,7 @@ class AuthTests(BotTestCase):
         assert 'tried to access a' in logs.output[0]
 
     def test_only_friends_is_friend(self):
-        @only_friends
-        def noop(_update):
-            return True
-
+        noop = only_friends(lambda _update: True)
         with self._with_owner_and_friends(JSON_FIRST_FRIEND):
             update_mock = MagicMock()
             update_mock.effective_user.id = FIRST_FRIEND_USERID
@@ -162,10 +144,7 @@ class AuthTests(BotTestCase):
             assert noop(update_mock) is True
 
     def test_only_friends_not_friend(self):
-        @only_friends
-        def noop(_update):
-            return True
-
+        noop = only_friends(lambda _update: True)
         with self._with_owner_and_friends(JSON_FIRST_FRIEND):
             update_mock = MagicMock()
             update_mock.effective_user.id = UNKNOWN_USERID

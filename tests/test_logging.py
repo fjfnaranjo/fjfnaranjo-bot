@@ -62,7 +62,6 @@ class LoggingTests(BotTestCase):
         ):
             with self.assertRaises(EnvValueError) as e:
                 reset()
-                getLogger('fbtest')
             assert 'BOT_LOGLEVEL' in str(e.exception)
 
     @patch(f'{MODULE_PATH}._get_log_path', return_value=LOGFILE_TEST_FILE)

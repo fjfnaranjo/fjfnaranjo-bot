@@ -101,8 +101,7 @@ class ConfigTests(BotTestCase):
         self._get_db_path_mock.return_value = join(self._db_test_file, 'impossibledir')
         reset(False)
         with self.assertRaises(EnvValueError) as e:
-            with cursor() as cur:
-                cur.execute('CREATE TABLE dummy (key PRIMARY KEY)')
+            cursor().__enter__()
         assert 'BOT_DB_NAME' in str(e.exception)
         assert 'dir' in str(e.exception)
 
@@ -111,8 +110,7 @@ class ConfigTests(BotTestCase):
         reset(False)
         chmod(self._db_test_dir, 0)
         with self.assertRaises(EnvValueError) as e:
-            with cursor() as cur:
-                cur.execute('CREATE TABLE dummy (key PRIMARY KEY)')
+            cursor().__enter__()
         assert 'BOT_DB_NAME' in str(e.exception)
         assert 'file' in str(e.exception)
 

@@ -1,13 +1,11 @@
 from telegram.ext import DispatcherHandlerStop
 
-from fjfnaranjobot.auth import only_owner
 from fjfnaranjobot.db import get_config, set_config
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
 
-@only_owner
 def config_set(update, _context):
     _, key, value = update.message.text.split(' ')
     set_config(key, value)
@@ -17,7 +15,6 @@ def config_set(update, _context):
     raise DispatcherHandlerStop()
 
 
-@only_owner
 def config_get(update, _context):
     _, key = update.message.text.split(' ')
     result = get_config(key)
