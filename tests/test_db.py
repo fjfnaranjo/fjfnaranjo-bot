@@ -5,7 +5,7 @@ from stat import S_IRWXU
 from tempfile import mkdtemp, mkstemp
 from unittest.mock import patch
 
-from fjfnaranjobot.config import (
+from fjfnaranjobot.db import (
     EnvValueError,
     InvalidKeyError,
     _get_db_path,
@@ -17,7 +17,7 @@ from fjfnaranjobot.config import (
 
 from .base import BotTestCase
 
-MODULE_PATH = 'fjfnaranjobot.config'
+MODULE_PATH = 'fjfnaranjobot.db'
 BOT_DB_NAME_DEFAULT = 'bot.db'
 BOT_DB_NAME_TEST = 'bot.a.test.name.db'
 

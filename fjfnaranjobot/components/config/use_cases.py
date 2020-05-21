@@ -1,7 +1,7 @@
 from telegram.ext import DispatcherHandlerStop
 
 from fjfnaranjobot.auth import only_owner
-from fjfnaranjobot.config import get_config, set_config
+from fjfnaranjobot.db import get_config, set_config
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
