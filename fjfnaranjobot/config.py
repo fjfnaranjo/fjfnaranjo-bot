@@ -39,20 +39,20 @@ def _ensure_db():
                 pass
         except OSError:
             raise EnvValueError('Invalid file name in BOT_DB_NAME var.')
-        with _cursor() as cur:
-            cur.execute('CREATE TABLE IF NOT EXISTS config (key PRIMARY KEY, value)')
     _state['initialized'] = True
 
 
-def reset_state():
+def reset_state(create=True):
     _state['initialized'] = False
     if isfile(get_db_path()):
         remove(get_db_path())
-    _ensure_db()
+    if create:
+        _ensure_db()
 
 
 @contextmanager
-def _cursor():
+def cursor():
+    _ensure_db()
     conn = connect(get_db_path())
     cur = conn.cursor()
     yield cur
@@ -66,14 +66,24 @@ def _validate_key(key):
         raise InvalidKeyError(f"No valid value for key {key}.")
 
 
-def set_key(key, value):
+@contextmanager
+def _config_cursor():
     _ensure_db()
+    conn = connect(get_db_path())
+    cur = conn.cursor()
+    cur.execute('CREATE TABLE IF NOT EXISTS config (key PRIMARY KEY, value)')
+    yield cur
+    conn.commit()
+    conn.close()
+
+
+def set_key(key, value):
     _validate_key(key)
     shown_value = value[:10]
     logger.debug(
         f"Setting configuration key '{key}' to value '{shown_value}' (cropped to 10 chars)."
     )
-    with _cursor() as cur:
+    with _config_cursor() as cur:
         cur.execute('SELECT value FROM config WHERE key=?', (key,))
         exists = cur.fetchone()
         if exists is None:
@@ -87,10 +97,9 @@ def set_key(key, value):
 
 
 def get_key(key):
-    _ensure_db()
     _validate_key(key)
     logger.debug(f"Getting configuration value for key '{key}'.")
-    with _cursor() as cur:
+    with _config_cursor() as cur:
         cur.execute('SELECT value FROM config WHERE key=?', (key,))
         result = cur.fetchone()
     return None if result is None else result[0]
