@@ -13,6 +13,3 @@ class FriendsHandlersTests(BotHandlerTestCase):
         self._user_is_owner()
         friends_handler(self._update)
         assert friends.called
-
-
-# TODO: Test auth control
