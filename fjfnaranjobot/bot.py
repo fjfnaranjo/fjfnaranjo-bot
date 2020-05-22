@@ -78,18 +78,18 @@ class Bot:
 
         # Root URL
         if url_path == '' or url_path == '/':
-            logger.debug('Reply with salute.')
+            logger.info('Reply with salute.')
             return "I'm fjfnaranjo's bot."
 
         # Healt check URL
         elif url_path == '/ping':
-            logger.debug('Reply with pong.')
+            logger.info('Reply with pong.')
             return 'pong'
 
         # Register webhook request URL
         elif url_path == ('/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook'))):
             self.bot.set_webhook(url=self.webhook_url)
-            logger.debug('Reply with ok to register_webhook.')
+            logger.info('Reply with ok to register_webhook.')
             return 'ok'
 
         # Register webhook request URL (using self signed cert)
@@ -97,7 +97,7 @@ class Bot:
             self.bot.set_webhook(
                 url=self.webhook_url, certificate=open('/botcert/YOURPUBLIC.pem', 'rb')
             )
-            logger.debug('Reply with ok to register_webhook_self.')
+            logger.info('Reply with ok to register_webhook_self.')
             return 'ok (self)'
 
         # Don't allow other URLs unless preceded by token

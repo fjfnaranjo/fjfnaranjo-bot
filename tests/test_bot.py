@@ -27,19 +27,19 @@ class BotTests(BotTestCase):
 
     def test_process_request_salute(self, _dispatcher, _tbot):
         bot = Bot()
-        with self.assertLogs(logger, DEBUG) as logs:
+        with self.assertLogs(logger) as logs:
             assert 'I\'m' in bot.process_request('', None)
         assert 'salute' in logs.output[-1]
 
     def test_process_request_salute_root(self, _dispatcher, _tbot):
         bot = Bot()
-        with self.assertLogs(logger, DEBUG) as logs:
+        with self.assertLogs(logger) as logs:
             assert 'I\'m' in bot.process_request('/', None)
         assert 'salute' in logs.output[-1]
 
     def test_process_request_ping(self, _dispatcher, _tbot):
         bot = Bot()
-        with self.assertLogs(logger, DEBUG) as logs:
+        with self.assertLogs(logger) as logs:
             assert 'pong' == bot.process_request('/ping', None)
         assert 'pong' in logs.output[-1]
 
@@ -47,7 +47,7 @@ class BotTests(BotTestCase):
         created_bot = MagicMock()
         tbot.return_value = created_bot
         bot = Bot()
-        with self.assertLogs(logger, DEBUG) as logs:
+        with self.assertLogs(logger) as logs:
             assert 'ok' == bot.process_request('/bwt/register_webhook', None)
         created_bot.set_webhook.assert_called_once_with(url='bwu/bwt')
         assert 'ok' in logs.output[-1]
@@ -60,7 +60,7 @@ class BotTests(BotTestCase):
         opened_file = MagicMock()
         open_.return_value = opened_file
         bot = Bot()
-        with self.assertLogs(logger, DEBUG) as logs:
+        with self.assertLogs(logger) as logs:
             assert 'ok (self)' == bot.process_request(
                 '/bwt/register_webhook_self', None
             )
