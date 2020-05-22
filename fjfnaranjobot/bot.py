@@ -95,11 +95,3 @@ class Bot:
             raise BotLibraryError("Error in bot library.") from e
 
         return 'ok'
-
-    def start_webhook(self, host='0.0.0.0', port=8080):
-        self.updater.start_webhook(
-            listen=host,
-            port=port,
-            url_path=BOT_WEBHOOK_TOKEN,
-            webhook_url=self.webhook_url,
-        )
