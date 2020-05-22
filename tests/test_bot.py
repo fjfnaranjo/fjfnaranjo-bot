@@ -5,6 +5,7 @@ from fjfnaranjobot.bot import (
     BotJSONError,
     BotLibraryError,
     BotTokenError,
+    EnvValueError,
     get_bot_data_dir,
 )
 
@@ -101,3 +102,47 @@ class BotTests(BotTestCase):
         bot = Bot()
         with self.assertRaises(BotTokenError):
             bot.process_request('/other', None)
+
+
+@patch(f'{MODULE_PATH}.TBot')
+@patch(f'{MODULE_PATH}.Dispatcher')
+@patch(f'{MODULE_PATH}.BOT_WEBHOOK_URL', 'bwu')
+@patch(f'{MODULE_PATH}.BOT_WEBHOOK_TOKEN', 'bwt')
+@patch(f'{MODULE_PATH}._BOT_COMPONENTS_TEMPLATE', 'tests.component_mocks.{}.handlers')
+class BotComponentLoaderTests(BotTestCase):
+    @patch(f'{MODULE_PATH}.BOT_COMPONENTS', '')
+    def test_no_components(self, _dispatcher, _tbot):
+        bot = Bot()
+        bot.dispatcher.add_handler.assert_not_called()
+
+    @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock1')
+    def test_component_without_handlers(self, _dispatcher, _tbot):
+        bot = Bot()
+        bot.dispatcher.add_handler.assert_not_called()
+
+    @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock2')
+    def test_component_with_empty_handlers(self, _dispatcher, _tbot):
+        bot = Bot()
+        bot.dispatcher.add_handler.assert_not_called()
+
+    @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock3')
+    def test_component_with_invalid_handlers(self, _dispatcher, _tbot):
+        with self.assertRaises(EnvValueError) as e:
+            Bot()
+        assert 'handler' in str(e.exception)
+
+    @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock4')
+    def test_component_with_ok_handlers_and_no_group(self, _dispatcher, _tbot):
+        bot = Bot()
+        assert 2 == bot.dispatcher.add_handler.call_count
+
+    @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock5')
+    def test_component_with_ok_handlers_and_group(self, _dispatcher, _tbot):
+        bot = Bot()
+        assert 2 == bot.dispatcher.add_handler.call_count
+
+    @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock6')
+    def test_component_with_ok_handlers_and_invalid_group(self, _dispatcher, _tbot):
+        with self.assertRaises(EnvValueError) as e:
+            Bot()
+        assert 'group' in str(e.exception)

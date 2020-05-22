@@ -4,7 +4,7 @@ from os import environ
 
 from telegram import Bot as TBot
 from telegram import Update
-from telegram.ext import Dispatcher
+from telegram.ext import Dispatcher, Handler
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
 BOT_TOKEN = environ.get('BOT_TOKEN')
@@ -13,6 +13,7 @@ BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
 BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,sorry,friends')
 
 _BOT_DATA_DIR_DEFAULT = 'botdata'
+_BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.handlers'
 
 
 class BotLibraryError(Exception):
@@ -45,15 +46,25 @@ class Bot:
     def _init_handlers(self):
         for component in BOT_COMPONENTS.split(','):
             try:
-                info = import_module(f'fjfnaranjobot.components.{component}.handlers')
+                info = import_module(_BOT_COMPONENTS_TEMPLATE.format(component))
                 try:
                     handlers = info.handlers
                 except AttributeError:
                     pass
                 else:
-                    group = getattr(info, 'group', DEFAULT_GROUP)
+                    try:
+                        group = int(getattr(info, 'group', DEFAULT_GROUP))
+                    except ValueError:
+                        raise EnvValueError(
+                            f'Invalid group for component {component} .'
+                        )
                     for handler in handlers:
-                        self.dispatcher.add_handler(handler, group)
+                        if not isinstance(handler, Handler):
+                            raise EnvValueError(
+                                f'Invalid handler for component {component} .'
+                            )
+                        else:
+                            self.dispatcher.add_handler(handler, group)
             except ModuleNotFoundError:
                 pass
 
