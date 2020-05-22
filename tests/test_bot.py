@@ -25,25 +25,26 @@ class BotTests(BotTestCase):
         dispatcher.assert_called_once_with(
             created_bot, None, workers=0, use_context=True
         )
-        assert 'Bot init.' in logs.output[0]
+        assert 'Bot init' in logs.output[-2]
+        assert 'Bot handlers registered' in logs.output[-1]
 
     def test_process_request_salute(self, _dispatcher, _tbot):
         bot = Bot()
         with self.assertLogs(logger, DEBUG) as logs:
             assert 'I\'m' in bot.process_request('', None)
-        assert 'salute' in logs.output[0]
+        assert 'salute' in logs.output[-1]
 
     def test_process_request_salute_root(self, _dispatcher, _tbot):
         bot = Bot()
         with self.assertLogs(logger, DEBUG) as logs:
             assert 'I\'m' in bot.process_request('/', None)
-        assert 'salute' in logs.output[0]
+        assert 'salute' in logs.output[-1]
 
     def test_process_request_ping(self, _dispatcher, _tbot):
         bot = Bot()
         with self.assertLogs(logger, DEBUG) as logs:
             assert 'pong' == bot.process_request('/ping', None)
-        assert 'pong' in logs.output[0]
+        assert 'pong' in logs.output[-1]
 
     def test_process_request_register_webhook(self, _dispatcher, tbot):
         created_bot = MagicMock()
@@ -52,8 +53,8 @@ class BotTests(BotTestCase):
         with self.assertLogs(logger, DEBUG) as logs:
             assert 'ok' == bot.process_request('/bwt/register_webhook', None)
         created_bot.set_webhook.assert_called_once_with(url='bwu/bwt')
-        assert 'ok' in logs.output[0]
-        assert 'register_webhook.' in logs.output[0]
+        assert 'ok' in logs.output[-1]
+        assert 'register_webhook.' in logs.output[-1]
 
     @patch(f'{MODULE_PATH}.open')
     def test_process_request_register_webhook_self(self, open_, _dispatcher, tbot):
@@ -70,15 +71,15 @@ class BotTests(BotTestCase):
         created_bot.set_webhook.assert_called_once_with(
             url='bwu/bwt', certificate=opened_file
         )
-        assert 'ok' in logs.output[0]
-        assert 'register_webhook_self.' in logs.output[0]
+        assert 'ok' in logs.output[-1]
+        assert 'register_webhook_self.' in logs.output[-1]
 
     def test_process_request_invalid_json(self, _dispatcher, _tbot):
         bot = Bot()
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotJSONError):
                 bot.process_request('/bwt', '---')
-        assert 'non-JSON' in logs.output[0]
+        assert 'non-JSON' in logs.output[-1]
 
     @patch(f'{MODULE_PATH}.Update')
     def test_process_request_dispatched_ok(self, update, dispatcher, _tbot):
@@ -88,7 +89,7 @@ class BotTests(BotTestCase):
         with self.assertLogs(logger, DEBUG) as logs:
             bot.process_request('/bwt', '{}')
         dispatcher.process_update(parsed_update)
-        assert 'Dispatch update to' in logs.output[0]
+        assert 'Dispatch update to' in logs.output[-1]
 
     @patch(f'{MODULE_PATH}.Update')
     def test_process_request_dispatched_error(self, update, _dispatcher, _tbot):
@@ -97,7 +98,7 @@ class BotTests(BotTestCase):
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotLibraryError):
                 bot.process_request('/bwt', '{}')
-        assert 'Dispatcher raised an error' in logs.output[0]
+        assert 'Dispatcher raised an error' in logs.output[-1]
 
     def test_other_urls(self, _tbot, _dispatcher):
         bot = Bot()
@@ -139,16 +140,16 @@ class BotComponentLoaderTests(BotTestCase):
         with self.assertLogs(logger, DEBUG) as logs:
             bot = Bot()
         assert 2 == bot.dispatcher.add_handler.call_count
+        assert 'Registered' in logs.output[-3]
         assert 'Registered' in logs.output[-2]
-        assert 'Registered' in logs.output[-1]
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock5')
     def test_component_with_ok_handlers_and_group(self, _dispatcher, _tbot):
         with self.assertLogs(logger, DEBUG) as logs:
             bot = Bot()
         assert 2 == bot.dispatcher.add_handler.call_count
+        assert 'Registered' in logs.output[-3]
         assert 'Registered' in logs.output[-2]
-        assert 'Registered' in logs.output[-1]
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock6')
     def test_component_with_ok_handlers_and_invalid_group(self, _dispatcher, _tbot):

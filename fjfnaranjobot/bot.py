@@ -37,8 +37,9 @@ class Bot:
         self.bot = TBot(BOT_TOKEN)
         self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
-        logger.debug("Bot init.")
+        logger.debug("Bot init done.")
         self._init_handlers()
+        logger.debug("Bot handlers registered.")
 
     def _init_handlers(self):
         for component in BOT_COMPONENTS.split(','):
@@ -62,8 +63,13 @@ class Bot:
                             )
                         else:
                             self.dispatcher.add_handler(handler, group)
+                            handler_callback = getattr(
+                                handler, 'callback', '-unknown callback-'
+                            )
+                            if callable(handler_callback):
+                                handler_callback = handler_callback.__name__
                             logger.debug(
-                                f"Registered handler {handler} for component {component} ."
+                                f"Registered handler {handler_callback} for component {component} ."
                             )
             except ModuleNotFoundError:
                 pass

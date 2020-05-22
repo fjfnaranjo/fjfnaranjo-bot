@@ -1,3 +1,4 @@
+from functools import wraps
 from json import dumps as to_json
 from json import loads as from_json
 from os import environ
@@ -67,6 +68,7 @@ def _report_user(update, user, permission):
 
 
 def only_real(f):
+    @wraps(f)
     def wrapper(update, *args, **kwargs):
         user = update.effective_user
         if user is None:
@@ -82,6 +84,7 @@ def only_real(f):
 
 def only_owner(f):
     @only_real
+    @wraps(f)
     def wrapper(update, *args, **kwargs):
         user = update.effective_user
         if user.id != get_owner_id():
@@ -99,6 +102,7 @@ def get_friends():
 
 def only_friends(f):
     @only_real
+    @wraps(f)
     def wrapper(update, *args, **kwargs):
         user = update.effective_user
         friends = get_friends()
