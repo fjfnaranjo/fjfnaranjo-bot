@@ -57,20 +57,20 @@ class BotUseCaseTestCase(BotTestCase, BotUpdateTest):
 
 
 class BotHandlerTestCase(BotTestCase, BotUpdateTest):
-    def _user_is_none(self):
-        self._update.effective_user = None
-
-    def _user_is_bot(self):
-        self._update.effective_user.is_bot = True
-        self._update.effective_user.id = BOT_USERID
-
-    def _user_is_unknown(self):
-        self._update.effective_user.is_bot = False
-        self._update.effective_user.id = UNKNOWN_USERID
-
-    def _user_is_friend(self, id_=FIRST_FRIEND_USERID):
-        self._update.effective_user.is_bot = False
-        self._update.effective_user.id = id_
+    #     def _user_is_none(self):
+    #         self._update.effective_user = None
+    #
+    #     def _user_is_bot(self):
+    #         self._update.effective_user.is_bot = True
+    #         self._update.effective_user.id = BOT_USERID
+    #
+    #     def _user_is_unknown(self):
+    #         self._update.effective_user.is_bot = False
+    #         self._update.effective_user.id = UNKNOWN_USERID
+    #
+    #     def _user_is_friend(self, id_=FIRST_FRIEND_USERID):
+    #         self._update.effective_user.is_bot = False
+    #         self._update.effective_user.id = id_
 
     def _user_is_owner(self):
         self._update.effective_user.is_bot = False
