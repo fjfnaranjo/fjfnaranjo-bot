@@ -37,6 +37,7 @@ class Bot:
         self.bot = TBot(BOT_TOKEN)
         self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
+        logger.debug("Bot init.")
         self._init_handlers()
 
     def _init_handlers(self):
@@ -61,6 +62,9 @@ class Bot:
                             )
                         else:
                             self.dispatcher.add_handler(handler, group)
+                            logger.debug(
+                                f"Registered handler {handler} for component {component} ."
+                            )
             except ModuleNotFoundError:
                 pass
 

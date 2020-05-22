@@ -19,11 +19,13 @@ class BotTests(BotTestCase):
     def test_bot_uses_tbot_and_dispatcher(self, dispatcher, tbot):
         created_bot = MagicMock()
         tbot.return_value = created_bot
-        Bot()
+        with self.assertLogs(logger, DEBUG) as logs:
+            Bot()
         tbot.assert_called_once_with('bt')
         dispatcher.assert_called_once_with(
             created_bot, None, workers=0, use_context=True
         )
+        assert 'Bot init.' in logs.output[0]
 
     def test_process_request_salute(self, _dispatcher, _tbot):
         bot = Bot()
@@ -134,13 +136,19 @@ class BotComponentLoaderTests(BotTestCase):
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock4')
     def test_component_with_ok_handlers_and_no_group(self, _dispatcher, _tbot):
-        bot = Bot()
+        with self.assertLogs(logger, DEBUG) as logs:
+            bot = Bot()
         assert 2 == bot.dispatcher.add_handler.call_count
+        assert 'Registered' in logs.output[-2]
+        assert 'Registered' in logs.output[-1]
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock5')
     def test_component_with_ok_handlers_and_group(self, _dispatcher, _tbot):
-        bot = Bot()
+        with self.assertLogs(logger, DEBUG) as logs:
+            bot = Bot()
         assert 2 == bot.dispatcher.add_handler.call_count
+        assert 'Registered' in logs.output[-2]
+        assert 'Registered' in logs.output[-1]
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock6')
     def test_component_with_ok_handlers_and_invalid_group(self, _dispatcher, _tbot):
