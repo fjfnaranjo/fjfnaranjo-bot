@@ -4,7 +4,7 @@ from os.path import isdir, isfile, join, split
 from re import compile
 from sqlite3 import connect
 
-from fjfnaranjobot.bot import EnvValueError, get_bot_data_dir
+from fjfnaranjobot.common import EnvValueError, get_bot_data_dir
 from fjfnaranjobot.logging import getLogger
 
 _BOT_DB_DEFAULT_NAME = 'bot.db'

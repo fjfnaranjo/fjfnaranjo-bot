@@ -7,12 +7,16 @@ from telegram import Update
 from telegram.ext import Dispatcher, Handler
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
+from fjfnaranjobot.common import EnvValueError
+from fjfnaranjobot.logging import getLogger
+
+logger = getLogger(__name__)
+
 BOT_TOKEN = environ.get('BOT_TOKEN')
 BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
 BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
 BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,sorry,friends')
 
-_BOT_DATA_DIR_DEFAULT = 'botdata'
 _BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.handlers'
 
 
@@ -26,14 +30,6 @@ class BotJSONError(Exception):
 
 class BotTokenError(Exception):
     pass
-
-
-class EnvValueError(Exception):
-    pass
-
-
-def get_bot_data_dir():
-    return environ.get('BOT_DATA_DIR', _BOT_DATA_DIR_DEFAULT)
 
 
 class Bot:
@@ -72,15 +68,18 @@ class Bot:
 
         # Root URL
         if url_path == '' or url_path == '/':
+            logger.debug('Reply with salute.')
             return "I'm fjfnaranjo's bot."
 
         # Healt check URL
         elif url_path == '/ping':
+            logger.debug('Reply with pong.')
             return 'pong'
 
         # Register webhook request URL
         elif url_path == ('/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook'))):
             self.bot.set_webhook(url=self.webhook_url)
+            logger.debug('Reply with ok to register_webhook.')
             return 'ok'
 
         # Register webhook request URL (using self signed cert)
@@ -88,21 +87,27 @@ class Bot:
             self.bot.set_webhook(
                 url=self.webhook_url, certificate=open('/botcert/YOURPUBLIC.pem', 'rb')
             )
+            logger.debug('Reply with ok to register_webhook_self.')
             return 'ok (self)'
 
         # Don't allow other URLs unless preceded by token
         elif url_path != '/' + BOT_WEBHOOK_TOKEN:
+            shown_url = url_path[:10]
+            logger.info(f'Uknown URL path {shown_url} (cropped to 10 chars).')
             raise BotTokenError()
 
         # Delegate response to bot library
         try:
             update_json = loads(update)
         except JSONDecodeError as e:
+            logger.info(f'Received non-JSON request.')
             raise BotJSONError("Sent content isn't JSON.") from e
 
         try:
+            logger.debug(f'Dispatch update to library.')
             self.dispatcher.process_update(Update.de_json(update_json, self.bot))
         except Exception as e:
+            logger.info(f'Dispatcher raised an error inside the library.')
             raise BotLibraryError("Error in bot library.") from e
 
         return 'ok'

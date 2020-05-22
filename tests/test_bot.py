@@ -1,33 +1,12 @@
+from logging import DEBUG
 from unittest.mock import MagicMock, patch
 
-from fjfnaranjobot.bot import (
-    Bot,
-    BotJSONError,
-    BotLibraryError,
-    BotTokenError,
-    EnvValueError,
-    get_bot_data_dir,
-)
+from fjfnaranjobot.bot import Bot, BotJSONError, BotLibraryError, BotTokenError, logger
+from fjfnaranjobot.common import EnvValueError
 
 from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.bot'
-BOT_DATA_DIR_DEFAULT = 'botdata'
-BOT_DATA_DIR_TEST = '/bot/data/test'
-
-
-class BotUtilsTests(BotTestCase):
-    def test_get_bot_data_dir_default(self):
-        with self._with_mocked_environ(
-            f'{MODULE_PATH}.environ', None, ['BOT_DATA_DIR']
-        ):
-            assert get_bot_data_dir() == BOT_DATA_DIR_DEFAULT
-
-    def test_get_bot_data_dir_env(self):
-        with self._with_mocked_environ(
-            f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': BOT_DATA_DIR_TEST}
-        ):
-            assert get_bot_data_dir() == BOT_DATA_DIR_TEST
 
 
 @patch(f'{MODULE_PATH}.TBot')
@@ -48,22 +27,31 @@ class BotTests(BotTestCase):
 
     def test_process_request_salute(self, _dispatcher, _tbot):
         bot = Bot()
-        assert 'I\'m' in bot.process_request('', None)
+        with self.assertLogs(logger, DEBUG) as logs:
+            assert 'I\'m' in bot.process_request('', None)
+        assert 'salute' in logs.output[0]
 
     def test_process_request_salute_root(self, _dispatcher, _tbot):
         bot = Bot()
-        assert 'I\'m' in bot.process_request('/', None)
+        with self.assertLogs(logger, DEBUG) as logs:
+            assert 'I\'m' in bot.process_request('/', None)
+        assert 'salute' in logs.output[0]
 
     def test_process_request_ping(self, _dispatcher, _tbot):
         bot = Bot()
-        assert 'pong' == bot.process_request('/ping', None)
+        with self.assertLogs(logger, DEBUG) as logs:
+            assert 'pong' == bot.process_request('/ping', None)
+        assert 'pong' in logs.output[0]
 
     def test_process_request_register_webhook(self, _dispatcher, tbot):
         created_bot = MagicMock()
         tbot.return_value = created_bot
         bot = Bot()
-        assert 'ok' == bot.process_request('/bwt/register_webhook', None)
+        with self.assertLogs(logger, DEBUG) as logs:
+            assert 'ok' == bot.process_request('/bwt/register_webhook', None)
         created_bot.set_webhook.assert_called_once_with(url='bwu/bwt')
+        assert 'ok' in logs.output[0]
+        assert 'register_webhook.' in logs.output[0]
 
     @patch(f'{MODULE_PATH}.open')
     def test_process_request_register_webhook_self(self, open_, _dispatcher, tbot):
@@ -72,36 +60,49 @@ class BotTests(BotTestCase):
         opened_file = MagicMock()
         open_.return_value = opened_file
         bot = Bot()
-        assert 'ok (self)' == bot.process_request('/bwt/register_webhook_self', None)
+        with self.assertLogs(logger, DEBUG) as logs:
+            assert 'ok (self)' == bot.process_request(
+                '/bwt/register_webhook_self', None
+            )
         open_.assert_called_once_with('/botcert/YOURPUBLIC.pem', 'rb')
         created_bot.set_webhook.assert_called_once_with(
             url='bwu/bwt', certificate=opened_file
         )
+        assert 'ok' in logs.output[0]
+        assert 'register_webhook_self.' in logs.output[0]
 
     def test_process_request_invalid_json(self, _dispatcher, _tbot):
         bot = Bot()
-        with self.assertRaises(BotJSONError):
-            bot.process_request('/bwt', '---')
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(BotJSONError):
+                bot.process_request('/bwt', '---')
+        assert 'non-JSON' in logs.output[0]
 
     @patch(f'{MODULE_PATH}.Update')
     def test_process_request_dispatched_ok(self, update, dispatcher, _tbot):
         bot = Bot()
         parsed_update = MagicMock()
         update.de_json.return_value = parsed_update
-        bot.process_request('/bwt', '{}')
+        with self.assertLogs(logger, DEBUG) as logs:
+            bot.process_request('/bwt', '{}')
         dispatcher.process_update(parsed_update)
+        assert 'Dispatcher update to' in logs.output[0]
 
     @patch(f'{MODULE_PATH}.Update')
     def test_process_request_dispatched_error(self, update, _dispatcher, _tbot):
         bot = Bot()
         update.de_json.side_effect = Exception
-        with self.assertRaises(BotLibraryError):
-            bot.process_request('/bwt', '{}')
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(BotLibraryError):
+                bot.process_request('/bwt', '{}')
+        assert 'Updated raised an error' in logs.output[0]
 
     def test_other_urls(self, _tbot, _dispatcher):
         bot = Bot()
-        with self.assertRaises(BotTokenError):
-            bot.process_request('/other', None)
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(BotTokenError):
+                bot.process_request('/other', None)
+        assert 'Uknown URL path' in logs.output[0]
 
 
 @patch(f'{MODULE_PATH}.TBot')

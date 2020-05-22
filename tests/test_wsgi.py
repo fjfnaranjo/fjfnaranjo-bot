@@ -1,4 +1,5 @@
 from io import BytesIO
+from logging import DEBUG
 from unittest.mock import MagicMock, patch
 
 from fjfnaranjobot.wsgi import BotJSONError, BotLibraryError, BotTokenError, application
@@ -36,7 +37,8 @@ class WSGITests(BotTestCase):
         fakebot.process_request.return_value = 'ok'
         _bot.return_value = fakebot
         environ = {'PATH_INFO': '/', 'wsgi.input': BytesIO()}
-        status, content, headers = self._fake_request(environ)
+        with self.assertLogs(wsgi_logger, DEBUG) as logs:
+            status, content, headers = self._fake_request(environ)
         headers_dict = {key: value for key, value in headers}
         assert '200' in status
         assert type(content) == bytes
@@ -45,6 +47,7 @@ class WSGITests(BotTestCase):
         assert headers_dict['Content-type'] == 'text/plain'
         assert 'Content-Length' in headers_dict
         assert headers_dict['Content-Length'] == '2'
+        assert 'Defer' in logs.output[0]
 
     @patch(f'{MODULE_PATH}.Bot')
     def test_application_bot_library_error(self, _bot):
