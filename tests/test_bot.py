@@ -86,7 +86,7 @@ class BotTests(BotTestCase):
         with self.assertLogs(logger, DEBUG) as logs:
             bot.process_request('/bwt', '{}')
         dispatcher.process_update(parsed_update)
-        assert 'Dispatcher update to' in logs.output[0]
+        assert 'Dispatch update to' in logs.output[0]
 
     @patch(f'{MODULE_PATH}.Update')
     def test_process_request_dispatched_error(self, update, _dispatcher, _tbot):
@@ -95,7 +95,7 @@ class BotTests(BotTestCase):
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotLibraryError):
                 bot.process_request('/bwt', '{}')
-        assert 'Updated raised an error' in logs.output[0]
+        assert 'Dispatcher raised an error' in logs.output[0]
 
     def test_other_urls(self, _tbot, _dispatcher):
         bot = Bot()
