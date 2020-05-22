@@ -11,9 +11,6 @@ MODULE_PATH = 'fjfnaranjobot.bot'
 
 @patch(f'{MODULE_PATH}.TBot')
 @patch(f'{MODULE_PATH}.Dispatcher')
-@patch(f'{MODULE_PATH}.BOT_TOKEN', 'bt')
-@patch(f'{MODULE_PATH}.BOT_WEBHOOK_URL', 'bwu')
-@patch(f'{MODULE_PATH}.BOT_WEBHOOK_TOKEN', 'bwt')
 @patch(f'{MODULE_PATH}.BOT_COMPONENTS', '')
 class BotTests(BotTestCase):
     def test_bot_uses_tbot_and_dispatcher(self, dispatcher, tbot):
@@ -21,7 +18,7 @@ class BotTests(BotTestCase):
         tbot.return_value = created_bot
         with self.assertLogs(logger, DEBUG) as logs:
             Bot()
-        tbot.assert_called_once_with('bt')
+        tbot.assert_called_once_with('123456:btbtbt')
         dispatcher.assert_called_once_with(
             created_bot, None, workers=0, use_context=True
         )
@@ -110,8 +107,6 @@ class BotTests(BotTestCase):
 
 @patch(f'{MODULE_PATH}.TBot')
 @patch(f'{MODULE_PATH}.Dispatcher')
-@patch(f'{MODULE_PATH}.BOT_WEBHOOK_URL', 'bwu')
-@patch(f'{MODULE_PATH}.BOT_WEBHOOK_TOKEN', 'bwt')
 @patch(f'{MODULE_PATH}._BOT_COMPONENTS_TEMPLATE', 'tests.component_mocks.{}.handlers')
 class BotComponentLoaderTests(BotTestCase):
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', '')

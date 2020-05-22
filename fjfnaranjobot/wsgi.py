@@ -9,6 +9,9 @@ logger = getLogger(__name__)
 Response = namedtuple('Response', ['status', 'headers', 'data'])
 
 
+bot = Bot()
+
+
 def application(environ, start_response):
     def prepare_text_response(text, status='200 OK'):
         data = bytes(text, 'utf8')
@@ -18,8 +21,6 @@ def application(environ, start_response):
             ('Content-Length', str(len(data))),
         ]
         return Response(status, response_headers, [data])
-
-    bot = Bot()
 
     url_path = environ.get('PATH_INFO', '')
 

@@ -26,3 +26,6 @@ jobs:
       run: pytest
       env:
         BOT_OWNER_ID: 11
+        BOT_TOKEN: '123456:btbtbt'
+        BOT_WEBHOOK_URL: bwu
+        BOT_WEBHOOK_TOKEN: bwt

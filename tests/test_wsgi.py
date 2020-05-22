@@ -10,10 +10,8 @@ from .base import BotTestCase
 MODULE_PATH = 'fjfnaranjobot.wsgi'
 
 
+@patch(f'{MODULE_PATH}.bot')
 class WSGITests(BotTestCase):
-    def setUp(self):
-        BotTestCase.setUp(self)
-
     def _fake_request(self, environ):
         def start_response_mock(status, headers):
             self._response_status = status
@@ -22,7 +20,6 @@ class WSGITests(BotTestCase):
         response_content = b''.join(application(environ, start_response_mock))
         return self._response_status, response_content, self._response_headers
 
-    @patch(f'{MODULE_PATH}.Bot')
     def test_application_empty_path(self, _bot):
         environ = MagicMock()
         with self.assertLogs(wsgi_logger) as logs:
@@ -31,11 +28,8 @@ class WSGITests(BotTestCase):
             assert '500' in status
         assert 'empty path' in logs.output[0]
 
-    @patch(f'{MODULE_PATH}.Bot')
-    def test_application_regular_request(self, _bot):
-        fakebot = MagicMock()
-        fakebot.process_request.return_value = 'ok'
-        _bot.return_value = fakebot
+    def test_application_regular_request(self, bot):
+        bot.process_request.return_value = 'ok'
         environ = {'PATH_INFO': '/', 'wsgi.input': BytesIO()}
         with self.assertLogs(wsgi_logger, DEBUG) as logs:
             status, content, headers = self._fake_request(environ)
@@ -49,11 +43,8 @@ class WSGITests(BotTestCase):
         assert headers_dict['Content-Length'] == '2'
         assert 'Defer' in logs.output[0]
 
-    @patch(f'{MODULE_PATH}.Bot')
-    def test_application_bot_library_error(self, _bot):
-        fakebot = MagicMock()
-        fakebot.process_request.side_effect = BotLibraryError()
-        _bot.return_value = fakebot
+    def test_application_bot_library_error(self, bot):
+        bot.process_request.side_effect = BotLibraryError()
         environ = {'PATH_INFO': '/', 'wsgi.input': BytesIO()}
         with self.assertLogs(wsgi_logger) as logs:
             status, content, headers = self._fake_request(environ)
@@ -67,11 +58,8 @@ class WSGITests(BotTestCase):
         assert headers_dict['Content-Length'] == '0'
         assert 'Error from bot library' in logs.output[0]
 
-    @patch(f'{MODULE_PATH}.Bot')
-    def test_application_bot_json_error(self, _bot):
-        fakebot = MagicMock()
-        fakebot.process_request.side_effect = BotJSONError()
-        _bot.return_value = fakebot
+    def test_application_bot_json_error(self, bot):
+        bot.process_request.side_effect = BotJSONError()
         environ = {'PATH_INFO': '/', 'wsgi.input': BytesIO()}
         with self.assertLogs(wsgi_logger) as logs:
             status, content, headers = self._fake_request(environ)
@@ -85,11 +73,8 @@ class WSGITests(BotTestCase):
         assert headers_dict['Content-Length'] == '0'
         assert 'Error from bot library (json)' in logs.output[0]
 
-    @patch(f'{MODULE_PATH}.Bot')
-    def test_application_bot_token_error(self, _bot):
-        fakebot = MagicMock()
-        fakebot.process_request.side_effect = BotTokenError()
-        _bot.return_value = fakebot
+    def test_application_bot_token_error(self, bot):
+        bot.process_request.side_effect = BotTokenError()
         environ = {'PATH_INFO': '/', 'wsgi.input': BytesIO()}
         with self.assertLogs(wsgi_logger) as logs:
             status, content, headers = self._fake_request(environ)
