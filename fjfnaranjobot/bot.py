@@ -103,7 +103,9 @@ class Bot:
         # Don't allow other URLs unless preceded by token
         elif url_path != '/' + BOT_WEBHOOK_TOKEN:
             shown_url = url_path[:10]
-            logger.info(f'Uknown URL path {shown_url} (cropped to 10 chars).')
+            logger.info(
+                f'Path {shown_url} (cropped to 10 chars) not preceded by token and not handled by bot.'
+            )
             raise BotTokenError()
 
         # Delegate response to bot library

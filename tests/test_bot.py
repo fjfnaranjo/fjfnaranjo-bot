@@ -102,7 +102,7 @@ class BotTests(BotTestCase):
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotTokenError):
                 bot.process_request('/other', None)
-        assert 'Uknown URL path' in logs.output[0]
+        assert 'not preceded by token and not handled by bot' in logs.output[0]
 
 
 @patch(f'{MODULE_PATH}.TBot')
