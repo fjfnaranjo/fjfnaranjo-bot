@@ -33,7 +33,7 @@ def _configure_logging():
         try:
             makedirs(log_dir)
         except:
-            raise EnvValueError('Invalid dir name in BOT_LOGFILE var.')
+            raise EnvValueError("Invalid dir name in BOT_LOGFILE var.")
     new_file = False
     if not isfile(log_path):
         try:
@@ -41,9 +41,9 @@ def _configure_logging():
                 pass
             new_file = True
         except OSError:
-            raise EnvValueError('Invalid file name in BOT_LOGFILE var.')
+            raise EnvValueError("Invalid file name in BOT_LOGFILE var.")
     if log_level not in valid_log_levels:
-        raise EnvValueError('Invalid level in BOT_LOGLEVEL var.')
+        raise EnvValueError("Invalid level in BOT_LOGLEVEL var.")
     dictConfig(
         {
             'version': 1,
@@ -64,7 +64,7 @@ def _configure_logging():
         }
     )
     if new_file:
-        loggingGetLogger('app').info('Log created.')
+        loggingGetLogger('app').info("Log created.")
     _state['initialized'] = True
 
 

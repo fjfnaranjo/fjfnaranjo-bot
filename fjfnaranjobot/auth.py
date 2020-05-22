@@ -20,16 +20,16 @@ def get_owner_id():
     try:
         return int(environ['BOT_OWNER_ID'])
     except KeyError:
-        raise EnvValueError('BOT_OWNER_ID var must be defined.')
+        raise EnvValueError("BOT_OWNER_ID var must be defined.")
     except (TypeError, ValueError):
-        raise EnvValueError('Invalid id in BOT_OWNER_ID var.')
+        raise EnvValueError("Invalid id in BOT_OWNER_ID var.")
 
 
 def ensure_int(string):
     try:
         return int(string)
     except ValueError:
-        raise FriendMustBeIntError('Error parsing id suplied by user.')
+        raise FriendMustBeIntError("Error parsing id as int.")
 
 
 def _parse_command(update):
@@ -43,9 +43,9 @@ def _parse_command(update):
 def _report_no_user(update, permission):
     command = _parse_command(update)[:10]
     logger.info(
-        f"Message received with no user "
+        "Message received with no user "
         f"trying to access a {permission} command. "
-        f"Command text: '{command}' (cropped to 10 chars.)"
+        f"Command text: '{command}' (cropped to 10 chars)."
     )
 
 
@@ -54,7 +54,7 @@ def _report_bot(update, user, permission):
     logger.info(
         f"Bot with username {user.username} and id {user.id} "
         f"tried to access a {permission} command. "
-        f"Command text: '{command}' (cropped to 10 chars.)"
+        f"Command text: '{command}' (cropped to 10 chars)."
     )
 
 
@@ -63,7 +63,7 @@ def _report_user(update, user, permission):
     logger.info(
         f"User {user.username} with id {user.id} "
         f"tried to access a {permission} command. "
-        f"Command text: '{command}' (cropped to 10 chars.)"
+        f"Command text: '{command}' (cropped to 10 chars)."
     )
 
 

@@ -2,7 +2,12 @@ from io import BytesIO
 from logging import DEBUG
 from unittest.mock import MagicMock, patch
 
-from fjfnaranjobot.wsgi import BotJSONError, BotLibraryError, BotTokenError, application
+from fjfnaranjobot.wsgi import (
+    BotFrameworkError,
+    BotJSONError,
+    BotTokenError,
+    application,
+)
 from fjfnaranjobot.wsgi import logger as wsgi_logger
 
 from .base import BotTestCase
@@ -26,7 +31,7 @@ class WSGITests(BotTestCase):
             status, content, _ = self._fake_request(environ)
             assert 0 == len(content)
             assert '500' in status
-        assert 'empty path' in logs.output[0]
+        assert 'Received empty path in WSGI request.' in logs.output[0]
 
     def test_application_regular_request(self, bot):
         bot.process_request.return_value = 'ok'
@@ -41,10 +46,10 @@ class WSGITests(BotTestCase):
         assert headers_dict['Content-type'] == 'text/plain'
         assert 'Content-Length' in headers_dict
         assert headers_dict['Content-Length'] == '2'
-        assert 'Defer' in logs.output[0]
+        assert 'Defer request to bot for processing.' in logs.output[0]
 
     def test_application_bot_library_error(self, bot):
-        bot.process_request.side_effect = BotLibraryError()
+        bot.process_request.side_effect = BotFrameworkError()
         environ = {'PATH_INFO': '/', 'wsgi.input': BytesIO()}
         with self.assertLogs(wsgi_logger) as logs:
             status, content, headers = self._fake_request(environ)
@@ -56,7 +61,7 @@ class WSGITests(BotTestCase):
         assert headers_dict['Content-type'] == 'text/plain'
         assert 'Content-Length' in headers_dict
         assert headers_dict['Content-Length'] == '0'
-        assert 'Error from bot library' in logs.output[0]
+        assert 'Error from bot framework.' in logs.output[0]
 
     def test_application_bot_json_error(self, bot):
         bot.process_request.side_effect = BotJSONError()
@@ -71,7 +76,7 @@ class WSGITests(BotTestCase):
         assert headers_dict['Content-type'] == 'text/plain'
         assert 'Content-Length' in headers_dict
         assert headers_dict['Content-Length'] == '0'
-        assert 'Error from bot library (json)' in logs.output[0]
+        assert 'Error from bot framework (json).' in logs.output[0]
 
     def test_application_bot_token_error(self, bot):
         bot.process_request.side_effect = BotTokenError()
@@ -83,4 +88,4 @@ class WSGITests(BotTestCase):
         assert type(content) == bytes
         assert 0 == len(content)
         assert 0 == len(headers_dict)
-        assert 'Error from bot library (token)' in logs.output[0]
+        assert 'Error from bot framework (token).' in logs.output[0]

@@ -1,3 +1,4 @@
+from logging import DEBUG
 from os import chmod, remove
 from os.path import isdir, isfile, join
 from shutil import rmtree
@@ -6,11 +7,13 @@ from tempfile import mkdtemp, mkstemp
 from unittest.mock import patch
 
 from fjfnaranjobot.db import (
+    DontExists,
     EnvValueError,
     InvalidKeyError,
     _get_db_path,
     cursor,
     get_config,
+    logger,
     reset,
     set_config,
 )
@@ -22,7 +25,7 @@ BOT_DB_NAME_DEFAULT = 'bot.db'
 BOT_DB_NAME_TEST = 'bot.a.test.name.db'
 
 
-class ConfigTests(BotTestCase):
+class DbTests(BotTestCase):
     def setUp(self):
         BotTestCase.setUp(self)
         self._db_test_file = mkstemp()[1]
@@ -64,31 +67,33 @@ class ConfigTests(BotTestCase):
     def test_reset_creates_new(self):
         self._get_db_path_mock.return_value = self._db_test_file
         remove(self._db_test_file)
-        reset()
+        with self.assertLogs(logger, DEBUG) as logs:
+            reset()
         assert isfile(self._db_test_file)
+        assert 'Initializing configuration database.' in logs.output[0]
 
     def test_reset_replaces_existent(self):
         self._get_db_path_mock.return_value = self._db_test_file
         with open(self._db_test_file, 'wb') as temp_file:
             temp_file.write(b'notempty')
-        reset()
+        with self.assertLogs(logger, DEBUG) as logs:
+            reset()
         with open(self._db_test_file, 'rb') as temp_file:
             assert temp_file.read() != b'notempty'
+        assert 'Initializing configuration database.' in logs.output[0]
 
     def test_reset_invalid_db_dir_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_file, 'impossibledir')
         with self.assertRaises(EnvValueError) as e:
             reset()
-        assert 'BOT_DB_NAME' in str(e.exception)
-        assert 'dir' in str(e.exception)
+        assert 'Invalid dir name in BOT_DB_NAME var.' in str(e.exception)
 
     def test_reset_invalid_db_file_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_dir, 'dontexists')
         chmod(self._db_test_dir, 0)
         with self.assertRaises(EnvValueError) as e:
             reset()
-        assert 'BOT_DB_NAME' in str(e.exception)
-        assert 'file' in str(e.exception)
+        assert 'Invalid file name in BOT_DB_NAME var.' in str(e.exception)
 
     def test_cursor_creates_new(self):
         self._get_db_path_mock.return_value = self._db_test_file
@@ -102,8 +107,7 @@ class ConfigTests(BotTestCase):
         reset(False)
         with self.assertRaises(EnvValueError) as e:
             cursor().__enter__()
-        assert 'BOT_DB_NAME' in str(e.exception)
-        assert 'dir' in str(e.exception)
+        assert 'Invalid dir name in BOT_DB_NAME var.' in str(e.exception)
 
     def test_cursor_invalid_db_file_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_dir, 'dontexists')
@@ -111,8 +115,7 @@ class ConfigTests(BotTestCase):
         chmod(self._db_test_dir, 0)
         with self.assertRaises(EnvValueError) as e:
             cursor().__enter__()
-        assert 'BOT_DB_NAME' in str(e.exception)
-        assert 'file' in str(e.exception)
+        assert 'Invalid file name in BOT_DB_NAME var.' in str(e.exception)
 
     def test_cursor_persist(self):
         self._get_db_path_mock.return_value = self._db_test_file
@@ -129,7 +132,12 @@ class ConfigTests(BotTestCase):
     def test_get_config_valid(self):
         for key in ['key', 'key.key']:
             with self.subTest(key=key):
-                get_config(key)
+                with self.assertRaises(DontExists):
+                    with self.assertLogs(logger, DEBUG) as logs:
+                        get_config(key)
+                assert (
+                    f'Getting configuration value for key \'{key}\'.' in logs.output[0]
+                )
 
     def test_get_config_invalid(self):
         for key in [
@@ -139,13 +147,19 @@ class ConfigTests(BotTestCase):
             '!a_invalid_key',
         ]:
             with self.subTest(key=key):
-                with self.assertRaises(InvalidKeyError):
+                with self.assertRaises(InvalidKeyError) as e:
                     get_config(key)
+                assert f'No valid value for key {key}.' in str(e.exception)
 
     def test_set_config_valid(self):
         for key in ['key', 'key.key']:
             with self.subTest(key=key):
-                set_config(key, 'val')
+                with self.assertLogs(logger, DEBUG) as logs:
+                    set_config(key, 'val')
+                assert (
+                    f'Setting configuration key \'{key}\' to value \'val\' (cropped to 10 chars).'
+                    in logs.output[0]
+                )
 
     def test_set_config_invalid(self):
         for key in [
@@ -155,8 +169,9 @@ class ConfigTests(BotTestCase):
             '!a_invalid_key',
         ]:
             with self.subTest(key=key):
-                with self.assertRaises(InvalidKeyError):
+                with self.assertRaises(InvalidKeyError) as e:
                     set_config(key, 'val')
+                assert f'No valid value for key {key}.' in str(e.exception)
 
     def test_set_config_get_config_persist(self):
         reset()
@@ -166,8 +181,9 @@ class ConfigTests(BotTestCase):
 
     def test_get_config_dont_exists(self):
         reset()
-        val = get_config('key')
-        assert None == val
+        with self.assertRaises(DontExists) as e:
+            get_config('key')
+        assert f'The key \'key\' don\'t exists.' in str(e.exception)
 
     def test_set_config_replaces_old_value(self):
         reset()

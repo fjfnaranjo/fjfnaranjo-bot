@@ -18,6 +18,10 @@ class InvalidKeyError(Exception):
     pass
 
 
+class DontExists(Exception):
+    pass
+
+
 def _get_db_path():
     return join(get_bot_data_dir(), environ.get('BOT_DB_NAME', _BOT_DB_DEFAULT_NAME))
 
@@ -31,14 +35,14 @@ def _ensure_db():
         try:
             makedirs(db_dir)
         except:
-            raise EnvValueError('Invalid dir name in BOT_DB_NAME var.')
+            raise EnvValueError("Invalid dir name in BOT_DB_NAME var.")
     if not isfile(db_path):
         logger.debug("Initializing configuration database.")
         try:
             with open(db_path, 'wb'):
                 pass
         except OSError:
-            raise EnvValueError('Invalid file name in BOT_DB_NAME var.')
+            raise EnvValueError("Invalid file name in BOT_DB_NAME var.")
     _state['initialized'] = True
 
 
@@ -102,4 +106,7 @@ def get_config(key):
     with _config_cursor() as cur:
         cur.execute('SELECT value FROM config WHERE key=?', (key,))
         result = cur.fetchone()
-    return None if result is None else result[0]
+    if result is None:
+        raise DontExists(f"The key '{key}' don't exists.")
+    else:
+        return result[0]

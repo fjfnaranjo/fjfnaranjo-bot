@@ -36,14 +36,15 @@ class LoggingTests(BotTestCase):
             temp_file.write(b'notempty')
         reset()
         with open(LOGFILE_TEST_FILE, 'rb') as temp_file:
-            assert temp_file.read() != b'notempty'
+            log_content = temp_file.read()
+            assert b'notempty' != log_content
+            assert 'Log created.' in log_content.decode('utf8')
 
     @patch(f'{MODULE_PATH}._get_log_path', return_value=join(LOGFILE_TEST_FILE, 'dir'))
     def test_reset_invalid_log_dir_name(self, _get_log_path):
         with self.assertRaises(EnvValueError) as e:
             reset()
-        assert 'BOT_LOGFILE' in str(e.exception)
-        assert 'dir' in str(e.exception)
+        assert 'Invalid dir name in BOT_LOGFILE var.' in str(e.exception)
 
     @patch(
         f'{MODULE_PATH}._get_log_path', return_value=join(LOGFILE_TEST_DIR, 'file'),
@@ -52,8 +53,7 @@ class LoggingTests(BotTestCase):
         chmod(LOGFILE_TEST_DIR, 0)
         with self.assertRaises(EnvValueError) as e:
             reset()
-        assert 'BOT_LOGFILE' in str(e.exception)
-        assert 'file' in str(e.exception)
+        assert 'Invalid file name in BOT_LOGFILE var.' in str(e.exception)
 
     @patch(f'{MODULE_PATH}._get_log_path', return_value=LOGFILE_TEST_FILE)
     def test_logger_no_valid_log_level(self, _get_log_path):
@@ -62,7 +62,7 @@ class LoggingTests(BotTestCase):
         ):
             with self.assertRaises(EnvValueError) as e:
                 reset()
-            assert 'BOT_LOGLEVEL' in str(e.exception)
+            assert 'Invalid level in BOT_LOGLEVEL var.' in str(e.exception)
 
     @patch(f'{MODULE_PATH}._get_log_path', return_value=LOGFILE_TEST_FILE)
     def test_logger_no_default_name(self, _get_log_path):

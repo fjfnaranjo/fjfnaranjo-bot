@@ -20,7 +20,7 @@ BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,sorry,friends')
 _BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.handlers'
 
 
-class BotLibraryError(Exception):
+class BotFrameworkError(Exception):
     pass
 
 
@@ -54,12 +54,12 @@ class Bot:
                         group = int(getattr(info, 'group', DEFAULT_GROUP))
                     except ValueError:
                         raise EnvValueError(
-                            f'Invalid group for component {component} .'
+                            f"Invalid group for component '{component}'."
                         )
                     for handler in handlers:
                         if not isinstance(handler, Handler):
                             raise EnvValueError(
-                                f'Invalid handler for component {component} .'
+                                f"Invalid handler for component '{component}'."
                             )
                         else:
                             self.dispatcher.add_handler(handler, group)
@@ -69,7 +69,7 @@ class Bot:
                             if callable(handler_callback):
                                 handler_callback = handler_callback.__name__
                             logger.debug(
-                                f"Registered handler {handler_callback} for component {component} ."
+                                f"Registered handler '{handler_callback}' for component '{component}'."
                             )
             except ModuleNotFoundError:
                 pass
@@ -78,18 +78,18 @@ class Bot:
 
         # Root URL
         if url_path == '' or url_path == '/':
-            logger.info('Reply with salute.')
+            logger.info("Reply with salute.")
             return "I'm fjfnaranjo's bot."
 
         # Healt check URL
         elif url_path == '/ping':
-            logger.info('Reply with pong.')
+            logger.info("Reply with pong.")
             return 'pong'
 
         # Register webhook request URL
         elif url_path == ('/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook'))):
             self.bot.set_webhook(url=self.webhook_url)
-            logger.info('Reply with ok to register_webhook.')
+            logger.info("Reply with ok to register_webhook.")
             return 'ok'
 
         # Register webhook request URL (using self signed cert)
@@ -97,29 +97,30 @@ class Bot:
             self.bot.set_webhook(
                 url=self.webhook_url, certificate=open('/botcert/YOURPUBLIC.pem', 'rb')
             )
-            logger.info('Reply with ok to register_webhook_self.')
+            logger.info("Reply with ok to register_webhook_self.")
             return 'ok (self)'
 
         # Don't allow other URLs unless preceded by token
         elif url_path != '/' + BOT_WEBHOOK_TOKEN:
             shown_url = url_path[:10]
             logger.info(
-                f'Path {shown_url} (cropped to 10 chars) not preceded by token and not handled by bot.'
+                f"Path '{shown_url}' (cropped to 10 chars) not preceded by token and not handled by bot."
             )
             raise BotTokenError()
 
-        # Delegate response to bot library
+        # Parse response to bot library
         try:
             update_json = loads(update)
         except JSONDecodeError as e:
-            logger.info(f'Received non-JSON request.')
+            logger.info("Received non-JSON request.")
             raise BotJSONError("Sent content isn't JSON.") from e
 
+        # Delegate response to bot library
         try:
-            logger.debug(f'Dispatch update to library.')
+            logger.debug("Dispatch update to library.")
             self.dispatcher.process_update(Update.de_json(update_json, self.bot))
         except Exception as e:
-            logger.info(f'Dispatcher raised an error inside the library.')
-            raise BotLibraryError("Error in bot library.") from e
+            logger.info("Error inside the framework raised by the dispatcher.")
+            raise BotFrameworkError("Error in bot framework.") from e
 
         return 'ok'

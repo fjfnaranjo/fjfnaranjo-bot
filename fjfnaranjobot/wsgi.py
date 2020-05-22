@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from fjfnaranjobot.bot import Bot, BotJSONError, BotLibraryError, BotTokenError
+from fjfnaranjobot.bot import Bot, BotFrameworkError, BotJSONError, BotTokenError
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -25,7 +25,7 @@ def application(environ, start_response):
     url_path = environ.get('PATH_INFO', '')
 
     if len(url_path) == 0:
-        logger.error('Received empty path in WSGI request.')
+        logger.error("Received empty path in WSGI request.")
         response = prepare_text_response(str(''), status='500 Internal Server Error')
 
     else:
@@ -34,18 +34,18 @@ def application(environ, start_response):
         request_body = environ['wsgi.input'].read(request_body_size)
 
         try:
-            logger.debug('Defer request to bot for processing')
+            logger.debug("Defer request to bot for processing.")
             response = prepare_text_response(
                 bot.process_request(url_path, request_body)
             )
-        except BotLibraryError as e:
-            logger.exception('Error from bot library', exc_info=e)
+        except BotFrameworkError as e:
+            logger.exception("Error from bot framework.", exc_info=e)
             response = prepare_text_response(str(e), status='500 Internal Server Error')
         except BotJSONError as e:
-            logger.info('Error from bot library (json)', exc_info=e)
+            logger.info("Error from bot framework (json).", exc_info=e)
             response = prepare_text_response(str(e), status='400 Bad Request')
         except BotTokenError as e:
-            logger.info('Error from bot library (token)', exc_info=e)
+            logger.info("Error from bot framework (token).", exc_info=e)
             response = Response('404 Not Found', [], [])
 
     start_response(response.status, response.headers)
