@@ -51,8 +51,8 @@ class Bot:
                 except AttributeError:
                     pass
                 else:
+                    group = getattr(info, 'group', DEFAULT_GROUP)
                     for handler in handlers:
-                        group = getattr(info, 'group', DEFAULT_GROUP)
                         self.dispatcher.add_handler(handler, group)
             except ModuleNotFoundError:
                 pass
