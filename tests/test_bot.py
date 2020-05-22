@@ -36,9 +36,6 @@ class BotUtilsTests(BotTestCase):
 @patch(f'{MODULE_PATH}.BOT_WEBHOOK_TOKEN', 'bwt')
 @patch(f'{MODULE_PATH}.BOT_COMPONENTS', '')
 class BotTests(BotTestCase):
-    def setUp(self):
-        BotTestCase.setUp(self)
-
     def test_bot_uses_tbot_and_dispatcher(self, dispatcher, tbot):
         created_bot = MagicMock()
         tbot.return_value = created_bot
