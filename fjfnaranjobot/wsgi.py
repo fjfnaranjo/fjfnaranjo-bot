@@ -42,10 +42,10 @@ def application(environ, start_response):
             logger.exception('Error from bot library', exc_info=e)
             response = prepare_text_response(str(e), status='500 Internal Server Error')
         except BotJSONError as e:
-            logger.exception('Error from bot library (json)', exc_info=e)
+            logger.info('Error from bot library (json)', exc_info=e)
             response = prepare_text_response(str(e), status='400 Bad Request')
         except BotTokenError as e:
-            logger.exception('Error from bot library (token)', exc_info=e)
+            logger.info('Error from bot library (token)', exc_info=e)
             response = Response('404 Not Found', [], [])
 
     start_response(response.status, response.headers)
