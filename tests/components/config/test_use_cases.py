@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 from fjfnaranjobot.components.config.use_cases import config_get, config_set, logger
-from fjfnaranjobot.db import DontExists
 
 from ...base import BotUseCaseTestCase
 
@@ -24,7 +23,7 @@ class ConfigUseCasesTests(BotUseCaseTestCase):
     @patch(f'{MODULE_PATH}.get_config')
     def test_config_get_missing(self, get_config):
         self._set_msg('cmd key')
-        get_config.side_effect = DontExists
+        get_config.side_effect = KeyError
         with self.assertLogs(logger) as logs:
             with self._raises_dispatcher_stop():
                 config_get(self._update, None)

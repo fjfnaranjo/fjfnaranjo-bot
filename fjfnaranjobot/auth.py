@@ -4,7 +4,7 @@ from json import loads as from_json
 from os import environ
 
 from fjfnaranjobot.bot import EnvValueError
-from fjfnaranjobot.db import get_config, set_config
+from fjfnaranjobot.config import get_config, set_config
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)

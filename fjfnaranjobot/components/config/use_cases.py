@@ -1,6 +1,6 @@
 from telegram.ext import DispatcherHandlerStop
 
-from fjfnaranjobot.db import DontExists, get_config, set_config
+from fjfnaranjobot.config import get_config, set_config
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -19,7 +19,7 @@ def config_get(update, _context):
     _, key = update.message.text.split(' ')
     try:
         result = get_config(key)
-    except DontExists:
+    except KeyError:
         logger.info(f"Replying with 'no value' message for key '{key}'.")
         update.message.reply_text(f"No value for key '{key}'.")
     else:

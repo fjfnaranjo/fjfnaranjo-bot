@@ -6,17 +6,8 @@ from stat import S_IRWXU
 from tempfile import mkdtemp, mkstemp
 from unittest.mock import patch
 
-from fjfnaranjobot.db import (
-    DontExists,
-    EnvValueError,
-    InvalidKeyError,
-    _get_db_path,
-    cursor,
-    get_config,
-    logger,
-    reset,
-    set_config,
-)
+from fjfnaranjobot.common import EnvValueError
+from fjfnaranjobot.db import cursor, get_db_path, logger, reset
 
 from .base import BotTestCase
 
@@ -30,7 +21,7 @@ class DbTests(BotTestCase):
         BotTestCase.setUp(self)
         self._db_test_file = mkstemp()[1]
         self._db_test_dir = mkdtemp()
-        self._get_db_path_patcher = patch(f'{MODULE_PATH}._get_db_path')
+        self._get_db_path_patcher = patch(f'{MODULE_PATH}.get_db_path')
         self._get_db_path_mock = self._get_db_path_patcher.start()
         self._get_db_path_mock.return_value = self._db_test_file
 
@@ -49,14 +40,14 @@ class DbTests(BotTestCase):
         with self._with_mocked_environ(
             f'{MODULE_PATH}.environ', None, ['BOT_DB_NAME',]
         ):
-            assert _get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
+            assert get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
 
     @patch(f'{MODULE_PATH}.get_bot_data_dir', return_value='dir')
     def test_get_db_path_join_and_env(self, _get_bot_data_dir):
         with self._with_mocked_environ(
             f'{MODULE_PATH}.environ', {'BOT_DB_NAME': BOT_DB_NAME_TEST},
         ):
-            assert _get_db_path() == join('dir', BOT_DB_NAME_TEST)
+            assert get_db_path() == join('dir', BOT_DB_NAME_TEST)
 
     def test_reset_only_reset(self):
         self._get_db_path_mock.return_value = self._db_test_file
@@ -128,66 +119,3 @@ class DbTests(BotTestCase):
             data = cur.fetchall()
         assert 1 == len(data)
         assert 123 == data[0][0]
-
-    def test_get_config_valid(self):
-        for key in ['key', 'key.key']:
-            with self.subTest(key=key):
-                with self.assertRaises(DontExists):
-                    with self.assertLogs(logger, DEBUG) as logs:
-                        get_config(key)
-                assert (
-                    f'Getting configuration value for key \'{key}\'.' in logs.output[0]
-                )
-
-    def test_get_config_invalid(self):
-        for key in [
-            '.key',
-            'key.',
-            'key key',
-            '!a_invalid_key',
-        ]:
-            with self.subTest(key=key):
-                with self.assertRaises(InvalidKeyError) as e:
-                    get_config(key)
-                assert f'No valid value for key {key}.' in str(e.exception)
-
-    def test_set_config_valid(self):
-        for key in ['key', 'key.key']:
-            with self.subTest(key=key):
-                with self.assertLogs(logger, DEBUG) as logs:
-                    set_config(key, 'val')
-                assert (
-                    f'Setting configuration key \'{key}\' to value \'val\' (cropped to 10 chars).'
-                    in logs.output[0]
-                )
-
-    def test_set_config_invalid(self):
-        for key in [
-            '.key',
-            'key.',
-            'key key',
-            '!a_invalid_key',
-        ]:
-            with self.subTest(key=key):
-                with self.assertRaises(InvalidKeyError) as e:
-                    set_config(key, 'val')
-                assert f'No valid value for key {key}.' in str(e.exception)
-
-    def test_set_config_get_config_persist(self):
-        reset()
-        set_config('key', 'val')
-        val = get_config('key')
-        assert 'val' == val
-
-    def test_get_config_dont_exists(self):
-        reset()
-        with self.assertRaises(DontExists) as e:
-            get_config('key')
-        assert f'The key \'key\' don\'t exists.' in str(e.exception)
-
-    def test_set_config_replaces_old_value(self):
-        reset()
-        set_config('key', 'val')
-        set_config('key', 'val2')
-        val = get_config('key')
-        assert 'val2' == val
