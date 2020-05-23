@@ -123,3 +123,6 @@ class Bot:
             raise BotFrameworkError("Error in bot framework.") from e
 
         return 'ok'
+
+
+bot = Bot()
