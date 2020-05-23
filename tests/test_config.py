@@ -1,6 +1,6 @@
 from logging import DEBUG
 
-from fjfnaranjobot.config import get_config, logger, reset, set_config
+from fjfnaranjobot.config import config, logger
 
 from .base import BotTestCase
 
@@ -8,12 +8,16 @@ MODULE_PATH = 'fjfnaranjobot.config'
 
 
 class ConfigTests(BotTestCase):
+    def setUp(self):
+        BotTestCase.setUp(self)
+        config.clear()
+
     def test_get_config_valid(self):
         for key in ['key', 'key.key']:
             with self.subTest(key=key):
                 with self.assertRaises(KeyError):
                     with self.assertLogs(logger, DEBUG) as logs:
-                        get_config(key)
+                        config[key]
                 assert (
                     f'Getting configuration value for key \'{key}\'.' in logs.output[0]
                 )
@@ -27,14 +31,14 @@ class ConfigTests(BotTestCase):
         ]:
             with self.subTest(key=key):
                 with self.assertRaises(ValueError) as e:
-                    get_config(key)
+                    config[key]
                 assert f'No valid value for key {key}.' in str(e.exception)
 
     def test_set_config_valid(self):
         for key in ['key', 'key.key']:
             with self.subTest(key=key):
                 with self.assertLogs(logger, DEBUG) as logs:
-                    set_config(key, 'val')
+                    config[key] = 'val'
                 assert (
                     f'Setting configuration key \'{key}\' to value \'val\' (cropped to 10 chars).'
                     in logs.output[0]
@@ -49,24 +53,37 @@ class ConfigTests(BotTestCase):
         ]:
             with self.subTest(key=key):
                 with self.assertRaises(ValueError) as e:
-                    set_config(key, 'val')
+                    config[key] = 'val'
                 assert f'No valid value for key {key}.' in str(e.exception)
 
     def test_set_config_get_config_persist(self):
-        reset()
-        set_config('key', 'val')
-        val = get_config('key')
-        assert 'val' == val
+        config['key'] = 'val'
+        assert 'val' == config['key']
 
     def test_get_config_dont_exists(self):
-        reset()
         with self.assertRaises(KeyError) as e:
-            get_config('key')
+            config['key']
         assert f'The key \'key\' don\'t exists.' in str(e.exception)
 
     def test_set_config_replaces_old_value(self):
-        reset()
-        set_config('key', 'val')
-        set_config('key', 'val2')
-        val = get_config('key')
-        assert 'val2' == val
+        config['key'] = 'val'
+        config['key'] = 'newval'
+        assert 'newval' == config['key']
+
+    def test_config_len_empty(self):
+        assert 0 == len(config)
+
+    def test_config_len(self):
+        config['key'] = 'val'
+        config['other.key'] = 'other_val'
+        assert 2 == len(config)
+
+    def test_del_config_exists(self):
+        config['key'] = 'val'
+        del config['key']
+        assert 0 == len(config)
+
+    def test_del_config_dont_exists(self):
+        with self.assertRaises(KeyError) as e:
+            del config['key']
+        assert f'The key \'key\' don\'t exists.' in str(e.exception)

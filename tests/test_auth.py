@@ -17,7 +17,6 @@ from fjfnaranjobot.auth import (
 from .base import (
     FIRST_FRIEND_USERID,
     JSON_FIRST_FRIEND,
-    JSON_NO_FRIENDS,
     JSON_ONE_FRIEND,
     JSON_SECOND_FRIEND,
     JSON_TWO_FRIENDS,
@@ -33,9 +32,10 @@ MODULE_PATH = 'fjfnaranjobot.auth'
 class AuthTests(BotTestCase):
     @contextmanager
     def _with_owner_and_friends(self, friends_list):
+        fake_config = {CFG_KEY: friends_list} if friends_list is not None else {}
         with patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USERID):
-            with patch(f'{MODULE_PATH}.get_config', return_value=friends_list):
-                yield
+            with patch(f'{MODULE_PATH}.config', fake_config):
+                yield fake_config
 
     def test_get_owner_id_no_default(self):
         with self._with_mocked_environ(
@@ -204,43 +204,36 @@ class AuthTests(BotTestCase):
             assert SECOND_FRIEND_USERID in friends
 
     def test_auth_add_friend(self):
-        with self._with_owner_and_friends(None):
-            with patch(f'{MODULE_PATH}.set_config') as set_config:
-                add_friend(FIRST_FRIEND_USERID)
-                set_config.assert_called_once_with(CFG_KEY, JSON_FIRST_FRIEND)
+        with self._with_owner_and_friends(None) as config:
+            add_friend(FIRST_FRIEND_USERID)
+            assert JSON_FIRST_FRIEND == config[CFG_KEY]
 
     def test_auth_add_friend_already_friend(self):
-        with self._with_owner_and_friends(JSON_ONE_FRIEND):
-            with patch(f'{MODULE_PATH}.set_config') as set_config:
-                add_friend(FIRST_FRIEND_USERID)
-                set_config.assert_not_called()
+        with self._with_owner_and_friends(JSON_ONE_FRIEND) as config:
+            add_friend(FIRST_FRIEND_USERID)
+            assert JSON_FIRST_FRIEND == config[CFG_KEY]
 
     def test_auth_add_friend_is_owner(self):
-        with self._with_owner_and_friends(None):
-            with patch(f'{MODULE_PATH}.set_config') as set_config:
-                add_friend(OWNER_USERID)
-                set_config.assert_not_called()
+        with self._with_owner_and_friends(None) as config:
+            add_friend(OWNER_USERID)
+            assert CFG_KEY not in config
 
     def test_auth_del_friend_not_friends(self):
-        with self._with_owner_and_friends(None):
-            with patch(f'{MODULE_PATH}.set_config') as set_config:
-                del_friend(FIRST_FRIEND_USERID)
-                set_config.assert_not_called()
+        with self._with_owner_and_friends(None) as config:
+            del_friend(FIRST_FRIEND_USERID)
+            assert CFG_KEY not in config
 
     def test_auth_del_friend_not_a_friend(self):
-        with self._with_owner_and_friends(JSON_ONE_FRIEND):
-            with patch(f'{MODULE_PATH}.set_config') as set_config:
-                del_friend(SECOND_FRIEND_USERID)
-                set_config.assert_not_called()
+        with self._with_owner_and_friends(JSON_ONE_FRIEND) as config:
+            del_friend(SECOND_FRIEND_USERID)
+            assert JSON_FIRST_FRIEND == config[CFG_KEY]
 
     def test_auth_del_friend_one_friend(self):
-        with self._with_owner_and_friends(JSON_TWO_FRIENDS):
-            with patch(f'{MODULE_PATH}.set_config') as set_config:
-                del_friend(FIRST_FRIEND_USERID)
-                set_config.assert_called_once_with(CFG_KEY, JSON_SECOND_FRIEND)
+        with self._with_owner_and_friends(JSON_TWO_FRIENDS) as config:
+            del_friend(FIRST_FRIEND_USERID)
+            assert JSON_SECOND_FRIEND == config[CFG_KEY]
 
     def test_auth_del_friend_last_friend(self):
-        with self._with_owner_and_friends(JSON_ONE_FRIEND):
-            with patch(f'{MODULE_PATH}.set_config') as set_config:
-                del_friend(FIRST_FRIEND_USERID)
-                set_config.assert_called_once_with(CFG_KEY, JSON_NO_FRIENDS)
+        with self._with_owner_and_friends(JSON_ONE_FRIEND) as config:
+            del_friend(FIRST_FRIEND_USERID)
+            assert CFG_KEY not in config

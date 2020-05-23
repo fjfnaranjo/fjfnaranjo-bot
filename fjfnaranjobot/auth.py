@@ -3,7 +3,7 @@ from json import dumps as to_json
 from json import loads as from_json
 from os import environ
 
-from fjfnaranjobot.config import get_config, set_config
+from fjfnaranjobot.config import config
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -91,8 +91,12 @@ def only_owner(f):
 
 
 def get_friends():
-    friends = get_config(CFG_KEY)
-    return [] if friends is None else [int(id_) for id_ in from_json(friends)]
+    try:
+        friends = config[CFG_KEY]
+    except KeyError:
+        return []
+    else:
+        return [] if friends is None else [int(id_) for id_ in from_json(friends)]
 
 
 def only_friends(f):
@@ -114,7 +118,7 @@ def add_friend(id_):
     friends = get_friends()
     if id_int not in friends and id_int != get_owner_id():
         friends.append(id_int)
-        set_config(CFG_KEY, to_json(friends))
+        config[CFG_KEY] = to_json(friends)
 
 
 def del_friend(id_):
@@ -122,4 +126,7 @@ def del_friend(id_):
     friends = get_friends()
     if id_int in friends:
         friends.remove(id_int)
-        set_config(CFG_KEY, to_json(friends))
+        if len(friends) == 0:
+            del config[CFG_KEY]
+        else:
+            config[CFG_KEY] = to_json(friends)
