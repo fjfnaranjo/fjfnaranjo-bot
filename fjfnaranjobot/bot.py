@@ -7,7 +7,6 @@ from telegram import Update
 from telegram.ext import Dispatcher, Handler
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
-from fjfnaranjobot.common import EnvValueError
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -53,12 +52,10 @@ class Bot:
                     try:
                         group = int(getattr(info, 'group', DEFAULT_GROUP))
                     except ValueError:
-                        raise EnvValueError(
-                            f"Invalid group for component '{component}'."
-                        )
+                        raise ValueError(f"Invalid group for component '{component}'.")
                     for handler in handlers:
                         if not isinstance(handler, Handler):
-                            raise EnvValueError(
+                            raise ValueError(
                                 f"Invalid handler for component '{component}'."
                             )
                         else:
@@ -106,7 +103,9 @@ class Bot:
             logger.info(
                 f"Path '{shown_url}' (cropped to 10 chars) not preceded by token and not handled by bot."
             )
-            raise BotTokenError()
+            raise BotTokenError(
+                f"Path '{shown_url}' (cropped to 10 chars) not preceded by token and not handled by bot."
+            )
 
         # Parse response to bot library
         try:

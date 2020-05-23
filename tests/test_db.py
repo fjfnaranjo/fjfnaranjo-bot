@@ -6,7 +6,6 @@ from stat import S_IRWXU
 from tempfile import mkdtemp, mkstemp
 from unittest.mock import patch
 
-from fjfnaranjobot.common import EnvValueError
 from fjfnaranjobot.db import cursor, get_db_path, logger, reset
 
 from .base import BotTestCase
@@ -75,14 +74,14 @@ class DbTests(BotTestCase):
 
     def test_reset_invalid_db_dir_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_file, 'impossibledir')
-        with self.assertRaises(EnvValueError) as e:
+        with self.assertRaises(ValueError) as e:
             reset()
         assert 'Invalid dir name in BOT_DB_NAME var.' in str(e.exception)
 
     def test_reset_invalid_db_file_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_dir, 'dontexists')
         chmod(self._db_test_dir, 0)
-        with self.assertRaises(EnvValueError) as e:
+        with self.assertRaises(ValueError) as e:
             reset()
         assert 'Invalid file name in BOT_DB_NAME var.' in str(e.exception)
 
@@ -96,7 +95,7 @@ class DbTests(BotTestCase):
     def test_cursor_invalid_db_dir_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_file, 'impossibledir')
         reset(False)
-        with self.assertRaises(EnvValueError) as e:
+        with self.assertRaises(ValueError) as e:
             cursor().__enter__()
         assert 'Invalid dir name in BOT_DB_NAME var.' in str(e.exception)
 
@@ -104,7 +103,7 @@ class DbTests(BotTestCase):
         self._get_db_path_mock.return_value = join(self._db_test_dir, 'dontexists')
         reset(False)
         chmod(self._db_test_dir, 0)
-        with self.assertRaises(EnvValueError) as e:
+        with self.assertRaises(ValueError) as e:
             cursor().__enter__()
         assert 'Invalid file name in BOT_DB_NAME var.' in str(e.exception)
 

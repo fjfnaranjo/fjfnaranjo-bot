@@ -7,14 +7,10 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 
-class InvalidKeyError(Exception):
-    pass
-
-
 def _validate_key(key):
     validator = compile(r'^([a-zA-Z]+\.)*([a-zA-Z]+)+$')
     if validator.fullmatch(key) is None:
-        raise InvalidKeyError(f"No valid value for key {key}.")
+        raise ValueError(f"No valid value for key {key}.")
 
 
 @contextmanager

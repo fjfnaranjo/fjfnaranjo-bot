@@ -3,7 +3,6 @@ from json import dumps as to_json
 from json import loads as from_json
 from os import environ
 
-from fjfnaranjobot.bot import EnvValueError
 from fjfnaranjobot.config import get_config, set_config
 from fjfnaranjobot.logging import getLogger
 
@@ -12,24 +11,20 @@ logger = getLogger(__name__)
 CFG_KEY = 'auth.friends'
 
 
-class FriendMustBeIntError(Exception):
-    pass
-
-
 def get_owner_id():
     try:
         return int(environ['BOT_OWNER_ID'])
     except KeyError:
-        raise EnvValueError("BOT_OWNER_ID var must be defined.")
+        raise ValueError("BOT_OWNER_ID var must be defined.")
     except (TypeError, ValueError):
-        raise EnvValueError("Invalid id in BOT_OWNER_ID var.")
+        raise ValueError("Invalid id in BOT_OWNER_ID var.")
 
 
 def ensure_int(string):
     try:
         return int(string)
     except ValueError:
-        raise FriendMustBeIntError("Error parsing id as int.")
+        raise ValueError("Error parsing id as int.")
 
 
 def _parse_command(update):

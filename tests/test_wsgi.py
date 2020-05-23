@@ -2,12 +2,8 @@ from io import BytesIO
 from logging import DEBUG
 from unittest.mock import MagicMock, patch
 
-from fjfnaranjobot.wsgi import (
-    BotFrameworkError,
-    BotJSONError,
-    BotTokenError,
-    application,
-)
+from fjfnaranjobot.bot import BotFrameworkError, BotJSONError, BotTokenError
+from fjfnaranjobot.wsgi import application
 from fjfnaranjobot.wsgi import logger as wsgi_logger
 
 from .base import BotTestCase

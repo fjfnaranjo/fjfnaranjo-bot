@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 
 from fjfnaranjobot.auth import (
     CFG_KEY,
-    FriendMustBeIntError,
     add_friend,
     del_friend,
     ensure_int,
@@ -14,7 +13,6 @@ from fjfnaranjobot.auth import (
     only_owner,
     only_real,
 )
-from fjfnaranjobot.bot import EnvValueError
 
 from .base import (
     FIRST_FRIEND_USERID,
@@ -43,13 +41,13 @@ class AuthTests(BotTestCase):
         with self._with_mocked_environ(
             f'{MODULE_PATH}.environ', None, ['BOT_OWNER_ID']
         ):
-            with self.assertRaises(EnvValueError) as e:
+            with self.assertRaises(ValueError) as e:
                 get_owner_id()
             assert 'BOT_OWNER_ID var must be defined.' in str(e.exception)
 
     def test_get_owner_id_env_not_int(self):
         with self._with_mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': 'a'}):
-            with self.assertRaises(EnvValueError) as e:
+            with self.assertRaises(ValueError) as e:
                 get_owner_id()
             assert 'Invalid id in BOT_OWNER_ID var.' in str(e.exception)
 
@@ -63,12 +61,12 @@ class AuthTests(BotTestCase):
         assert isinstance(ensured, int)
 
     def test_ensure_int_empty(self):
-        with self.assertRaises(FriendMustBeIntError) as e:
+        with self.assertRaises(ValueError) as e:
             ensure_int('')
         assert 'Error parsing id as int.' in str(e.exception)
 
     def test_ensure_int_not_int(self):
-        with self.assertRaises(FriendMustBeIntError):
+        with self.assertRaises(ValueError):
             ensure_int('one')
 
     def test_only_all_logs_none_command(self):

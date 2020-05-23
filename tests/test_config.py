@@ -1,6 +1,6 @@
 from logging import DEBUG
 
-from fjfnaranjobot.config import InvalidKeyError, get_config, logger, reset, set_config
+from fjfnaranjobot.config import get_config, logger, reset, set_config
 
 from .base import BotTestCase
 
@@ -26,7 +26,7 @@ class ConfigTests(BotTestCase):
             '!a_invalid_key',
         ]:
             with self.subTest(key=key):
-                with self.assertRaises(InvalidKeyError) as e:
+                with self.assertRaises(ValueError) as e:
                     get_config(key)
                 assert f'No valid value for key {key}.' in str(e.exception)
 
@@ -48,7 +48,7 @@ class ConfigTests(BotTestCase):
             '!a_invalid_key',
         ]:
             with self.subTest(key=key):
-                with self.assertRaises(InvalidKeyError) as e:
+                with self.assertRaises(ValueError) as e:
                     set_config(key, 'val')
                 assert f'No valid value for key {key}.' in str(e.exception)
 

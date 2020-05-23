@@ -3,7 +3,7 @@ from os import environ, makedirs, remove
 from os.path import isdir, isfile, join, split
 from sqlite3 import connect
 
-from fjfnaranjobot.common import EnvValueError, get_bot_data_dir
+from fjfnaranjobot.common import get_bot_data_dir
 from fjfnaranjobot.logging import getLogger
 
 _BOT_DB_DEFAULT_NAME = 'bot.db'
@@ -26,14 +26,14 @@ def _ensure_db():
         try:
             makedirs(db_dir)
         except:
-            raise EnvValueError("Invalid dir name in BOT_DB_NAME var.")
+            raise ValueError("Invalid dir name in BOT_DB_NAME var.")
     if not isfile(db_path):
         logger.debug("Initializing configuration database.")
         try:
             with open(db_path, 'wb'):
                 pass
         except OSError:
-            raise EnvValueError("Invalid file name in BOT_DB_NAME var.")
+            raise ValueError("Invalid file name in BOT_DB_NAME var.")
     _state['initialized'] = True
 
 

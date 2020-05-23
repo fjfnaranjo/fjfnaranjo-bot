@@ -4,7 +4,7 @@ from logging.config import dictConfig
 from os import environ, makedirs, remove
 from os.path import isdir, isfile, join, split
 
-from fjfnaranjobot.common import EnvValueError, get_bot_data_dir
+from fjfnaranjobot.common import get_bot_data_dir
 
 _BOT_LOGFILE_DEFAULT = 'bot.log'
 _BOT_LOGLEVEL_DEFAULT = 'INFO'
@@ -33,7 +33,7 @@ def _configure_logging():
         try:
             makedirs(log_dir)
         except:
-            raise EnvValueError("Invalid dir name in BOT_LOGFILE var.")
+            raise ValueError("Invalid dir name in BOT_LOGFILE var.")
     new_file = False
     if not isfile(log_path):
         try:
@@ -41,9 +41,9 @@ def _configure_logging():
                 pass
             new_file = True
         except OSError:
-            raise EnvValueError("Invalid file name in BOT_LOGFILE var.")
+            raise ValueError("Invalid file name in BOT_LOGFILE var.")
     if log_level not in valid_log_levels:
-        raise EnvValueError("Invalid level in BOT_LOGLEVEL var.")
+        raise ValueError("Invalid level in BOT_LOGLEVEL var.")
     dictConfig(
         {
             'version': 1,

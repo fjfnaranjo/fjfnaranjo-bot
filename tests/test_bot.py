@@ -8,7 +8,6 @@ from fjfnaranjobot.bot import (
     BotTokenError,
     logger,
 )
-from fjfnaranjobot.common import EnvValueError
 
 from .base import BotTestCase
 
@@ -96,7 +95,7 @@ class BotTests(BotTestCase):
     @patch(f'{MODULE_PATH}.Update')
     def test_process_request_dispatched_error(self, update, _dispatcher, _tbot):
         bot = Bot()
-        update.de_json.side_effect = Exception
+        update.de_json.side_effect = Exception()
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotFrameworkError) as e:
                 bot.process_request('/bwt', '{}')
@@ -106,8 +105,12 @@ class BotTests(BotTestCase):
     def test_other_urls(self, _tbot, _dispatcher):
         bot = Bot()
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(BotTokenError):
+            with self.assertRaises(BotTokenError) as e:
                 bot.process_request('/other', None)
+        assert (
+            'Path \'/other\' (cropped to 10 chars) not preceded by token and not handled by bot.'
+            in str(e.exception)
+        )
         assert (
             'Path \'/other\' (cropped to 10 chars) not preceded by token and not handled by bot.'
             in logs.output[0]
@@ -135,7 +138,7 @@ class BotComponentLoaderTests(BotTestCase):
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock3')
     def test_component_with_invalid_handlers(self, _dispatcher, _tbot):
-        with self.assertRaises(EnvValueError) as e:
+        with self.assertRaises(ValueError) as e:
             Bot()
         assert 'Invalid handler for component \'component_mock3\'.' in str(e.exception)
 
@@ -169,6 +172,6 @@ class BotComponentLoaderTests(BotTestCase):
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock6')
     def test_component_with_ok_handlers_and_invalid_group(self, _dispatcher, _tbot):
-        with self.assertRaises(EnvValueError) as e:
+        with self.assertRaises(ValueError) as e:
             Bot()
         assert 'Invalid group for component \'component_mock6\'.' in str(e.exception)

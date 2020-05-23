@@ -3,7 +3,6 @@ from os.path import isfile, join
 from tempfile import mkdtemp, mkstemp
 from unittest.mock import patch
 
-from fjfnaranjobot.bot import EnvValueError
 from fjfnaranjobot.logging import _get_log_path, getLogger, reset
 
 from .base import BotTestCase
@@ -42,7 +41,7 @@ class LoggingTests(BotTestCase):
 
     @patch(f'{MODULE_PATH}._get_log_path', return_value=join(LOGFILE_TEST_FILE, 'dir'))
     def test_reset_invalid_log_dir_name(self, _get_log_path):
-        with self.assertRaises(EnvValueError) as e:
+        with self.assertRaises(ValueError) as e:
             reset()
         assert 'Invalid dir name in BOT_LOGFILE var.' in str(e.exception)
 
@@ -51,7 +50,7 @@ class LoggingTests(BotTestCase):
     )
     def test_reset_invalid_db_file_name(self, _get_log_path):
         chmod(LOGFILE_TEST_DIR, 0)
-        with self.assertRaises(EnvValueError) as e:
+        with self.assertRaises(ValueError) as e:
             reset()
         assert 'Invalid file name in BOT_LOGFILE var.' in str(e.exception)
 
@@ -60,7 +59,7 @@ class LoggingTests(BotTestCase):
         with self._with_mocked_environ(
             f'{MODULE_PATH}.environ', {'BOT_LOGLEVEL': f'{FAKE_LEVEL}'}
         ):
-            with self.assertRaises(EnvValueError) as e:
+            with self.assertRaises(ValueError) as e:
                 reset()
             assert 'Invalid level in BOT_LOGLEVEL var.' in str(e.exception)
 
