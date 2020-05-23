@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from telegram.ext.dispatcher import DispatcherHandlerStop
+from telegram.ext import DispatcherHandlerStop
 
 from fjfnaranjobot.components.friends.handlers import friends_handler
 
