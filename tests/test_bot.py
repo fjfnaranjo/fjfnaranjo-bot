@@ -79,7 +79,7 @@ class BotTests(BotTestCase):
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotJSONError) as e:
                 bot.process_request('/bwt', '---')
-        assert 'Sent content isn\'t JSON.' == str(e.exception)
+        assert 'Sent content isn\'t JSON.' == e.exception.args[0]
         assert 'Received non-JSON request.' in logs.output[-1]
 
     @patch(f'{MODULE_PATH}.Update')
@@ -99,7 +99,7 @@ class BotTests(BotTestCase):
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotFrameworkError) as e:
                 bot.process_request('/bwt', '{}')
-        assert 'Error in bot framework.' == str(e.exception)
+        assert 'Error in bot framework.' == e.exception.args[0]
         assert 'Error inside the framework raised by the dispatcher.' in logs.output[-1]
 
     def test_other_urls(self, _tbot, _dispatcher):
@@ -109,7 +109,7 @@ class BotTests(BotTestCase):
                 bot.process_request('/other', None)
         assert (
             'Path \'/other\' (cropped to 10 chars) not preceded by token and not handled by bot.'
-            in str(e.exception)
+            in e.exception.args[0]
         )
         assert (
             'Path \'/other\' (cropped to 10 chars) not preceded by token and not handled by bot.'
@@ -140,7 +140,9 @@ class BotComponentLoaderTests(BotTestCase):
     def test_component_with_invalid_handlers(self, _dispatcher, _tbot):
         with self.assertRaises(ValueError) as e:
             Bot()
-        assert 'Invalid handler for component \'component_mock3\'.' == str(e.exception)
+        assert (
+            'Invalid handler for component \'component_mock3\'.' == e.exception.args[0]
+        )
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock4')
     def test_component_with_ok_handlers_and_no_group(self, _dispatcher, _tbot):
@@ -174,4 +176,4 @@ class BotComponentLoaderTests(BotTestCase):
     def test_component_with_ok_handlers_and_invalid_group(self, _dispatcher, _tbot):
         with self.assertRaises(ValueError) as e:
             Bot()
-        assert 'Invalid group for component \'component_mock6\'.' == str(e.exception)
+        assert 'Invalid group for component \'component_mock6\'.' == e.exception.args[0]
