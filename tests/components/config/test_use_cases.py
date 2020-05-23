@@ -35,7 +35,7 @@ class ConfigUseCasesTests(BotUseCaseTestCase):
                 config_get(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message_contents = self._update.message.reply_text.call_args[0][0]
-        assert 'No value for key \'key\'.' in message_contents
+        assert 'No value for key \'key\'.' == message_contents
         assert 'Replying with \'no value\' message for key \'key\'.' in logs.output[0]
 
     @patch.dict(f'{MODULE_PATH}.config', {'key': 'result'}, True)

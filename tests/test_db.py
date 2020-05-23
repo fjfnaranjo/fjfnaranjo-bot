@@ -76,14 +76,14 @@ class DbTests(BotTestCase):
         self._get_db_path_mock.return_value = join(self._db_test_file, 'impossibledir')
         with self.assertRaises(ValueError) as e:
             reset()
-        assert 'Invalid dir name in BOT_DB_NAME var.' in str(e.exception)
+        assert 'Invalid dir name in BOT_DB_NAME var.' == str(e.exception)
 
     def test_reset_invalid_db_file_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_dir, 'dontexists')
         chmod(self._db_test_dir, 0)
         with self.assertRaises(ValueError) as e:
             reset()
-        assert 'Invalid file name in BOT_DB_NAME var.' in str(e.exception)
+        assert 'Invalid file name in BOT_DB_NAME var.' == str(e.exception)
 
     def test_cursor_creates_new(self):
         self._get_db_path_mock.return_value = self._db_test_file
@@ -97,7 +97,7 @@ class DbTests(BotTestCase):
         reset(False)
         with self.assertRaises(ValueError) as e:
             cursor().__enter__()
-        assert 'Invalid dir name in BOT_DB_NAME var.' in str(e.exception)
+        assert 'Invalid dir name in BOT_DB_NAME var.' == str(e.exception)
 
     def test_cursor_invalid_db_file_name(self):
         self._get_db_path_mock.return_value = join(self._db_test_dir, 'dontexists')
@@ -105,7 +105,7 @@ class DbTests(BotTestCase):
         chmod(self._db_test_dir, 0)
         with self.assertRaises(ValueError) as e:
             cursor().__enter__()
-        assert 'Invalid file name in BOT_DB_NAME var.' in str(e.exception)
+        assert 'Invalid file name in BOT_DB_NAME var.' == str(e.exception)
 
     def test_cursor_persist(self):
         self._get_db_path_mock.return_value = self._db_test_file

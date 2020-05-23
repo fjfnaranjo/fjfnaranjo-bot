@@ -43,13 +43,13 @@ class AuthTests(BotTestCase):
         ):
             with self.assertRaises(ValueError) as e:
                 get_owner_id()
-            assert 'BOT_OWNER_ID var must be defined.' in str(e.exception)
+            assert 'BOT_OWNER_ID var must be defined.' == str(e.exception)
 
     def test_get_owner_id_env_not_int(self):
         with self._with_mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': 'a'}):
             with self.assertRaises(ValueError) as e:
                 get_owner_id()
-            assert 'Invalid id in BOT_OWNER_ID var.' in str(e.exception)
+            assert 'Invalid id in BOT_OWNER_ID var.' == str(e.exception)
 
     def test_get_owner_id_env(self):
         with self._with_mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': '1'}):
@@ -63,7 +63,7 @@ class AuthTests(BotTestCase):
     def test_ensure_int_empty(self):
         with self.assertRaises(ValueError) as e:
             ensure_int('')
-        assert 'Error parsing id as int.' in str(e.exception)
+        assert 'Error parsing id as int.' == str(e.exception)
 
     def test_ensure_int_not_int(self):
         with self.assertRaises(ValueError):

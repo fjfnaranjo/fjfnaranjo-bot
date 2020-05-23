@@ -43,7 +43,7 @@ class LoggingTests(BotTestCase):
     def test_reset_invalid_log_dir_name(self, _get_log_path):
         with self.assertRaises(ValueError) as e:
             reset()
-        assert 'Invalid dir name in BOT_LOGFILE var.' in str(e.exception)
+        assert 'Invalid dir name in BOT_LOGFILE var.' == str(e.exception)
 
     @patch(
         f'{MODULE_PATH}._get_log_path', return_value=join(LOGFILE_TEST_DIR, 'file'),
@@ -52,7 +52,7 @@ class LoggingTests(BotTestCase):
         chmod(LOGFILE_TEST_DIR, 0)
         with self.assertRaises(ValueError) as e:
             reset()
-        assert 'Invalid file name in BOT_LOGFILE var.' in str(e.exception)
+        assert 'Invalid file name in BOT_LOGFILE var.' == str(e.exception)
 
     @patch(f'{MODULE_PATH}._get_log_path', return_value=LOGFILE_TEST_FILE)
     def test_logger_no_valid_log_level(self, _get_log_path):
@@ -61,7 +61,7 @@ class LoggingTests(BotTestCase):
         ):
             with self.assertRaises(ValueError) as e:
                 reset()
-            assert 'Invalid level in BOT_LOGLEVEL var.' in str(e.exception)
+            assert 'Invalid level in BOT_LOGLEVEL var.' == str(e.exception)
 
     @patch(f'{MODULE_PATH}._get_log_path', return_value=LOGFILE_TEST_FILE)
     def test_logger_no_default_name(self, _get_log_path):

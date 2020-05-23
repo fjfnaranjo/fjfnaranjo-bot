@@ -79,7 +79,7 @@ class BotTests(BotTestCase):
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotJSONError) as e:
                 bot.process_request('/bwt', '---')
-        assert 'Sent content isn\'t JSON.' in str(e.exception)
+        assert 'Sent content isn\'t JSON.' == str(e.exception)
         assert 'Received non-JSON request.' in logs.output[-1]
 
     @patch(f'{MODULE_PATH}.Update')
@@ -99,7 +99,7 @@ class BotTests(BotTestCase):
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotFrameworkError) as e:
                 bot.process_request('/bwt', '{}')
-        assert 'Error in bot framework.' in str(e.exception)
+        assert 'Error in bot framework.' == str(e.exception)
         assert 'Error inside the framework raised by the dispatcher.' in logs.output[-1]
 
     def test_other_urls(self, _tbot, _dispatcher):
@@ -140,7 +140,7 @@ class BotComponentLoaderTests(BotTestCase):
     def test_component_with_invalid_handlers(self, _dispatcher, _tbot):
         with self.assertRaises(ValueError) as e:
             Bot()
-        assert 'Invalid handler for component \'component_mock3\'.' in str(e.exception)
+        assert 'Invalid handler for component \'component_mock3\'.' == str(e.exception)
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock4')
     def test_component_with_ok_handlers_and_no_group(self, _dispatcher, _tbot):
@@ -174,4 +174,4 @@ class BotComponentLoaderTests(BotTestCase):
     def test_component_with_ok_handlers_and_invalid_group(self, _dispatcher, _tbot):
         with self.assertRaises(ValueError) as e:
             Bot()
-        assert 'Invalid group for component \'component_mock6\'.' in str(e.exception)
+        assert 'Invalid group for component \'component_mock6\'.' == str(e.exception)

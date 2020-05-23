@@ -16,7 +16,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert 'Invalid syntax. Use: \'/friends [|add id|del id]\'.' in message
+        assert 'Invalid syntax. Use: \'/friends [|add id|del id]\'.' == message
         assert 'Invalid syntax for /friends command. Usage sent.' in logs.output[0]
 
     def test_friends_invalid_syntax_subcommand(self):
@@ -26,7 +26,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert 'Unknown sub-command. Options are: \'add\' and \'del\'.' in message
+        assert 'Unknown sub-command. Options are: \'add\' and \'del\'.' == message
         assert (
             'Invalid syntax for /friends command. Unknown sub-command.'
             in logs.output[0]
@@ -40,7 +40,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert 'You don\'t have any friends.' in message
+        assert 'You don\'t have any friends.' == message
         assert 'Sending no friends.' in logs.output[0]
 
     @patch(f'{MODULE_PATH}.get_friends', return_value=[FIRST_FRIEND_USERID])
@@ -51,7 +51,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert f'You only have one friend: \'{FIRST_FRIEND_USERID}\'.' in message
+        assert f'You only have one friend: \'{FIRST_FRIEND_USERID}\'.' == message
         assert 'Sending one friend.' in logs.output[0]
 
     @patch(
@@ -84,7 +84,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
         message = self._update.message.reply_text.call_args[0][0]
         assert (
             f'Your friends are: \'{FIRST_FRIEND_USERID}\', '
-            f'\'{SECOND_FRIEND_USERID}\' and \'{THIRD_FRIEND_USERID}\'.' in message
+            f'\'{SECOND_FRIEND_USERID}\' and \'{THIRD_FRIEND_USERID}\'.' == message
         )
         assert 'Sending list of friends.' in logs.output[0]
 
@@ -97,7 +97,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert f'Added @{FIRST_FRIEND_USERID} as a friend.' in message
+        assert f'Added @{FIRST_FRIEND_USERID} as a friend.' == message
         add_friend.assert_called_once_with(FIRST_FRIEND_USERID)
         assert f'Adding @{FIRST_FRIEND_USERID} as a friend.' in logs.output[0]
 
@@ -110,7 +110,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert f'Added @{SECOND_FRIEND_USERID} as a friend.' in message
+        assert f'Added @{SECOND_FRIEND_USERID} as a friend.' == message
         add_friend.assert_called_once_with(SECOND_FRIEND_USERID)
         assert f'Adding @{SECOND_FRIEND_USERID} as a friend.' in logs.output[0]
 
@@ -123,7 +123,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert f'@{FIRST_FRIEND_USERID} is already a friend.' in message
+        assert f'@{FIRST_FRIEND_USERID} is already a friend.' == message
         assert (
             f'Not adding @{FIRST_FRIEND_USERID} because already a friend.'
             in logs.output[0]
@@ -138,7 +138,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert f'@{FIRST_FRIEND_USERID} isn\'t a friend.' in message
+        assert f'@{FIRST_FRIEND_USERID} isn\'t a friend.' == message
         assert (
             f'Not removing @{FIRST_FRIEND_USERID} because not a friend.'
             in logs.output[0]
@@ -153,7 +153,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert f'@{SECOND_FRIEND_USERID} isn\'t a friend.' in message
+        assert f'@{SECOND_FRIEND_USERID} isn\'t a friend.' == message
         assert (
             f'Not removing @{SECOND_FRIEND_USERID} because not a friend.'
             in logs.output[0]
@@ -171,7 +171,7 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert f'Removed @{SECOND_FRIEND_USERID} as a friend.' in message
+        assert f'Removed @{SECOND_FRIEND_USERID} as a friend.' == message
         del_friend.assert_called_once_with(SECOND_FRIEND_USERID)
         assert f'Removing @{SECOND_FRIEND_USERID} as a friend.' in logs.output[0]
 
@@ -184,6 +184,6 @@ class FriendsUseCasesTests(BotUseCaseTestCase):
                 friends(self._update, None)
         self._update.message.reply_text.assert_called_once()
         message = self._update.message.reply_text.call_args[0][0]
-        assert f'Removed @{FIRST_FRIEND_USERID} as a friend.' in message
+        assert f'Removed @{FIRST_FRIEND_USERID} as a friend.' == message
         del_friend.assert_called_once_with(FIRST_FRIEND_USERID)
         assert f'Removing @{FIRST_FRIEND_USERID} as a friend.' in logs.output[0]

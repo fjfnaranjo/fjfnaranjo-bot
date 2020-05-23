@@ -32,7 +32,7 @@ class ConfigTests(BotTestCase):
             with self.subTest(key=key):
                 with self.assertRaises(ValueError) as e:
                     config[key]
-                assert f'No valid value for key {key}.' in str(e.exception)
+                assert f'No valid value for key {key}.' == str(e.exception)
 
     def test_set_config_valid(self):
         for key in ['key', 'key.key']:
@@ -54,7 +54,7 @@ class ConfigTests(BotTestCase):
             with self.subTest(key=key):
                 with self.assertRaises(ValueError) as e:
                     config[key] = 'val'
-                assert f'No valid value for key {key}.' in str(e.exception)
+                assert f'No valid value for key {key}.' == str(e.exception)
 
     def test_set_config_get_config_persist(self):
         config['key'] = 'val'
@@ -63,7 +63,7 @@ class ConfigTests(BotTestCase):
     def test_get_config_dont_exists(self):
         with self.assertRaises(KeyError) as e:
             config['key']
-        assert f'The key \'key\' don\'t exists.' in str(e.exception)
+        assert f'The key \'key\' don\'t exists.' == e.exception.args[0]
 
     def test_set_config_replaces_old_value(self):
         config['key'] = 'val'
@@ -86,4 +86,4 @@ class ConfigTests(BotTestCase):
     def test_del_config_dont_exists(self):
         with self.assertRaises(KeyError) as e:
             del config['key']
-        assert f'The key \'key\' don\'t exists.' in str(e.exception)
+        assert f'The key \'key\' don\'t exists.' == e.exception.args[0]
