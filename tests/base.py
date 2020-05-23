@@ -36,13 +36,11 @@ class BotTestCase(TestCase):
             yield
 
 
-class BotUpdateTest(TestCase):
+class BotHandlerTestCase(BotTestCase):
     def setUp(self):
         TestCase.setUp(self)
         self._update = MagicMock()
 
-
-class BotUseCaseTestCase(BotTestCase, BotUpdateTest):
     def _set_msg(self, msg):
         self._update.message.text = msg
 
@@ -51,8 +49,6 @@ class BotUseCaseTestCase(BotTestCase, BotUpdateTest):
         with self.assertRaises(DispatcherHandlerStop):
             yield
 
-
-class BotHandlerTestCase(BotTestCase, BotUpdateTest):
     #     def _user_is_none(self):
     #         self._update.effective_user = None
     #
