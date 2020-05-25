@@ -51,7 +51,7 @@ def config_del_handler(update, _context):
 
 
 handlers = (
-    CommandHandler('config_set', config_set_handler),
     CommandHandler('config_get', config_get_handler),
+    CommandHandler('config_set', config_set_handler),
     CommandHandler('config_del', config_del_handler),
 )

@@ -17,21 +17,6 @@ class ConfigHandlersTests(BotHandlerTestCase):
         BotHandlerTestCase.setUp(self)
         self._user_is_owner()
 
-    def test_config_set(self):
-        fake_config = {}
-        patcher = patch(f'{MODULE_PATH}.config', fake_config)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-        self._set_update_message_text('config_set', ['key', 'val'])
-        with self._assert_reply_log_dispatch(
-            'I\'ll remember that.',
-            'Stored \'val\' (cropped to 10 chars) with key \'key\'.',
-            logger,
-        ):
-            config_set_handler(self._update, None)
-        assert 1 == len(fake_config)
-        assert 'val' == fake_config['key']
-
     @patch.dict(f'{MODULE_PATH}.config', {}, True)
     def test_config_get_missing(self):
         self._set_update_message_text('config_get', ['key'])
@@ -51,6 +36,21 @@ class ConfigHandlersTests(BotHandlerTestCase):
             logger,
         ):
             config_get_handler(self._update, None)
+
+    def test_config_set(self):
+        fake_config = {}
+        patcher = patch(f'{MODULE_PATH}.config', fake_config)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self._set_update_message_text('config_set', ['key', 'val'])
+        with self._assert_reply_log_dispatch(
+            'I\'ll remember that.',
+            'Stored \'val\' (cropped to 10 chars) with key \'key\'.',
+            logger,
+        ):
+            config_set_handler(self._update, None)
+        assert 1 == len(fake_config)
+        assert 'val' == fake_config['key']
 
     def test_config_del_missing(self):
         fake_config = {}
