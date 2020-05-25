@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from logging import INFO
 from os import environ
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
@@ -41,13 +42,17 @@ class BotHandlerTestCase(BotTestCase):
         TestCase.setUp(self)
         self._update = MagicMock()
 
-    def _set_msg(self, msg):
-        self._update.message.text = msg
+    def _set_update_message_text(self, cmd, cmd_args):
+        self._update.message.text = f'{cmd} ' + ' '.join(cmd_args)
+        return self._update.message.text
 
     @contextmanager
-    def _raises_dispatcher_stop(self):
-        with self.assertRaises(DispatcherHandlerStop):
-            yield
+    def _assert_reply_log_dispatch(self, reply, info, logger, level=INFO):
+        with self.assertLogs(logger, level) as logs:
+            with self.assertRaises(DispatcherHandlerStop):
+                yield
+            self._update.message.reply_text.assert_called_once_with(reply)
+        assert info in logs.output[-1]
 
     #     def _user_is_none(self):
     #         self._update.effective_user = None

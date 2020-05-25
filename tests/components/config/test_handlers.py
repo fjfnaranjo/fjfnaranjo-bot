@@ -20,63 +20,54 @@ class ConfigHandlersTests(BotHandlerTestCase):
     def test_config_set(self):
         fake_config = {}
         patch(f'{MODULE_PATH}.config', fake_config).start()
-        self._set_msg('cmd key val')
-        with self.assertLogs(logger) as logs:
-            with self._raises_dispatcher_stop():
-                config_set_handler(self._update, None)
+        self._set_update_message_text('config_set', ['key', 'val'])
+        with self._assert_reply_log_dispatch(
+            'I\'ll remember that.',
+            'Stored \'val\' (cropped to 10 chars) with key \'key\'.',
+            logger,
+        ):
+            config_set_handler(self._update, None)
         assert 1 == len(fake_config)
         assert 'val' == fake_config['key']
-        self._update.message.reply_text.assert_called_once_with('I\'ll remember that.')
-        assert (
-            'Stored \'val\' (cropped to 10 chars) with key \'key\'.' in logs.output[0]
-        )
 
     @patch.dict(f'{MODULE_PATH}.config', {}, True)
     def test_config_get_missing(self):
-        self._set_msg('cmd key')
-        with self.assertLogs(logger) as logs:
-            with self._raises_dispatcher_stop():
-                config_get_handler(self._update, None)
-        self._update.message.reply_text.assert_called_once()
-        message_contents = self._update.message.reply_text.call_args[0][0]
-        assert 'No value for key \'key\'.' == message_contents
-        assert 'Replying with \'no value\' message for key \'key\'.' in logs.output[0]
+        self._set_update_message_text('config_get', ['key'])
+        with self._assert_reply_log_dispatch(
+            'No value for key \'key\'.',
+            'Replying with \'no value\' message for key \'key\'.',
+            logger,
+        ):
+            config_get_handler(self._update, None)
 
     @patch.dict(f'{MODULE_PATH}.config', {'key': 'result'}, True)
     def test_config_get_exists(self):
-        self._set_msg('cmd key')
-        with self.assertLogs(logger) as logs:
-            with self._raises_dispatcher_stop():
-                config_get_handler(self._update, None)
-        self._update.message.reply_text.assert_called_once_with('result')
-        assert (
-            'Replying with \'result\' (cropped to 10 chars) for key \'key\'.'
-            in logs.output[0]
-        )
+        self._set_update_message_text('config_get', ['key'])
+        with self._assert_reply_log_dispatch(
+            'result',
+            'Replying with \'result\' (cropped to 10 chars) for key \'key\'.',
+            logger,
+        ):
+            config_get_handler(self._update, None)
 
     def test_config_del_missing(self):
         fake_config = {}
         patch(f'{MODULE_PATH}.config', fake_config).start()
-        self._set_msg('cmd key')
-        with self.assertLogs(logger) as logs:
-            with self._raises_dispatcher_stop():
-                config_del_handler(self._update, None)
+        self._set_update_message_text('config_del', ['key'])
+        with self._assert_reply_log_dispatch(
+            'I don\'t know anything about \'key\'.',
+            'Tried to delete config with key \'key\' but it didn\'t exists.',
+            logger,
+        ):
+            config_del_handler(self._update, None)
         assert 0 == len(fake_config)
-        self._update.message.reply_text.assert_called_once_with(
-            'I don\'t know anything about \'key\'.'
-        )
-        assert (
-            'Tried to delete config with key \'key\' but it didn\'t exists.'
-            in logs.output[0]
-        )
 
     def test_config_del_exists(self):
         fake_config = {'key': 'val'}
         patch(f'{MODULE_PATH}.config', fake_config).start()
-        self._set_msg('cmd key')
-        with self.assertLogs(logger) as logs:
-            with self._raises_dispatcher_stop():
-                config_del_handler(self._update, None)
+        self._set_update_message_text('config_del', ['key'])
+        with self._assert_reply_log_dispatch(
+            'I\'ll forget that.', 'Deleting config with key \'key\'.', logger,
+        ):
+            config_del_handler(self._update, None)
         assert 0 == len(fake_config)
-        self._update.message.reply_text.assert_called_once_with('I\'ll forget that.')
-        assert 'Deleting config with key \'key\'.' in logs.output[0]
