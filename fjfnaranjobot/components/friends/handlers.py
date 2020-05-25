@@ -1,4 +1,4 @@
-from telegram.ext import CommandHandler, DispatcherHandlerStop
+from telegram.ext import DispatcherHandlerStop, StringCommandHandler
 
 from fjfnaranjobot.auth import (
     add_friend,
@@ -15,7 +15,10 @@ group = 10
 
 
 @only_owner
-def friends_get_handler(update, _context):
+def friends_get_handler(update, context):
+    if context.args is not None:
+        raise ValueError("'friends_get' command doesn't accept arguments.")
+
     all_friends = get_friends()
 
     if len(all_friends) == 0:
@@ -43,38 +46,38 @@ def friends_get_handler(update, _context):
 
 
 @only_owner
-def friends_add_handler(update, _context):
-    _, id_ = update.message.text.split(' ')
-    id_int = ensure_int(id_)
+def friends_add_handler(update, context):
+    (id_text,) = context.args
+    id_ = ensure_int(id_text)
 
-    if id_int not in get_friends():
-        logger.info(f"Adding @{id_int} as a friend.")
-        add_friend(id_int)
-        update.message.reply_text(f"Added @{id_int} as a friend.")
+    if id_ not in get_friends():
+        logger.info(f"Adding @{id_} as a friend.")
+        add_friend(id_)
+        update.message.reply_text(f"Added @{id_} as a friend.")
 
     else:
-        logger.info(f"Not adding @{id_int} because already a friend.")
-        update.message.reply_text(f"@{id_int} is already a friend.")
+        logger.info(f"Not adding @{id_} because already a friend.")
+        update.message.reply_text(f"@{id_} is already a friend.")
 
     raise DispatcherHandlerStop()
 
 
 @only_owner
-def friends_del_handler(update, _context):
-    _, id_ = update.message.text.split(' ')
-    id_int = ensure_int(id_)
+def friends_del_handler(update, context):
+    (id_text,) = context.args
+    id_ = ensure_int(id_text)
 
-    if id_int in get_friends():
-        logger.info(f"Removing @{id_int} as a friend.")
-        del_friend(id_int)
-        update.message.reply_text(f"Removed @{id_int} as a friend.")
+    if id_ in get_friends():
+        logger.info(f"Removing @{id_} as a friend.")
+        del_friend(id_)
+        update.message.reply_text(f"Removed @{id_} as a friend.")
     else:
-        logger.info(f"Not removing @{id_int} because not a friend.")
-        update.message.reply_text(f"@{id_int} isn't a friend.")
+        logger.info(f"Not removing @{id_} because not a friend.")
+        update.message.reply_text(f"@{id_} isn't a friend.")
 
     raise DispatcherHandlerStop()
 
 
-handlers = (CommandHandler('friends_get', friends_get_handler),)
-handlers = (CommandHandler('friends_add', friends_add_handler),)
-handlers = (CommandHandler('friends_del', friends_del_handler),)
+handlers = (StringCommandHandler('friends_get', friends_get_handler),)
+handlers = (StringCommandHandler('friends_add', friends_add_handler),)
+handlers = (StringCommandHandler('friends_del', friends_del_handler),)

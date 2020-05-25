@@ -41,10 +41,13 @@ class BotHandlerTestCase(BotTestCase):
     def setUp(self):
         TestCase.setUp(self)
         self._update = MagicMock()
+        self._context = MagicMock()
 
-    def _set_update_message_text(self, cmd, cmd_args):
-        self._update.message.text = f'{cmd} ' + ' '.join(cmd_args)
-        return self._update.message.text
+    def _set_string_command(self, cmd, cmd_args=None):
+        self._update.message.text = f'{cmd} ' + (
+            ' '.join(cmd_args) if cmd_args is not None else ''
+        )
+        self._context.args = cmd_args
 
     @contextmanager
     def _assert_reply_log_dispatch(self, reply, info, logger, level=INFO):

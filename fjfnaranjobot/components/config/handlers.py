@@ -1,4 +1,4 @@
-from telegram.ext import CommandHandler, DispatcherHandlerStop
+from telegram.ext import DispatcherHandlerStop, StringCommandHandler
 
 from fjfnaranjobot.auth import only_owner
 from fjfnaranjobot.config import config
@@ -10,8 +10,8 @@ group = 10
 
 
 @only_owner
-def config_get_handler(update, _context):
-    _, key = update.message.text.split(' ')
+def config_get_handler(update, context):
+    (key,) = context.args
     try:
         result = config[key]
     except KeyError:
@@ -27,8 +27,8 @@ def config_get_handler(update, _context):
 
 
 @only_owner
-def config_set_handler(update, _context):
-    _, key, value = update.message.text.split(' ')
+def config_set_handler(update, context):
+    key, value = context.args
     config[key] = value
     shown_value = value[:10]
     logger.info(f"Stored '{shown_value}' (cropped to 10 chars) with key '{key}'.")
@@ -37,8 +37,8 @@ def config_set_handler(update, _context):
 
 
 @only_owner
-def config_del_handler(update, _context):
-    _, key = update.message.text.split(' ')
+def config_del_handler(update, context):
+    (key,) = context.args
     try:
         del config[key]
     except KeyError:
@@ -51,7 +51,7 @@ def config_del_handler(update, _context):
 
 
 handlers = (
-    CommandHandler('config_get', config_get_handler),
-    CommandHandler('config_set', config_set_handler),
-    CommandHandler('config_del', config_del_handler),
+    StringCommandHandler('config_get', config_get_handler),
+    StringCommandHandler('config_set', config_set_handler),
+    StringCommandHandler('config_del', config_del_handler),
 )

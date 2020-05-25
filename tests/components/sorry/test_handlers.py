@@ -12,4 +12,4 @@ class SorryHandlersTests(BotHandlerTestCase):
             'Sending \'sorry\' back to the user.',
             logger,
         ):
-            sorry_handler(self._update, None)
+            sorry_handler(self._update, self._context)
