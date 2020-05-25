@@ -4,7 +4,7 @@ from os.path import isdir, isfile, join
 from shutil import rmtree
 from stat import S_IRWXU
 from tempfile import mkdtemp, mkstemp
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from fjfnaranjobot.db import cursor, get_db_path, logger, reset
 
@@ -20,13 +20,12 @@ class DbTests(BotTestCase):
         BotTestCase.setUp(self)
         self._db_test_file = mkstemp()[1]
         self._db_test_dir = mkdtemp()
-        self._get_db_path_patcher = patch(f'{MODULE_PATH}.get_db_path')
-        self._get_db_path_mock = self._get_db_path_patcher.start()
-        self._get_db_path_mock.return_value = self._db_test_file
+        self._get_db_path_mock = MagicMock(return_value=self._db_test_file)
+        patcher = patch(f'{MODULE_PATH}.get_db_path', self._get_db_path_mock)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def tearDown(self):
-        self._get_db_path_patcher.stop()
-        self._get_db_path_mock = None
         if isfile(self._db_test_file):
             remove(self._db_test_file)
         if isdir(self._db_test_dir):

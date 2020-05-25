@@ -19,7 +19,9 @@ class ConfigHandlersTests(BotHandlerTestCase):
 
     def test_config_set(self):
         fake_config = {}
-        patch(f'{MODULE_PATH}.config', fake_config).start()
+        patcher = patch(f'{MODULE_PATH}.config', fake_config)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self._set_update_message_text('config_set', ['key', 'val'])
         with self._assert_reply_log_dispatch(
             'I\'ll remember that.',
@@ -52,7 +54,9 @@ class ConfigHandlersTests(BotHandlerTestCase):
 
     def test_config_del_missing(self):
         fake_config = {}
-        patch(f'{MODULE_PATH}.config', fake_config).start()
+        patcher = patch(f'{MODULE_PATH}.config', fake_config)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self._set_update_message_text('config_del', ['key'])
         with self._assert_reply_log_dispatch(
             'I don\'t know anything about \'key\'.',
@@ -64,7 +68,9 @@ class ConfigHandlersTests(BotHandlerTestCase):
 
     def test_config_del_exists(self):
         fake_config = {'key': 'val'}
-        patch(f'{MODULE_PATH}.config', fake_config).start()
+        patcher = patch(f'{MODULE_PATH}.config', fake_config)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self._set_update_message_text('config_del', ['key'])
         with self._assert_reply_log_dispatch(
             'I\'ll forget that.', 'Deleting config with key \'key\'.', logger,
