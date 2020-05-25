@@ -157,6 +157,7 @@ class BotComponentLoaderTests(BotTestCase):
             'Registered handler \'<lambda>\' for component \'component_mock4\'.'
             in logs.output[-2]
         )
+        assert "cmdm41\ncmdm42" == bot.command_list
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock5')
     def test_component_with_ok_handlers_and_group(self, _dispatcher, _tbot):
@@ -171,6 +172,7 @@ class BotComponentLoaderTests(BotTestCase):
             'Registered handler \'<lambda>\' for component \'component_mock5\'.'
             in logs.output[-2]
         )
+        assert "cmdm51\ncmdm52" == bot.command_list
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock6')
     def test_component_with_ok_handlers_and_invalid_group(self, _dispatcher, _tbot):

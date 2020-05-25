@@ -1,6 +1,6 @@
 from telegram.ext import CommandHandler
 
 handlers = [
-    CommandHandler('cmd', lambda: None),
-    CommandHandler('cmd2', lambda: None),
+    CommandHandler('cmdm41', lambda: None),
+    CommandHandler('cmdm42', lambda: None),
 ]

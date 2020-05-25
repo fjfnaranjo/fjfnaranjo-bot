@@ -78,6 +78,8 @@ def friends_del_handler(update, context):
     raise DispatcherHandlerStop()
 
 
-handlers = (StringCommandHandler('friends_get', friends_get_handler),)
-handlers = (StringCommandHandler('friends_add', friends_add_handler),)
-handlers = (StringCommandHandler('friends_del', friends_del_handler),)
+handlers = (
+    StringCommandHandler('friends_get', friends_get_handler),
+    StringCommandHandler('friends_add', friends_add_handler),
+    StringCommandHandler('friends_del', friends_del_handler),
+)

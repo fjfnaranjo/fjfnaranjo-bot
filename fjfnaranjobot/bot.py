@@ -4,7 +4,7 @@ from os import environ
 
 from telegram import Bot as TBot
 from telegram import Update
-from telegram.ext import Dispatcher, Handler
+from telegram.ext import CommandHandler, Dispatcher, Handler, StringCommandHandler
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
 from fjfnaranjobot.logging import getLogger
@@ -37,6 +37,7 @@ class Bot:
         self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
+        self._commands = []
         self._init_handlers()
         logger.debug("Bot handlers registered.")
 
@@ -68,8 +69,18 @@ class Bot:
                             logger.debug(
                                 f"Registered handler '{handler_callback}' for component '{component}'."
                             )
+                            if isinstance(handler, StringCommandHandler):
+                                self._commands.append(handler.command)
+                            if isinstance(handler, CommandHandler):
+                                for command in handler.command:
+                                    self._commands.append(command)
+
             except ModuleNotFoundError:
                 pass
+
+    @property
+    def command_list(self):
+        return "\n".join(self._commands)
 
     def process_request(self, url_path, update):
 
