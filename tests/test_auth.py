@@ -1,6 +1,8 @@
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
+from telegram.ext.dispatcher import DispatcherHandlerStop
+
 from fjfnaranjobot.auth import (
     CFG_KEY,
     add_friend,
@@ -69,59 +71,90 @@ class AuthTests(BotTestCase):
         with self.assertRaises(ValueError):
             ensure_int('one')
 
-    def test_only_all_logs_none_command(self):
-        all_auth_filters = (only_real, only_owner, only_friends)
-        for auth_filter in all_auth_filters:
-            with self.subTest(auth_filter=auth_filter):
-                noop = auth_filter(lambda _update: True)
-                update_mock = MagicMock()
-                update_mock.message.text = 'cmd foo bar'
-                update_mock.effective_user = None
-                with self.assertLogs(logger) as logs:
-                    assert noop(update_mock) is None
-                assert 'Command text: \'cmd' in logs.output[0]
+    def test_only_real_no_user_no_message(self):
+        noop = only_real(lambda _update: True)
+        update_mock = MagicMock(spec=['effective_user'])
+        update_mock.effective_user = None
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(DispatcherHandlerStop):
+                noop(update_mock)
+        assert (
+            'Message received with no user '
+            'trying to access a only_real command. '
+            'Command text: \'<unknown>\' (cropped to 10 chars).'
+        ) in logs.output[0]
 
-    def test_only_all_logs_command(self):
-        all_auth_filters = (only_real, only_owner, only_friends)
-        for auth_filter in all_auth_filters:
-            auth_filter_name = auth_filter.__name__
-            with self.subTest(auth_filter_name=auth_filter_name):
-                noop = auth_filter(lambda _update: True)
-                update_mock = MagicMock()
-                update_mock.message = None
-                update_mock.effective_user = None
-                with self.assertLogs(logger) as logs:
-                    assert noop(update_mock) is None
-                assert (
-                    'Message received with no user '
-                    f'trying to access a only_real command. '
-                    'Command text: \'unknown\' (cropped to 10 chars).'
-                ) in logs.output[0]
+    def test_only_real_no_user_empty_command(self):
+        noop = only_real(lambda _update: True)
+        update_mock = MagicMock()
+        update_mock.effective_user = None
+        update_mock.message = MagicMock(spec=['reply_text'])
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(DispatcherHandlerStop):
+                noop(update_mock)
+        assert (
+            'Message received with no user '
+            'trying to access a only_real command. '
+            'Command text: \'<empty>\' (cropped to 10 chars).'
+        ) in logs.output[0]
 
-    def test_only_real_user_is_none(self):
+    def test_only_real_no_user(self):
         noop = only_real(lambda _update: True)
         update_mock = MagicMock()
         update_mock.effective_user = None
         update_mock.message.text = 'cmd'
         with self.assertLogs(logger) as logs:
-            assert noop(update_mock) is None
+            with self.assertRaises(DispatcherHandlerStop):
+                noop(update_mock)
         assert (
             'Message received with no user '
             'trying to access a only_real command. '
             'Command text: \'cmd\' (cropped to 10 chars).'
         ) in logs.output[0]
 
-    def test_only_real_user_is_bot(self):
+    def test_only_real_bot_no_message(self):
+        noop = only_real(lambda _update: True)
+        update_mock = MagicMock(spec=['effective_user'])
+        update_mock.effective_user.id = UNKNOWN_USERID
+        update_mock.effective_user.username = 'un'
+        update_mock.effective_user.is_bot = True
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(DispatcherHandlerStop):
+                noop(update_mock)
+        assert (
+            f'Bot with username un and id {UNKNOWN_USERID} '
+            'tried to access a only_real command. '
+            'Command text: \'<unknown>\' (cropped to 10 chars).'
+        ) in logs.output[0]
+
+    def test_only_real_bot_empty_command(self):
         noop = only_real(lambda _update: True)
         update_mock = MagicMock()
-        update_mock.effective_user.is_bot = True
+        update_mock.effective_user.id = UNKNOWN_USERID
         update_mock.effective_user.username = 'un'
-        update_mock.effective_user.id = 'id'
+        update_mock.effective_user.is_bot = True
+        update_mock.message = MagicMock(spec=['reply_text'])
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(DispatcherHandlerStop):
+                noop(update_mock)
+        assert (
+            f'Bot with username un and id {UNKNOWN_USERID} '
+            'tried to access a only_real command. '
+            'Command text: \'<empty>\' (cropped to 10 chars).'
+        ) in logs.output[0]
+
+    def test_only_real_bot(self):
+        noop = only_real(lambda _update: True)
+        update_mock = MagicMock()
+        update_mock.effective_user.id = UNKNOWN_USERID
+        update_mock.effective_user.username = 'un'
+        update_mock.effective_user.is_bot = True
         update_mock.message.text = 'cmd'
         with self.assertLogs(logger) as logs:
-            assert noop(update_mock) is None
+            with self.assertRaises(DispatcherHandlerStop):
+                noop(update_mock)
         assert (
-            'Bot with username un and id id '
+            f'Bot with username un and id {UNKNOWN_USERID} '
             'tried to access a only_real command. '
             'Command text: \'cmd\' (cropped to 10 chars).'
         ) in logs.output[0]
@@ -131,6 +164,37 @@ class AuthTests(BotTestCase):
         update_mock = MagicMock()
         update_mock.effective_user.is_bot = False
         assert noop(update_mock) is True
+
+    def test_only_owner_no_message(self):
+        noop = only_owner(lambda _update: True)
+        update_mock = MagicMock(spec=['effective_user'])
+        update_mock.effective_user.id = UNKNOWN_USERID
+        update_mock.effective_user.username = 'un'
+        update_mock.effective_user.is_bot = False
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(DispatcherHandlerStop):
+                noop(update_mock)
+        assert (
+            f'User un with id {UNKNOWN_USERID} '
+            'tried to access a only_owner command. '
+            'Command text: \'<unknown>\' (cropped to 10 chars).'
+        ) in logs.output[0]
+
+    def test_only_owner_empty_command(self):
+        noop = only_owner(lambda _update: True)
+        update_mock = MagicMock()
+        update_mock.effective_user.id = UNKNOWN_USERID
+        update_mock.effective_user.username = 'un'
+        update_mock.effective_user.is_bot = False
+        update_mock.message = MagicMock(spec=['reply_text'])
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(DispatcherHandlerStop):
+                noop(update_mock)
+        assert (
+            f'User un with id {UNKNOWN_USERID} '
+            'tried to access a only_owner command. '
+            'Command text: \'<empty>\' (cropped to 10 chars).'
+        ) in logs.output[0]
 
     @patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USERID)
     def test_only_owner_ok(self, _get_owner_id):
@@ -147,17 +211,48 @@ class AuthTests(BotTestCase):
         update_mock.effective_user.id = UNKNOWN_USERID
         update_mock.effective_user.is_bot = False
         update_mock.effective_user.username = 'un'
-        update_mock.effective_user.id = 'id'
         update_mock.message.text = 'cmd'
         with self.assertLogs(logger) as logs:
-            assert noop(update_mock) is None
+            with self.assertRaises(DispatcherHandlerStop):
+                assert noop(update_mock) is None
         assert (
-            f'User un with id id '
+            f'User un with id {UNKNOWN_USERID} '
             f'tried to access a only_owner command. '
             f'Command text: \'cmd\' (cropped to 10 chars).'
         ) in logs.output[0]
 
-    def test_only_friends_is_friend(self):
+    def test_only_friends_no_message(self):
+        noop = only_friends(lambda _update: True)
+        update_mock = MagicMock(spec=['effective_user'])
+        update_mock.effective_user.id = UNKNOWN_USERID
+        update_mock.effective_user.username = 'un'
+        update_mock.effective_user.is_bot = False
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(DispatcherHandlerStop):
+                noop(update_mock)
+        assert (
+            f'User un with id {UNKNOWN_USERID} '
+            'tried to access a only_friends command. '
+            'Command text: \'<unknown>\' (cropped to 10 chars).'
+        ) in logs.output[0]
+
+    def test_only_friends_empty_command(self):
+        noop = only_friends(lambda _update: True)
+        update_mock = MagicMock()
+        update_mock.effective_user.id = UNKNOWN_USERID
+        update_mock.effective_user.username = 'un'
+        update_mock.effective_user.is_bot = False
+        update_mock.message = MagicMock(spec=['reply_text'])
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(DispatcherHandlerStop):
+                noop(update_mock)
+        assert (
+            f'User un with id {UNKNOWN_USERID} '
+            'tried to access a only_friends command. '
+            'Command text: \'<empty>\' (cropped to 10 chars).'
+        ) in logs.output[0]
+
+    def test_only_friends_ok(self):
         noop = only_friends(lambda _update: True)
         with self._with_owner_and_friends(JSON_FIRST_FRIEND):
             update_mock = MagicMock()
@@ -172,12 +267,12 @@ class AuthTests(BotTestCase):
             update_mock.effective_user.id = UNKNOWN_USERID
             update_mock.effective_user.is_bot = False
             update_mock.effective_user.username = 'un'
-            update_mock.effective_user.id = 'id'
             update_mock.message.text = 'cmd'
             with self.assertLogs(logger) as logs:
-                assert noop(update_mock) is None
+                with self.assertRaises(DispatcherHandlerStop):
+                    noop(update_mock)
             assert (
-                f'User un with id id '
+                f'User un with id {UNKNOWN_USERID} '
                 f'tried to access a only_friends command. '
                 f'Command text: \'cmd\' (cropped to 10 chars).'
             ) in logs.output[0]

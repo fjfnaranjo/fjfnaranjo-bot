@@ -3,6 +3,9 @@ from json import dumps as to_json
 from json import loads as from_json
 from os import environ
 
+from telegram.ext import DispatcherHandlerStop
+
+from fjfnaranjobot.common import SORRY_TEXT
 from fjfnaranjobot.config import config
 from fjfnaranjobot.logging import getLogger
 
@@ -28,11 +31,11 @@ def ensure_int(string):
 
 
 def _parse_command(update):
-    message = getattr(update, 'message')
+    message = getattr(update, 'message', None)
     if message is not None:
-        return getattr(message, 'text', '')
+        return getattr(message, 'text', '<empty>')
     else:
-        return 'unknown'
+        return '<unknown>'
 
 
 def _report_no_user(update, permission):
@@ -68,10 +71,14 @@ def only_real(f):
         user = update.effective_user
         if user is None:
             _report_no_user(update, 'only_real')
-            return
+            if hasattr(update, 'message'):
+                update.message.reply_text(SORRY_TEXT)
+            raise DispatcherHandlerStop()
         if user.is_bot:
             _report_bot(update, user, 'only_real')
-            return
+            if hasattr(update, 'message'):
+                update.message.reply_text(SORRY_TEXT)
+            raise DispatcherHandlerStop()
         return f(update, *args, **kwargs)
 
     return wrapper
@@ -84,7 +91,9 @@ def only_owner(f):
         user = update.effective_user
         if user.id != get_owner_id():
             _report_user(update, user, 'only_owner')
-            return
+            if hasattr(update, 'message'):
+                update.message.reply_text(SORRY_TEXT)
+            raise DispatcherHandlerStop()
         return f(update, *args, **kwargs)
 
     return wrapper
@@ -107,7 +116,9 @@ def only_friends(f):
         friends = get_friends()
         if user.id != get_owner_id() and friends is not None and user.id not in friends:
             _report_user(update, user, 'only_friends')
-            return
+            if hasattr(update, 'message'):
+                update.message.reply_text(SORRY_TEXT)
+            raise DispatcherHandlerStop()
         return f(update, *args, **kwargs)
 
     return wrapper
