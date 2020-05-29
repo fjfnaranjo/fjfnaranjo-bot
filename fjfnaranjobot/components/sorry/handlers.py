@@ -4,8 +4,6 @@ from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
-group = 90
-
 
 def sorry_handler(update, _context):
     logger.info("Sending 'sorry' back to the user.")

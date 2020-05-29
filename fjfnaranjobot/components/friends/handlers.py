@@ -11,8 +11,6 @@ from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
-group = 10
-
 
 @only_owner
 def friends_get_handler(update, context):
