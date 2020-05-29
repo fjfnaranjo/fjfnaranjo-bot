@@ -2,8 +2,7 @@ from telegram.ext import CommandHandler, Handler, MessageHandler, StringCommandH
 
 
 class FakeHandler(Handler):
-    def check_update(self, _update):
-        return
+    check_update = lambda: None
 
 
 group = 99
