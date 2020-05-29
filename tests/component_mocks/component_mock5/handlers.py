@@ -1,5 +1,11 @@
 from telegram.ext import CommandHandler, Handler, MessageHandler, StringCommandHandler
 
+
+class FakeHandler(Handler):
+    def check_update(self, _update):
+        return
+
+
 group = 99
 
 handlers = (
@@ -7,5 +13,5 @@ handlers = (
     CommandHandler('cmdm52', lambda: None),
     StringCommandHandler('cmdm53', lambda: None),
     MessageHandler(None, lambda: None),
-    Handler(lambda: None),
+    FakeHandler(lambda: None),
 )
