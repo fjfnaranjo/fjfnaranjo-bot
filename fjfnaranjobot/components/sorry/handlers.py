@@ -1,5 +1,6 @@
 from telegram.ext import DispatcherHandlerStop, Filters, MessageHandler
 
+from fjfnaranjobot.common import SORRY_TEXT
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -7,7 +8,7 @@ logger = getLogger(__name__)
 
 def sorry_handler(update, _context):
     logger.info("Sending 'sorry' back to the user.")
-    update.message.reply_text("I don't know what to do about that. Sorry :(")
+    update.message.reply_text(SORRY_TEXT)
     raise DispatcherHandlerStop()
 
 
