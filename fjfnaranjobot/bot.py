@@ -4,9 +4,10 @@ from os import environ
 
 from telegram import Bot as TBot
 from telegram import Update
-from telegram.ext import CommandHandler, Dispatcher, Handler, StringCommandHandler
+from telegram.ext import Dispatcher, Handler
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
+from fjfnaranjobot.common import get_names_callbacks
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -37,7 +38,7 @@ class Bot:
         self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
-        self._commands = []
+        self._command_list = []
         self._init_handlers()
         logger.debug("Bot handlers registered.")
 
@@ -61,26 +62,22 @@ class Bot:
                             )
                         else:
                             self.dispatcher.add_handler(handler, group)
-                            handler_callback = getattr(
-                                handler, 'callback', '-unknown callback-'
-                            )
-                            if callable(handler_callback):
-                                handler_callback = handler_callback.__name__
-                            logger.debug(
-                                f"Registered handler '{handler_callback}' for component '{component}'."
-                            )
-                            if isinstance(handler, StringCommandHandler):
-                                self._commands.append(handler.command)
-                            if isinstance(handler, CommandHandler):
-                                for command in handler.command:
-                                    self._commands.append(command)
+                            callback_names = get_names_callbacks(handler)
+                            for command, callback in callback_names:
+                                self._command_list.append(command)
+                                logger.debug(
+                                    f"Registered command '{command}' "
+                                    f"with callback '{callback}' "
+                                    f"for component '{component}' "
+                                    f"and group number {group}."
+                                )
 
             except ModuleNotFoundError:
                 pass
 
     @property
     def command_list(self):
-        return "\n".join(self._commands)
+        return "\n".join(self._command_list)
 
     def process_request(self, url_path, update):
 

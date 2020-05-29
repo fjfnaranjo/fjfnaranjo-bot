@@ -150,11 +150,11 @@ class BotComponentLoaderTests(BotTestCase):
             bot = Bot()
         assert 2 == bot.dispatcher.add_handler.call_count
         assert (
-            'Registered handler \'<lambda>\' for component \'component_mock4\'.'
+            'Registered command \'cmdm41\' with callback \'<lambda>\' for component \'component_mock4\' and group number 0.'
             in logs.output[-3]
         )
         assert (
-            'Registered handler \'<lambda>\' for component \'component_mock4\'.'
+            'Registered command \'cmdm42\' with callback \'<lambda>\' for component \'component_mock4\' and group number 0.'
             in logs.output[-2]
         )
         assert "cmdm41\ncmdm42" == bot.command_list
@@ -165,12 +165,12 @@ class BotComponentLoaderTests(BotTestCase):
             bot = Bot()
         assert 2 == bot.dispatcher.add_handler.call_count
         assert (
-            'Registered handler \'<lambda>\' for component \'component_mock5\'.'
-            in logs.output[-3]
+            'Registered command \'cmdm51\' with callback \'<lambda>\' '
+            'for component \'component_mock5\' and group number 99.' in logs.output[-3]
         )
         assert (
-            'Registered handler \'<lambda>\' for component \'component_mock5\'.'
-            in logs.output[-2]
+            'Registered command \'cmdm52\' with callback \'<lambda>\' '
+            'for component \'component_mock5\' and group number 99.' in logs.output[-2]
         )
         assert "cmdm51\ncmdm52" == bot.command_list
 
@@ -179,3 +179,14 @@ class BotComponentLoaderTests(BotTestCase):
         with self.assertRaises(ValueError) as e:
             Bot()
         assert 'Invalid group for component \'component_mock6\'.' == e.exception.args[0]
+
+    @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock7')
+    def test_component_with_ok_conversation_and_group(self, _dispatcher, _tbot):
+        with self.assertLogs(logger, DEBUG) as logs:
+            bot = Bot()
+        assert 1 == bot.dispatcher.add_handler.call_count
+        assert (
+            'Registered command \'cmdm71\' with callback \'<lambda>\' '
+            'for component \'component_mock7\' and group number 0.' in logs.output[-2]
+        )
+        assert "cmdm71" == bot.command_list
