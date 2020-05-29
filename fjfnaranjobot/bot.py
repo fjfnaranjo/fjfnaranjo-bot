@@ -64,7 +64,8 @@ class Bot:
                             self.dispatcher.add_handler(handler, group)
                             callback_names = get_names_callbacks(handler)
                             for command, callback in callback_names:
-                                self._command_list.append(command)
+                                if not command.startswith('<'):
+                                    self._command_list.append(command)
                                 logger.debug(
                                     f"Registered command '{command}' "
                                     f"with callback '{callback}' "

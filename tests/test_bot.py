@@ -148,31 +148,55 @@ class BotComponentLoaderTests(BotTestCase):
     def test_component_with_ok_handlers_and_no_group(self, _dispatcher, _tbot):
         with self.assertLogs(logger, DEBUG) as logs:
             bot = Bot()
-        assert 2 == bot.dispatcher.add_handler.call_count
+        assert 5 == bot.dispatcher.add_handler.call_count
         assert (
-            'Registered command \'cmdm41\' with callback \'<lambda>\' for component \'component_mock4\' and group number 0.'
-            in logs.output[-3]
+            'Registered command \'cmdm41\' with callback \'<lambda>\' '
+            'for component \'component_mock4\' and group number 0.' in logs.output[-6]
         )
         assert (
-            'Registered command \'cmdm42\' with callback \'<lambda>\' for component \'component_mock4\' and group number 0.'
-            in logs.output[-2]
+            'Registered command \'cmdm42\' with callback \'<lambda>\' '
+            'for component \'component_mock4\' and group number 0.' in logs.output[-5]
         )
-        assert "cmdm41\ncmdm42" == bot.command_list
+        assert (
+            'Registered command \'cmdm43\' with callback \'<lambda>\' '
+            'for component \'component_mock4\' and group number 0.' in logs.output[-4]
+        )
+        assert (
+            'Registered command \'<message>\' with callback \'<lambda>\' '
+            'for component \'component_mock4\' and group number 0.' in logs.output[-3]
+        )
+        assert (
+            'Registered command \'<unknown command>\' with callback \'<lambda>\' '
+            'for component \'component_mock4\' and group number 0.' in logs.output[-2]
+        )
+        assert "cmdm41\ncmdm42\ncmdm43" == bot.command_list
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock5')
     def test_component_with_ok_handlers_and_group(self, _dispatcher, _tbot):
         with self.assertLogs(logger, DEBUG) as logs:
             bot = Bot()
-        assert 2 == bot.dispatcher.add_handler.call_count
+        assert 5 == bot.dispatcher.add_handler.call_count
         assert (
             'Registered command \'cmdm51\' with callback \'<lambda>\' '
-            'for component \'component_mock5\' and group number 99.' in logs.output[-3]
+            'for component \'component_mock5\' and group number 99.' in logs.output[-6]
         )
         assert (
             'Registered command \'cmdm52\' with callback \'<lambda>\' '
+            'for component \'component_mock5\' and group number 99.' in logs.output[-5]
+        )
+        assert (
+            'Registered command \'cmdm53\' with callback \'<lambda>\' '
+            'for component \'component_mock5\' and group number 99.' in logs.output[-4]
+        )
+        assert (
+            'Registered command \'<message>\' with callback \'<lambda>\' '
+            'for component \'component_mock5\' and group number 99.' in logs.output[-3]
+        )
+        assert (
+            'Registered command \'<unknown command>\' with callback \'<lambda>\' '
             'for component \'component_mock5\' and group number 99.' in logs.output[-2]
         )
-        assert "cmdm51\ncmdm52" == bot.command_list
+        assert "cmdm51\ncmdm52\ncmdm53" == bot.command_list
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock6')
     def test_component_with_ok_handlers_and_invalid_group(self, _dispatcher, _tbot):
