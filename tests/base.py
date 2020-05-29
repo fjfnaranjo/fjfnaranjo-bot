@@ -44,18 +44,26 @@ class BotHandlerTestCase(BotTestCase):
         self._context = MagicMock()
 
     def _set_string_command(self, cmd, cmd_args=None):
-        self._update.message.text = f'{cmd} ' + (
-            ' '.join(cmd_args) if cmd_args is not None else ''
+        self._update.message.text = cmd + (
+            (' ' + (' '.join(cmd_args))) if cmd_args is not None else ''
         )
         self._context.args = cmd_args
 
+    def _set_user_data(self, user_data):
+        self._context.user_data = user_data
+
+    @contextmanager
+    def _assert_reply_log(self, reply, info, logger, level=INFO):
+        with self.assertLogs(logger, level) as logs:
+            yield
+        self.assertIn(info, logs.output[-1])
+        self._update.message.reply_text.assert_called_once_with(reply)
+
     @contextmanager
     def _assert_reply_log_dispatch(self, reply, info, logger, level=INFO):
-        with self.assertLogs(logger, level) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+        with self.assertRaises(DispatcherHandlerStop):
+            with self._assert_reply_log(reply, info, logger, level):
                 yield
-            self._update.message.reply_text.assert_called_once_with(reply)
-        assert info in logs.output[-1]
 
     #     def _user_is_none(self):
     #         self._update.effective_user = None
