@@ -97,17 +97,19 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
     def setUp(self, *args, **kwargs):
         BotUpdateContextTestCase.setUp(self, *args, **kwargs)
 
-        self._message_reply_text = MagicMock()
-        self._message_reply_text.message_id = 101
-        self._message_reply_text.chat.id = 102
-        self._update_mock.message.reply_text.return_value = self._message_reply_text
+        self._message_reply_text_mock = MagicMock()
+        self._message_reply_text_mock.message_id = 101
+        self._message_reply_text_mock.chat.id = 102
+        self._update_mock.message.reply_text.return_value = (
+            self._message_reply_text_mock
+        )
 
         self.user_data = None
         self.args = None
 
     @property
     def message_reply_text(self):
-        return self._message_reply_text
+        return self._message_reply_text_mock
 
     @property
     def user_data(self):
