@@ -17,13 +17,13 @@ FAKE_LEVEL = 99
 
 class LoggingTests(BotTestCase):
     def test_get_log_path_join_and_default(self):
-        with self._with_mocked_environ(
+        with self.mocked_environ(
             f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': 'dir'}, ['BOT_LOGFILE']
         ):
             assert _get_log_path() == join('dir', BOT_LOGFILE_DEFAULT)
 
     def test_get_log_path_join_and_env(self):
-        with self._with_mocked_environ(
+        with self.mocked_environ(
             f'{MODULE_PATH}.environ',
             {'BOT_DATA_DIR': 'dir', 'BOT_LOGFILE': BOT_LOGFILE_TEST},
         ):
@@ -56,7 +56,7 @@ class LoggingTests(BotTestCase):
 
     @patch(f'{MODULE_PATH}._get_log_path', return_value=LOGFILE_TEST_FILE)
     def test_logger_no_valid_log_level(self, _get_log_path):
-        with self._with_mocked_environ(
+        with self.mocked_environ(
             f'{MODULE_PATH}.environ', {'BOT_LOGLEVEL': f'{FAKE_LEVEL}'}
         ):
             with self.assertRaises(ValueError) as e:

@@ -35,14 +35,12 @@ class DbTests(BotTestCase):
 
     @patch(f'{MODULE_PATH}.get_bot_data_dir', return_value='dir')
     def test_get_db_path_join_and_default(self, _get_bot_data_dir):
-        with self._with_mocked_environ(
-            f'{MODULE_PATH}.environ', None, ['BOT_DB_NAME',]
-        ):
+        with self.mocked_environ(f'{MODULE_PATH}.environ', None, ['BOT_DB_NAME',]):
             assert get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
 
     @patch(f'{MODULE_PATH}.get_bot_data_dir', return_value='dir')
     def test_get_db_path_join_and_env(self, _get_bot_data_dir):
-        with self._with_mocked_environ(
+        with self.mocked_environ(
             f'{MODULE_PATH}.environ', {'BOT_DB_NAME': BOT_DB_NAME_TEST},
         ):
             assert get_db_path() == join('dir', BOT_DB_NAME_TEST)

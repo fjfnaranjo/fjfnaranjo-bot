@@ -41,21 +41,19 @@ class AuthTests(BotUpdateContextTestCase):
                 yield fake_config
 
     def test_get_owner_id_no_default(self):
-        with self._with_mocked_environ(
-            f'{MODULE_PATH}.environ', None, ['BOT_OWNER_ID']
-        ):
+        with self.mocked_environ(f'{MODULE_PATH}.environ', None, ['BOT_OWNER_ID']):
             with self.assertRaises(ValueError) as e:
                 get_owner_id()
             assert 'BOT_OWNER_ID var must be defined.' == e.exception.args[0]
 
     def test_get_owner_id_env_not_int(self):
-        with self._with_mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': 'a'}):
+        with self.mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': 'a'}):
             with self.assertRaises(ValueError) as e:
                 get_owner_id()
             assert 'Invalid id in BOT_OWNER_ID var.' == e.exception.args[0]
 
     def test_get_owner_id_env(self):
-        with self._with_mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': '1'}):
+        with self.mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': '1'}):
             assert get_owner_id() == 1
 
     def test_ensure_int_ok(self):

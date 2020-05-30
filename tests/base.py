@@ -21,7 +21,7 @@ JSON_TWO_FRIENDS = f'[{FIRST_FRIEND_USERID},{SECOND_FRIEND_USERID}]'
 
 class BotTestCase(TestCase):
     @contextmanager
-    def _with_mocked_environ(self, path, edit_keys=None, delete_keys=None):
+    def mocked_environ(self, path, edit_keys=None, delete_keys=None):
         if edit_keys is None:
             edit_keys = {}
         if delete_keys is None:
@@ -46,6 +46,10 @@ class BotUpdateContextTestCase(BotTestCase):
     @property
     def update(self):
         return self._update
+
+    @property
+    def update_and_context(self):
+        return self._update, self._context
 
     def set_string_command(self, cmd, cmd_args=None):
         self._update.message.text = cmd + (
@@ -100,10 +104,6 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
 
         self.user_data = None
         self.args = None
-
-    @property
-    def update_and_context(self):
-        return self._update, self._context
 
     @property
     def message_reply_text(self):
