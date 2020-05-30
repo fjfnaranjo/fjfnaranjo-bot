@@ -40,57 +40,57 @@ class BotTestCase(TestCase):
 class BotUpdateContextTestCase(BotTestCase):
     def setUp(self, *args, **kwargs):
         BotTestCase.setUp(self, *args, **kwargs)
-        self._update = MagicMock()
-        self._context = MagicMock()
+        self._update_mock = MagicMock()
+        self._context_mock = MagicMock()
 
     @property
     def update(self):
-        return self._update
+        return self._update_mock
 
     @property
     def update_and_context(self):
-        return self._update, self._context
+        return self._update_mock, self._context_mock
 
     def set_string_command(self, cmd, cmd_args=None):
-        self._update.message.text = cmd + (
+        self._update_mock.message.text = cmd + (
             (' ' + (' '.join(cmd_args))) if cmd_args is not None else ''
         )
-        self._context.args = cmd_args
+        self._context_mock.args = cmd_args
 
-    def _update_spec(self, no_message=None, empty_command=None):
+    def _update_mock_spec(self, no_message=None, empty_command=None):
         if no_message:
-            self._update = MagicMock(spec=['effective_user'])
+            self._update_mock = MagicMock(spec=['effective_user'])
         elif empty_command:
-            self._update = MagicMock()
-            self._update.message = MagicMock(spec=['reply_text'])
+            self._update_mock = MagicMock()
+            self._update_mock.message = MagicMock(spec=['reply_text'])
 
     def user_is_none(self, no_message=None, empty_command=None):
-        self._update_spec(no_message, empty_command)
-        self._update.effective_user = None
+        self._update_mock_spec(no_message, empty_command)
+        self._update_mock.effective_user = None
 
     def user_is_bot(self, no_message=None, empty_command=None):
-        self._update_spec(no_message, empty_command)
-        self._update.effective_user.is_bot = True
-        self._update.effective_user.username = 'bot'
-        self._update.effective_user.id = BOT_USERID
+        self._update_mock_spec(no_message, empty_command)
+        self._update_mock.effective_user.is_bot = True
+        self._update_mock.effective_user.username = 'bot'
+        self._update_mock.effective_user.id = BOT_USERID
 
     def user_is_unknown(self, no_message=None, empty_command=None):
-        self._update_spec(no_message, empty_command)
-        self._update.effective_user.is_bot = False
-        self._update.effective_user.username = 'unknown'
-        self._update.effective_user.id = UNKNOWN_USERID
+        self._update_mock_spec(no_message, empty_command)
+        self._update_mock.effective_user.is_bot = False
+        self._update_mock.effective_user.username = 'unknown'
+        self._update_mock.effective_user.id = UNKNOWN_USERID
 
     def user_is_friend(
         self, id_=FIRST_FRIEND_USERID, no_message=None, empty_command=None
     ):
-        self._update_spec(no_message, empty_command)
-        self._update.effective_user.is_bot = False
-        self._update.effective_user.id = id_
+        self._update_mock_spec(no_message, empty_command)
+        self._update_mock.effective_user.is_bot = False
+        self._update_mock.effective_user.id = id_
 
     def user_is_owner(self, no_message=None, empty_command=None):
-        self._update_spec(no_message, empty_command)
-        self._update.effective_user.is_bot = False
-        self._update.effective_user.id = OWNER_USERID
+        self._update_mock_spec(no_message, empty_command)
+        self._update_mock.effective_user.is_bot = False
+        self._update_mock.effective_user.id = OWNER_USERID
 
 
 class BotHandlerTestCase(BotUpdateContextTestCase):
@@ -100,7 +100,7 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
         self._message_reply_text = MagicMock()
         self._message_reply_text.message_id = 101
         self._message_reply_text.chat.id = 102
-        self._update.message.reply_text.return_value = self._message_reply_text
+        self._update_mock.message.reply_text.return_value = self._message_reply_text
 
         self.user_data = None
         self.args = None
@@ -111,22 +111,24 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
 
     @property
     def user_data(self):
-        return self._context.user_data
+        return self._context_mock.user_data
 
     @user_data.setter
     def user_data(self, new_user_data):
-        self._context.user_data = new_user_data
+        self._context_mock.user_data = new_user_data
 
     def assert_reply(self, text):
-        self._update.message.reply_text.assert_called_once_with(text)
+        self._update_mock.message.reply_text.assert_called_once_with(text)
 
     def assert_edit(self, text, chat_id, message_id):
-        self._context.bot.edit_message_text.assert_called_once_with(
+        self._context_mock.bot.edit_message_text.assert_called_once_with(
             text, chat_id, message_id
         )
 
     def assert_delete(self, chat_id, message_id):
-        self._context.bot.delete_message.assert_called_once_with(chat_id, message_id)
+        self._context_mock.bot.delete_message.assert_called_once_with(
+            chat_id, message_id
+        )
 
     @contextmanager
     def assert_log(self, log_text, logger, min_log_level=INFO):
