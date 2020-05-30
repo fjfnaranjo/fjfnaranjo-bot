@@ -41,6 +41,7 @@ class BotUpdateContextTestCase(BotTestCase):
     def setUp(self, *args, **kwargs):
         BotTestCase.setUp(self, *args, **kwargs)
         self._update_mock = MagicMock()
+        self.user_is_unknown()
         self._context_mock = MagicMock()
 
     @property
@@ -106,6 +107,15 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
 
         self.user_data = None
         self.args = None
+
+    def _update_mock_spec(self, no_message=None, empty_command=None):
+        if no_message or empty_command:
+            raise NotImplementedError(
+                "The arguments for methods of the user_is_* family destroy the "
+                "mocked telegram.Update object inside the test case. "
+                f"{self.__class__.__name__} use this mock to store state and to "
+                "prevent malfunction the former functionality is disabled."
+            )
 
     @property
     def message_reply_text(self):

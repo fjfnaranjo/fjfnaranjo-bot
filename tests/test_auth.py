@@ -146,7 +146,6 @@ class AuthTests(BotUpdateContextTestCase):
 
     def test_only_real_user_ok(self):
         noop = only_real(lambda _update: True)
-        self.user_is_unknown()
         assert noop(self.update) is True
 
     def test_only_owner_no_message(self):
@@ -176,7 +175,6 @@ class AuthTests(BotUpdateContextTestCase):
     @patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USERID)
     def test_only_owner_no_owner(self, _get_owner_id):
         noop = only_owner(lambda _update: True)
-        self.user_is_unknown()
         self.set_string_command('cmd')
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
@@ -219,7 +217,6 @@ class AuthTests(BotUpdateContextTestCase):
 
     def test_only_friends_not_friend(self):
         noop = only_friends(lambda _update: True)
-        self.user_is_unknown()
         self.set_string_command('cmd')
         with self._with_owner_and_friends(JSON_FIRST_FRIEND):
             with self.assertLogs(logger) as logs:
