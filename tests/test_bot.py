@@ -206,6 +206,12 @@ class BotComponentLoaderTests(BotTestCase):
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock8')
     def test_component_with_component(self, _dispatcher, _tbot):
-        bot = Bot()
-        assert "only_prod\nboth_prod_and_dev" == bot.command_list
-        assert "only_dev\nboth_prod_and_dev" == bot.command_list_dev
+        command_list_patcher = patch(f'{MODULE_PATH}.command_list', [])
+        command_list_mock = command_list_patcher.start()
+        self.addCleanup(command_list_patcher.stop)
+        command_list_dev_patcher = patch(f'{MODULE_PATH}.command_list_dev', [])
+        command_list_dev_mock = command_list_dev_patcher.start()
+        self.addCleanup(command_list_dev_patcher.stop)
+        Bot()
+        assert ['only_prod', 'both_prod_and_dev'] == command_list_mock
+        assert ['only_dev', 'both_prod_and_dev'] == command_list_dev_mock

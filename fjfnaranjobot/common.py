@@ -13,3 +13,7 @@ class User:
     def __init__(self, id_, username):
         self.id = int(id_)
         self.username = username
+
+
+command_list = []
+command_list_dev = []

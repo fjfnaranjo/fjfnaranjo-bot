@@ -14,6 +14,7 @@ from telegram.ext import (
 )
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
+from fjfnaranjobot.common import command_list, command_list_dev
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -21,7 +22,7 @@ logger = getLogger(__name__)
 BOT_TOKEN = environ.get('BOT_TOKEN')
 BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
 BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
-BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,friends,sorry')
+BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,friends,commands,sorry')
 
 _BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.handlers'
 
@@ -71,8 +72,6 @@ class Bot:
         self.dispatcher.add_error_handler(self.log_error_from_context)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
-        self._command_list = []
-        self._command_list_dev = []
         self._init_handlers()
         logger.debug("Bot handlers registered.")
 
@@ -117,20 +116,12 @@ class Bot:
                 else:
                     for command in commands:
                         if command[0] is not None:
-                            self._command_list.append(command[0])
+                            command_list.append(command[0])
                         if command[1] is not None:
-                            self._command_list_dev.append(command[1])
+                            command_list_dev.append(command[1])
 
             except ModuleNotFoundError:
                 pass
-
-    @property
-    def command_list(self):
-        return "\n".join(self._command_list)
-
-    @property
-    def command_list_dev(self):
-        return "\n".join(self._command_list_dev)
 
     def process_request(self, url_path, update):
 
