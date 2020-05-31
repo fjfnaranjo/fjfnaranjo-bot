@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from telegram.ext import ConversationHandler, DispatcherHandlerStop
 
+from fjfnaranjobot.auth import logger as auth_logger
 from fjfnaranjobot.components.config.handlers import (
     DEL_VAR,
     GET_SET_OR_DEL,
@@ -31,23 +32,23 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.user_data = {'message_ids': (1, 2)}
         self.user_is_owner()
 
-    def text_config_handler_unknown_unauthorized(self):
+    def test_config_handler_unknown_unauthorized(self):
         self.user_is_unknown()
-        with self.assertLogs(logger) as logs:
+        with self.assertLogs(auth_logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 config_handler(*self.update_and_context)
         assert 1 == len(logs.output)
 
-    def text_config_handler_bot_unauthorized(self):
+    def test_config_handler_bot_unauthorized(self):
         self.user_is_bot()
-        with self.assertLogs(logger) as logs:
+        with self.assertLogs(auth_logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 config_handler(*self.update_and_context)
         assert 1 == len(logs.output)
 
-    def text_config_handler_friend_unauthorized(self):
+    def test_config_handler_friend_unauthorized(self):
         self.user_is_friend()
-        with self.assertLogs(logger) as logs:
+        with self.assertLogs(auth_logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 config_handler(*self.update_and_context)
         assert 1 == len(logs.output)
