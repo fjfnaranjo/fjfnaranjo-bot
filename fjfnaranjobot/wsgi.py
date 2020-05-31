@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from fjfnaranjobot.bot import BotFrameworkError, BotJSONError, BotTokenError, bot
+from fjfnaranjobot.bot import BotJSONError, BotTokenError, bot
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -35,15 +35,15 @@ def application(environ, start_response):
             response = prepare_text_response(
                 bot.process_request(url_path, request_body)
             )
-        except BotFrameworkError as e:
-            logger.exception("Error from bot framework.", exc_info=e)
-            response = prepare_text_response(str(e), status='500 Internal Server Error')
         except BotJSONError as e:
             logger.info("Error from bot framework (json).", exc_info=e)
             response = prepare_text_response(str(e), status='400 Bad Request')
         except BotTokenError as e:
             logger.info("Error from bot framework (token).", exc_info=e)
             response = Response('404 Not Found', [], [])
+        except Exception as e:
+            logger.exception("Error from bot framework or library.", exc_info=e)
+            response = prepare_text_response(str(e), status='500 Internal Server Error')
 
     start_response(response.status, response.headers)
     return iter(response.data)

@@ -2,7 +2,7 @@ from io import BytesIO
 from logging import DEBUG
 from unittest.mock import MagicMock, patch
 
-from fjfnaranjobot.bot import BotFrameworkError, BotJSONError, BotTokenError
+from fjfnaranjobot.bot import BotJSONError, BotTokenError
 from fjfnaranjobot.wsgi import application
 from fjfnaranjobot.wsgi import logger as wsgi_logger
 
@@ -45,7 +45,7 @@ class WSGITests(BotTestCase):
         assert 'Defer request to bot for processing.' in logs.output[0]
 
     def test_application_bot_library_error(self, bot):
-        bot.process_request.side_effect = BotFrameworkError()
+        bot.process_request.side_effect = Exception()
         environ = {'PATH_INFO': '/', 'wsgi.input': BytesIO()}
         with self.assertLogs(wsgi_logger) as logs:
             status, content, headers = self._fake_request(environ)
@@ -57,7 +57,7 @@ class WSGITests(BotTestCase):
         assert headers_dict['Content-type'] == 'text/plain'
         assert 'Content-Length' in headers_dict
         assert headers_dict['Content-Length'] == '0'
-        assert 'Error from bot framework.' in logs.output[0]
+        assert 'Error from bot framework or library.' in logs.output[0]
 
     def test_application_bot_json_error(self, bot):
         bot.process_request.side_effect = BotJSONError()

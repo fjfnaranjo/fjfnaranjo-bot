@@ -1,13 +1,7 @@
 from logging import DEBUG
 from unittest.mock import MagicMock, patch
 
-from fjfnaranjobot.bot import (
-    Bot,
-    BotFrameworkError,
-    BotJSONError,
-    BotTokenError,
-    logger,
-)
+from fjfnaranjobot.bot import Bot, BotJSONError, BotTokenError, logger
 
 from .base import BotTestCase
 
@@ -29,6 +23,14 @@ class BotTests(BotTestCase):
         )
         assert 'Bot init done.' in logs.output[-2]
         assert 'Bot handlers registered.' in logs.output[-1]
+
+    def test_bot_log_exceptions(self, _dispatcher, _tbot):
+        bot = Bot()
+        context_mock = MagicMock()
+        context_mock.error = Exception()
+        with self.assertLogs(logger) as logs:
+            bot.log_error_from_context(None, context_mock)
+        assert 'Error inside the framework raised by the dispatcher.' in logs.output[0]
 
     def test_process_request_salute(self, _dispatcher, _tbot):
         bot = Bot()
@@ -91,16 +93,6 @@ class BotTests(BotTestCase):
             bot.process_request('/bwt', '{}')
         dispatcher.process_update(parsed_update)
         assert 'Dispatch update to library.' in logs.output[-1]
-
-    @patch(f'{MODULE_PATH}.Update')
-    def test_process_request_dispatched_error(self, update, _dispatcher, _tbot):
-        bot = Bot()
-        update.de_json.side_effect = Exception()
-        with self.assertLogs(logger) as logs:
-            with self.assertRaises(BotFrameworkError) as e:
-                bot.process_request('/bwt', '{}')
-        assert 'Error in bot framework.' == e.exception.args[0]
-        assert 'Error inside the framework raised by the dispatcher.' in logs.output[-1]
 
     def test_other_urls(self, _tbot, _dispatcher):
         bot = Bot()

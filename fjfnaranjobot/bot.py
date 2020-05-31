@@ -20,10 +20,6 @@ BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,friends,sorry')
 _BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.handlers'
 
 
-class BotFrameworkError(Exception):
-    pass
-
-
 class BotJSONError(Exception):
     pass
 
@@ -36,11 +32,18 @@ class Bot:
     def __init__(self):
         self.bot = TBot(BOT_TOKEN)
         self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
+        self.dispatcher.add_error_handler(self.log_error_from_context)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
         self._command_list = []
         self._init_handlers()
         logger.debug("Bot handlers registered.")
+
+    def log_error_from_context(self, _update, context):
+        logger.exception(
+            "Error inside the framework raised by the dispatcher.",
+            exc_info=context.error,
+        )
 
     def _init_handlers(self):
         for component in BOT_COMPONENTS.split(','):
@@ -124,12 +127,8 @@ class Bot:
             raise BotJSONError("Sent content isn't JSON.") from e
 
         # Delegate response to bot library
-        try:
-            logger.debug("Dispatch update to library.")
-            self.dispatcher.process_update(Update.de_json(update_json, self.bot))
-        except Exception as e:
-            logger.info("Error inside the framework raised by the dispatcher.")
-            raise BotFrameworkError("Error in bot framework.") from e
+        logger.debug("Dispatch update to library.")
+        self.dispatcher.process_update(Update.de_json(update_json, self.bot))
 
         return 'ok'
 
