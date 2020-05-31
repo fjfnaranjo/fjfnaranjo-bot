@@ -107,9 +107,12 @@ class _FriendsProxy(MutableSet):
             exists = cur.fetchone()
             return True if exists is not None else None
 
-    def __iter__(self):
+    def __iter__(self, *, sort=False):
+        statement = 'SELECT id, username FROM friends'
+        if sort:
+            statement += ' ORDER BY id'
         with self._friends_cursor() as cur:
-            cur.execute('SELECT id, username FROM friends')
+            cur.execute(statement)
             rows = cur.fetchall()
         for row in rows:
             yield User(row[0], row[1])
@@ -148,6 +151,9 @@ class _FriendsProxy(MutableSet):
             cur.execute(
                 'DELETE FROM friends WHERE id=?', (user.id,),
             )
+
+    def sorted(self):
+        return self.__iter__(sort=True)
 
     def __le__(self, _other):
         raise NotImplementedError

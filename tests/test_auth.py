@@ -254,6 +254,14 @@ class FriendsTestCase(BotTestCase):
             assert FIRST_FRIEND_USER in friends
             assert SECOND_FRIEND_USER in friends
 
+    def test_auth_get_friends_many_friends_sorted(self):
+        with self.friends([SECOND_FRIEND_USER, FIRST_FRIEND_USER]):
+            for friend in friends.sorted():
+                assert 2 == len(friends)
+                assert FIRST_FRIEND_USER.id == friend.id
+                break
+                assert SECOND_FRIEND_USER.id == friend.id
+
     def test_auth_add_friend(self):
         friends.add(FIRST_FRIEND_USER)
         assert 1 == len(friends)
