@@ -161,7 +161,6 @@ class BotComponentLoaderTests(BotTestCase):
             'Registered command \'<unknown command>\' with callback \'<lambda>\' '
             'for component \'component_mock4\' and group number 0.' in logs.output[-2]
         )
-        assert "cmdm41\ncmdm42\ncmdm43" == bot.command_list
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock5')
     def test_component_with_ok_handlers_and_group(self, _dispatcher, _tbot):
@@ -188,7 +187,6 @@ class BotComponentLoaderTests(BotTestCase):
             'Registered command \'<unknown command>\' with callback \'<lambda>\' '
             'for component \'component_mock5\' and group number 99.' in logs.output[-2]
         )
-        assert "cmdm51\ncmdm52\ncmdm53" == bot.command_list
 
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock6')
     def test_component_with_ok_handlers_and_invalid_group(self, _dispatcher, _tbot):
@@ -205,4 +203,9 @@ class BotComponentLoaderTests(BotTestCase):
             'Registered command \'cmdm71\' with callback \'<lambda>\' '
             'for component \'component_mock7\' and group number 0.' in logs.output[-2]
         )
-        assert "cmdm71" == bot.command_list
+
+    @patch(f'{MODULE_PATH}.BOT_COMPONENTS', 'component_mock8')
+    def test_component_with_component(self, _dispatcher, _tbot):
+        bot = Bot()
+        assert "only_prod\nboth_prod_and_dev" == bot.command_list
+        assert "only_dev\nboth_prod_and_dev" == bot.command_list_dev

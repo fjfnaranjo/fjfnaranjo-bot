@@ -72,6 +72,7 @@ class Bot:
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
         self._command_list = []
+        self._command_list_dev = []
         self._init_handlers()
         logger.debug("Bot handlers registered.")
 
@@ -103,14 +104,22 @@ class Bot:
                             self.dispatcher.add_handler(handler, group)
                             callback_names = get_names_callbacks(handler)
                             for command, callback in callback_names:
-                                if not command.startswith('<'):
-                                    self._command_list.append(command)
                                 logger.debug(
                                     f"Registered command '{command}' "
                                     f"with callback '{callback}' "
                                     f"for component '{component}' "
                                     f"and group number {group}."
                                 )
+                try:
+                    commands = info.commands
+                except AttributeError:
+                    pass
+                else:
+                    for command in commands:
+                        if command[0] is not None:
+                            self._command_list.append(command[0])
+                        if command[1] is not None:
+                            self._command_list_dev.append(command[1])
 
             except ModuleNotFoundError:
                 pass
@@ -118,6 +127,10 @@ class Bot:
     @property
     def command_list(self):
         return "\n".join(self._command_list)
+
+    @property
+    def command_list_dev(self):
+        return "\n".join(self._command_list_dev)
 
     def process_request(self, url_path, update):
 

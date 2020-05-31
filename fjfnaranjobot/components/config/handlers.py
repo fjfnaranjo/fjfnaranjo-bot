@@ -163,3 +163,5 @@ handlers = (
         fallbacks=[CommandHandler('config_cancel', cancel_handler)],
     ),
 )
+
+commands = ((None, 'config',),)

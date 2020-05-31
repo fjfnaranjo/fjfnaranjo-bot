@@ -221,3 +221,5 @@ handlers = (
         fallbacks=[CommandHandler('friends_cancel', cancel_handler)],
     ),
 )
+
+commands = ((None, 'friends',),)
