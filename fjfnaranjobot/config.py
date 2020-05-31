@@ -8,7 +8,7 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 
-class ConfigurationProxy(MutableMapping):
+class _ConfigurationProxy(MutableMapping):
     @staticmethod
     def _validate_key(key):
         validator = compile(r'^([a-zA-Z]+\.)*([a-zA-Z]+)+$')
@@ -72,4 +72,4 @@ class ConfigurationProxy(MutableMapping):
             yield item[0]
 
 
-config = ConfigurationProxy()
+config = _ConfigurationProxy()
