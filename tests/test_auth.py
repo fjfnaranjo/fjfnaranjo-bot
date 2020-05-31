@@ -232,7 +232,7 @@ class FriendsTestCase(BotTestCase):
     def friends(self, friends_list):
         friends.clear()
         for friend in friends_list:
-            friends.add(User(friend.id, friend.username))
+            friends.add(friend)
         yield
         friends.clear()
 
@@ -256,11 +256,9 @@ class FriendsTestCase(BotTestCase):
 
     def test_auth_get_friends_many_friends_sorted(self):
         with self.friends([SECOND_FRIEND_USER, FIRST_FRIEND_USER]):
-            for friend in friends.sorted():
-                assert 2 == len(friends)
-                assert FIRST_FRIEND_USER.id == friend.id
-                break
-                assert SECOND_FRIEND_USER.id == friend.id
+            first_friend, second_friend = friends.sorted()
+            assert FIRST_FRIEND_USER.id == first_friend.id
+            assert SECOND_FRIEND_USER.id == second_friend.id
 
     def test_auth_add_friend(self):
         friends.add(FIRST_FRIEND_USER)
