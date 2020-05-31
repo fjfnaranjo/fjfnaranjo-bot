@@ -11,7 +11,6 @@ from fjfnaranjobot.common import User
 OWNER_USER = User(11, 'o')
 FIRST_FRIEND_USER = User(21, 'f')
 SECOND_FRIEND_USER = User(22, 's')
-THIRD_FRIEND_USER = User(23, 't')
 UNKNOWN_USER = User(31, 'u')
 BOT_USER = User(41, 'b')
 

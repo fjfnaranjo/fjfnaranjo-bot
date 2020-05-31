@@ -13,9 +13,8 @@ PAGE_SIZE = 5
 
 
 #
-# cmd --> GET_ADD_OR_DEL --> GET_PAGE --> end
-#                                ^-------
-#                                     --> ONLY_PAGE
+# cmd --> GET_ADD_OR_DEL --> GET_PAGE   --> GET_PAGE
+#                                       --> ONLY_PAGE
 #                        --> ADD_FRIEND --> end
 #                        --> DEL_FRIEND --> end
 #
@@ -43,9 +42,7 @@ def get_page_handler(_update, context):
         try:
             page = int(context.args[0])
             if page < 1:
-                raise ValueError(
-                    "The page number must be a positive integer greater than 0."
-                )
+                raise ValueError()
         except ValueError:
             logger.info(f"Received an invalid page number '{context.args[0]}'.")
             context.bot.edit_message_text(
@@ -54,6 +51,7 @@ def get_page_handler(_update, context):
                 "If you want to do something else, /friends_cancel .",
                 *context.user_data['message_ids'],
             )
+            return GET_PAGE
     else:
         page = context.user_data.get('page', 1) if context.user_data is not None else 1
 
@@ -63,13 +61,16 @@ def get_page_handler(_update, context):
     )
 
     if page > num_pages:
-        logger.info(f"Sending the page {page} of friends.")
+        logger.info(
+            f"Not sending the page {page} of friends because it doesn't exists."
+        )
         context.bot.edit_message_text(
             f"The page {page} doesn't exists. "
             "Send the /friends_getpage command again to start from the first page."
             "If you want to do something else, /friends_cancel .",
             *context.user_data['message_ids'],
         )
+        return GET_PAGE
 
     else:
 
@@ -101,7 +102,6 @@ def get_page_handler(_update, context):
                 f"\n\n{friends_page}",
                 *context.user_data['message_ids'],
             )
-            context.user_data['page'] = page
             return ONLY_PAGE
         elif page == 1:
             logger.info(f"Sending the first page of friends.")
@@ -140,16 +140,6 @@ def add_handler(_update, context):
     return ADD_FRIEND
 
 
-def del_handler(_update, context):
-    logger.info("Requesting contact to remove as a friend.")
-    context.bot.edit_message_text(
-        "Send me the contact of the friend you want to remove. "
-        "If you want to do something else, /friends_cancel .",
-        *context.user_data['message_ids'],
-    )
-    return DEL_FRIEND
-
-
 def add_friend_handler(update, context):
     contact = update.message.contact
     user = User(contact.user_id, ' '.join([contact.first_name, contact.last_name]))
@@ -159,6 +149,16 @@ def add_friend_handler(update, context):
     del context.user_data['message_ids']
     update.message.reply_text(f"Added {user.username} as a friend.")
     return ConversationHandler.END
+
+
+def del_handler(_update, context):
+    logger.info("Requesting contact to remove as a friend.")
+    context.bot.edit_message_text(
+        "Send me the contact of the friend you want to remove. "
+        "If you want to do something else, /friends_cancel .",
+        *context.user_data['message_ids'],
+    )
+    return DEL_FRIEND
 
 
 def del_friend_handler(update, context):
