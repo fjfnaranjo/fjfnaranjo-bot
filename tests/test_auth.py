@@ -4,28 +4,22 @@ from unittest.mock import patch
 from telegram.ext.dispatcher import DispatcherHandlerStop
 
 from fjfnaranjobot.auth import (
-    CFG_KEY,
-    add_friend,
-    del_friend,
-    ensure_int,
-    get_friends,
+    friends,
     get_owner_id,
     logger,
     only_friends,
     only_owner,
     only_real,
 )
+from fjfnaranjobot.common import User
+from tests.base import SECOND_FRIEND_USER
 
 from .base import (
-    BOT_USERID,
-    FIRST_FRIEND_USERID,
-    JSON_FIRST_FRIEND,
-    JSON_ONE_FRIEND,
-    JSON_SECOND_FRIEND,
-    JSON_TWO_FRIENDS,
-    OWNER_USERID,
-    SECOND_FRIEND_USERID,
-    UNKNOWN_USERID,
+    BOT_USER,
+    FIRST_FRIEND_USER,
+    OWNER_USER,
+    UNKNOWN_USER,
+    BotTestCase,
     BotUpdateContextTestCase,
 )
 
@@ -33,12 +27,20 @@ MODULE_PATH = 'fjfnaranjobot.auth'
 
 
 class AuthTests(BotUpdateContextTestCase):
+    @staticmethod
     @contextmanager
-    def _with_owner_and_friends(self, friends_list):
-        fake_config = {CFG_KEY: friends_list} if friends_list is not None else {}
-        with patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USERID):
-            with patch(f'{MODULE_PATH}.config', fake_config):
-                yield fake_config
+    def owner():
+        with patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USER.id):
+            yield
+
+    @contextmanager
+    def owner_and_friends(self, friend_list):
+        with self.owner():
+            friends.clear()
+            for friend in friend_list:
+                friends.add(User(friend.id, friend.username))
+            yield
+            friends.clear()
 
     def test_get_owner_id_no_default(self):
         with self.mocked_environ(f'{MODULE_PATH}.environ', None, ['BOT_OWNER_ID']):
@@ -55,20 +57,6 @@ class AuthTests(BotUpdateContextTestCase):
     def test_get_owner_id_env(self):
         with self.mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': '1'}):
             assert get_owner_id() == 1
-
-    def test_ensure_int_ok(self):
-        ensured = ensure_int('53')
-        assert ensured == 53
-        assert isinstance(ensured, int)
-
-    def test_ensure_int_empty(self):
-        with self.assertRaises(ValueError) as e:
-            ensure_int('')
-        assert 'Error parsing id as int.' == e.exception.args[0]
-
-    def test_ensure_int_not_int(self):
-        with self.assertRaises(ValueError):
-            ensure_int('one')
 
     def test_only_real_no_user_no_message(self):
         noop = only_real(lambda _update: True)
@@ -114,7 +102,7 @@ class AuthTests(BotUpdateContextTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(self.update)
         assert (
-            f'Bot with username bot and id {BOT_USERID} '
+            f'Bot with username {BOT_USER.username} and id {BOT_USER.id} '
             'tried to access a only_real command. '
             'Command text: \'<unknown>\' (cropped to 10 chars).'
         ) in logs.output[0]
@@ -126,7 +114,7 @@ class AuthTests(BotUpdateContextTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(self.update)
         assert (
-            f'Bot with username bot and id {BOT_USERID} '
+            f'Bot with username {BOT_USER.username} and id {BOT_USER.id} '
             'tried to access a only_real command. '
             'Command text: \'<empty>\' (cropped to 10 chars).'
         ) in logs.output[0]
@@ -139,7 +127,7 @@ class AuthTests(BotUpdateContextTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(self.update)
         assert (
-            f'Bot with username bot and id {BOT_USERID} '
+            f'Bot with username {BOT_USER.username} and id {BOT_USER.id} '
             'tried to access a only_real command. '
             'Command text: \'cmd\' (cropped to 10 chars).'
         ) in logs.output[0]
@@ -155,7 +143,7 @@ class AuthTests(BotUpdateContextTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(self.update)
         assert (
-            f'User unknown with id {UNKNOWN_USERID} '
+            f'User u with id {UNKNOWN_USER.id} '
             'tried to access a only_owner command. '
             'Command text: \'<unknown>\' (cropped to 10 chars).'
         ) in logs.output[0]
@@ -167,29 +155,29 @@ class AuthTests(BotUpdateContextTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(self.update)
         assert (
-            f'User unknown with id {UNKNOWN_USERID} '
+            f'User u with id {UNKNOWN_USER.id} '
             'tried to access a only_owner command. '
             'Command text: \'<empty>\' (cropped to 10 chars).'
         ) in logs.output[0]
 
-    @patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USERID)
-    def test_only_owner_no_owner(self, _get_owner_id):
+    def test_only_owner_no_owner(self):
         noop = only_owner(lambda _update: True)
         self.set_string_command('cmd')
-        with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
-                assert noop(self.update) is None
+        with self.owner():
+            with self.assertLogs(logger) as logs:
+                with self.assertRaises(DispatcherHandlerStop):
+                    assert noop(self.update) is None
         assert (
-            f'User unknown with id {UNKNOWN_USERID} '
-            f'tried to access a only_owner command. '
-            f'Command text: \'cmd\' (cropped to 10 chars).'
+            f'User u with id {UNKNOWN_USER.id} '
+            'tried to access a only_owner command. '
+            'Command text: \'cmd\' (cropped to 10 chars).'
         ) in logs.output[0]
 
-    @patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USERID)
-    def test_only_owner_ok(self, _get_owner_id):
-        noop = only_owner(lambda _update: True)
-        self.user_is_owner()
-        assert noop(self.update) is True
+    def test_only_owner_ok(self):
+        with self.owner():
+            noop = only_owner(lambda _update: True)
+            self.user_is_owner()
+            assert noop(self.update) is True
 
     def test_only_friends_no_message(self):
         noop = only_friends(lambda _update: True)
@@ -198,7 +186,7 @@ class AuthTests(BotUpdateContextTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(self.update)
         assert (
-            f'User unknown with id {UNKNOWN_USERID} '
+            f'User u with id {UNKNOWN_USER.id} '
             'tried to access a only_friends command. '
             'Command text: \'<unknown>\' (cropped to 10 chars).'
         ) in logs.output[0]
@@ -210,7 +198,7 @@ class AuthTests(BotUpdateContextTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(self.update)
         assert (
-            f'User unknown with id {UNKNOWN_USERID} '
+            f'User u with id {UNKNOWN_USER.id} '
             'tried to access a only_friends command. '
             'Command text: \'<empty>\' (cropped to 10 chars).'
         ) in logs.output[0]
@@ -218,74 +206,89 @@ class AuthTests(BotUpdateContextTestCase):
     def test_only_friends_not_friend(self):
         noop = only_friends(lambda _update: True)
         self.set_string_command('cmd')
-        with self._with_owner_and_friends(JSON_FIRST_FRIEND):
+        with self.owner_and_friends([FIRST_FRIEND_USER]):
             with self.assertLogs(logger) as logs:
                 with self.assertRaises(DispatcherHandlerStop):
                     noop(self.update)
             assert (
-                f'User unknown with id {UNKNOWN_USERID} '
-                f'tried to access a only_friends command. '
-                f'Command text: \'cmd\' (cropped to 10 chars).'
+                f'User u with id {UNKNOWN_USER.id} '
+                'tried to access a only_friends command. '
+                'Command text: \'cmd\' (cropped to 10 chars).'
             ) in logs.output[0]
 
     def test_only_friends_ok(self):
         noop = only_friends(lambda _update: True)
-        self.user_is_friend()
-        with self._with_owner_and_friends(JSON_FIRST_FRIEND):
+        self.user_is_friend(FIRST_FRIEND_USER)
+        with self.owner_and_friends([FIRST_FRIEND_USER]):
             assert noop(self.update) is True
 
-    def test_auth_get_friends_no_friends(self):
-        with self._with_owner_and_friends(None):
-            friends = get_friends()
-            assert isinstance(friends, list)
-            assert 0 == len(friends)
 
-    def test_auth_get_friends_one_friend(self):
-        with self._with_owner_and_friends(JSON_ONE_FRIEND):
-            friends = get_friends()
-            assert isinstance(friends, list)
+class FriendsTestCase(BotTestCase):
+    def setUp(self):
+        BotTestCase.setUp(self)
+        friends.clear()
+
+    @contextmanager
+    def friends(self, friends_list):
+        friends.clear()
+        for friend in friends_list:
+            friends.add(User(friend.id, friend.username))
+        yield
+        friends.clear()
+
+    def test_le_not_implemented(self):
+        with self.assertRaises(NotImplementedError):
+            bool(friends <= 0)
+
+    def test_no_friends(self):
+        assert 0 == len(friends)
+
+    def test_one_friend(self):
+        with self.friends([FIRST_FRIEND_USER]):
             assert 1 == len(friends)
-            assert FIRST_FRIEND_USERID in friends
+            assert FIRST_FRIEND_USER in friends
 
     def test_auth_get_friends_many_friends(self):
-        with self._with_owner_and_friends(JSON_TWO_FRIENDS):
-            friends = get_friends()
-            assert isinstance(friends, list)
+        with self.friends([FIRST_FRIEND_USER, SECOND_FRIEND_USER]):
             assert 2 == len(friends)
-            assert FIRST_FRIEND_USERID in friends
-            assert SECOND_FRIEND_USERID in friends
+            assert FIRST_FRIEND_USER in friends
+            assert SECOND_FRIEND_USER in friends
 
     def test_auth_add_friend(self):
-        with self._with_owner_and_friends(None) as config:
-            add_friend(FIRST_FRIEND_USERID)
-            assert JSON_FIRST_FRIEND == config[CFG_KEY]
+        friends.add(FIRST_FRIEND_USER)
+        assert 1 == len(friends)
+        assert FIRST_FRIEND_USER in friends
 
     def test_auth_add_friend_already_friend(self):
-        with self._with_owner_and_friends(JSON_ONE_FRIEND) as config:
-            add_friend(FIRST_FRIEND_USERID)
-            assert JSON_FIRST_FRIEND == config[CFG_KEY]
+        with self.friends([FIRST_FRIEND_USER]):
+            friends.add(User(FIRST_FRIEND_USER.id, 'x'))
+            assert 1 == len(friends)
+            assert FIRST_FRIEND_USER in friends
+            for friend in friends:
+                assert 'x' == friend.username
 
     def test_auth_add_friend_is_owner(self):
-        with self._with_owner_and_friends(None) as config:
-            add_friend(OWNER_USERID)
-            assert CFG_KEY not in config
+        friends.add(OWNER_USER)
+        assert 1 == len(friends)
+        assert OWNER_USER in friends
 
     def test_auth_del_friend_not_friends(self):
-        with self._with_owner_and_friends(None) as config:
-            del_friend(FIRST_FRIEND_USERID)
-            assert CFG_KEY not in config
+        friends.discard(FIRST_FRIEND_USER)
+        assert 0 == len(friends)
 
     def test_auth_del_friend_not_a_friend(self):
-        with self._with_owner_and_friends(JSON_ONE_FRIEND) as config:
-            del_friend(SECOND_FRIEND_USERID)
-            assert JSON_FIRST_FRIEND == config[CFG_KEY]
+        with self.friends([FIRST_FRIEND_USER]):
+            friends.discard(SECOND_FRIEND_USER)
+            assert 1 == len(friends)
+            assert FIRST_FRIEND_USER in friends
 
     def test_auth_del_friend_one_friend(self):
-        with self._with_owner_and_friends(JSON_TWO_FRIENDS) as config:
-            del_friend(FIRST_FRIEND_USERID)
-            assert JSON_SECOND_FRIEND == config[CFG_KEY]
+        with self.friends([FIRST_FRIEND_USER, SECOND_FRIEND_USER]):
+            friends.discard(FIRST_FRIEND_USER)
+            assert 1 == len(friends)
+            assert SECOND_FRIEND_USER in friends
 
     def test_auth_del_friend_last_friend(self):
-        with self._with_owner_and_friends(JSON_ONE_FRIEND) as config:
-            del_friend(FIRST_FRIEND_USERID)
-            assert CFG_KEY not in config
+        with self.friends([FIRST_FRIEND_USER]):
+            friends.discard(FIRST_FRIEND_USER)
+            assert 0 == len(friends)

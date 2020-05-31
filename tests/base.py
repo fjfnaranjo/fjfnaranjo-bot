@@ -6,17 +6,14 @@ from unittest.mock import MagicMock, patch
 
 from telegram.ext import DispatcherHandlerStop
 
-OWNER_USERID = 11
-FIRST_FRIEND_USERID = 21
-SECOND_FRIEND_USERID = 22
-THIRD_FRIEND_USERID = 23
-UNKNOWN_USERID = 31
-BOT_USERID = 91
+from fjfnaranjobot.common import User
 
-JSON_FIRST_FRIEND = f'[{FIRST_FRIEND_USERID}]'
-JSON_SECOND_FRIEND = f'[{SECOND_FRIEND_USERID}]'
-JSON_ONE_FRIEND = f'[{FIRST_FRIEND_USERID}]'
-JSON_TWO_FRIENDS = f'[{FIRST_FRIEND_USERID},{SECOND_FRIEND_USERID}]'
+OWNER_USER = User(11, 'o')
+FIRST_FRIEND_USER = User(21, 'f')
+SECOND_FRIEND_USER = User(22, 's')
+THIRD_FRIEND_USER = User(23, 't')
+UNKNOWN_USER = User(31, 'u')
+BOT_USER = User(41, 'b')
 
 
 class BotTestCase(TestCase):
@@ -58,7 +55,7 @@ class BotUpdateContextTestCase(BotTestCase):
         )
         self._context_mock.args = cmd_args
 
-    def _update_mock_spec(self, no_message=None, empty_command=None):
+    def update_mock_spec(self, no_message=None, empty_command=None):
         if no_message:
             self._update_mock = MagicMock(spec=['effective_user'])
         elif empty_command:
@@ -66,32 +63,34 @@ class BotUpdateContextTestCase(BotTestCase):
             self._update_mock.message = MagicMock(spec=['reply_text'])
 
     def user_is_none(self, no_message=None, empty_command=None):
-        self._update_mock_spec(no_message, empty_command)
+        self.update_mock_spec(no_message, empty_command)
         self._update_mock.effective_user = None
 
     def user_is_bot(self, no_message=None, empty_command=None):
-        self._update_mock_spec(no_message, empty_command)
+        self.update_mock_spec(no_message, empty_command)
         self._update_mock.effective_user.is_bot = True
-        self._update_mock.effective_user.username = 'bot'
-        self._update_mock.effective_user.id = BOT_USERID
+        self._update_mock.effective_user.id = BOT_USER.id
+        self._update_mock.effective_user.username = BOT_USER.username
 
     def user_is_unknown(self, no_message=None, empty_command=None):
-        self._update_mock_spec(no_message, empty_command)
+        self.update_mock_spec(no_message, empty_command)
         self._update_mock.effective_user.is_bot = False
-        self._update_mock.effective_user.username = 'unknown'
-        self._update_mock.effective_user.id = UNKNOWN_USERID
+        self._update_mock.effective_user.id = UNKNOWN_USER.id
+        self._update_mock.effective_user.username = UNKNOWN_USER.username
 
     def user_is_friend(
-        self, id_=FIRST_FRIEND_USERID, no_message=None, empty_command=None
+        self, friend=FIRST_FRIEND_USER, no_message=None, empty_command=None
     ):
-        self._update_mock_spec(no_message, empty_command)
+        self.update_mock_spec(no_message, empty_command)
         self._update_mock.effective_user.is_bot = False
-        self._update_mock.effective_user.id = id_
+        self._update_mock.effective_user.id = friend.id
+        self._update_mock.effective_user.username = friend.username
 
     def user_is_owner(self, no_message=None, empty_command=None):
-        self._update_mock_spec(no_message, empty_command)
+        self.update_mock_spec(no_message, empty_command)
         self._update_mock.effective_user.is_bot = False
-        self._update_mock.effective_user.id = OWNER_USERID
+        self._update_mock.effective_user.id = OWNER_USER.id
+        self._update_mock.effective_user.username = OWNER_USER.username
 
 
 class BotHandlerTestCase(BotUpdateContextTestCase):
@@ -108,7 +107,7 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
         self.user_data = None
         self.args = None
 
-    def _update_mock_spec(self, no_message=None, empty_command=None):
+    def update_mock_spec(self, no_message=None, empty_command=None):
         if no_message or empty_command:
             raise NotImplementedError(
                 "The arguments for methods of the user_is_* family destroy the "
