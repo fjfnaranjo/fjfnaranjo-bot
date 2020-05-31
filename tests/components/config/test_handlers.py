@@ -219,4 +219,5 @@ class ConfigHandlersTests(BotHandlerTestCase):
         ):
             assert ConversationHandler.END == cancel_handler(*self.update_and_context)
         self.assert_delete(1, 2)
+        self.assert_reply('Ok.')
         assert {'some': 'content'} == self.user_data
