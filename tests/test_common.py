@@ -19,11 +19,6 @@ class BotDataDirTests(BotTestCase):
             assert get_bot_data_dir() == BOT_DATA_DIR_TEST
 
 
-class GetNameCallbackTests(BotTestCase):
-    # TODO: Implement
-    pass
-
-
 class UserTestCase(BotTestCase):
     def test_create_friend(self):
         friend = User(0, 'a')
