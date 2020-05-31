@@ -96,7 +96,9 @@ class _FriendsProxy(MutableSet):
     @contextmanager
     def _friends_cursor():
         with cursor() as cur:
-            cur.execute('CREATE TABLE IF NOT EXISTS friends (id PRIMARY KEY, username)')
+            cur.execute(
+                'CREATE TABLE IF NOT EXISTS friends (id INTEGER PRIMARY KEY, username)'
+            )
             yield cur
 
     def __contains__(self, user):
