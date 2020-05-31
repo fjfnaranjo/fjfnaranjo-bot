@@ -45,3 +45,9 @@ def get_names_callbacks(handler):
             names_callbacks.append(('<unknown command>', callback_name,))
 
     return names_callbacks
+
+
+class User:
+    def __init__(self, id_, username):
+        self.id = int(id_)
+        self.username = username
