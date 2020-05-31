@@ -109,9 +109,15 @@ class ConfigHandlersTests(BotHandlerTestCase):
     @patch(f'{MODULE_PATH}.config.__setitem__', side_effect=ValueError)
     def test_get_var_handler_invalid_key(self, _config):
         self.set_string_command('invalid-key')
-        with self.assertRaises(ValueError) as e:
-            get_var_handler(*self.update_and_context)
-        assert 'No valid value for key invalid-key.' in e.exception.args[0]
+        with self.assert_log('Can\'t get invalid config key \'invalid-key\'.', logger):
+            assert GET_VAR == get_var_handler(*self.update_and_context)
+        self.assert_edit(
+            'The key \'invalid-key\' is not a valid key. '
+            'Tell me another key you want to get. '
+            'If you want to do something else, /config_cancel .',
+            1,
+            2,
+        )
 
     def test_set_handler(self):
         with self.assert_log(
@@ -139,6 +145,55 @@ class ConfigHandlersTests(BotHandlerTestCase):
         )
         assert {'message_ids': (1, 2), 'key': 'key'} == self.user_data
 
+    def test_set_var_handler_missing(self):
+        fake_config = {}
+        patcher = patch(f'{MODULE_PATH}.config', fake_config)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.set_string_command('key')
+        with self.assert_log(
+            'Requesting value to set the key.', logger,
+        ):
+            assert SET_VALUE == set_var_handler(*self.update_and_context)
+        self.assert_edit(
+            'Tell me what value do you want to put in the key \'key\'. '
+            'If you want to do something else, /config_cancel .',
+            1,
+            2,
+        )
+        assert {'message_ids': (1, 2), 'key': 'key'} == self.user_data
+
+    def test_set_var_handler_exists(self):
+        fake_config = {'key': 'val'}
+        patcher = patch(f'{MODULE_PATH}.config', fake_config)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.set_string_command('key')
+        with self.assert_log(
+            'Requesting value to set the key.', logger,
+        ):
+            assert SET_VALUE == set_var_handler(*self.update_and_context)
+        self.assert_edit(
+            'Tell me what value do you want to put in the key \'key\'. '
+            'If you want to do something else, /config_cancel .',
+            1,
+            2,
+        )
+        assert {'message_ids': (1, 2), 'key': 'key'} == self.user_data
+
+    @patch(f'{MODULE_PATH}.config.__setitem__', side_effect=ValueError)
+    def test_set_var_handler_invalid_key(self, _config):
+        self.set_string_command('invalid-key')
+        with self.assert_log('Can\'t set invalid config key \'invalid-key\'.', logger):
+            assert SET_VAR == set_var_handler(*self.update_and_context)
+        self.assert_edit(
+            'The key \'invalid-key\' is not a valid key. '
+            'Tell me another key you want to set. '
+            'If you want to do something else, /config_cancel .',
+            1,
+            2,
+        )
+
     def test_set_value_handler_set(self):
         fake_config = {}
         patcher = patch(f'{MODULE_PATH}.config', fake_config)
@@ -156,14 +211,6 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.assert_reply('I\'ll remember that.')
         assert {'key': 'val'} == fake_config
         assert {} == self.user_data
-
-    @patch(f'{MODULE_PATH}.config.__setitem__', side_effect=ValueError)
-    def test_set_value_handler_invalid_key(self, _config):
-        self.user_data['key'] = 'invalid-key'
-        self.set_string_command('val')
-        with self.assertRaises(ValueError) as e:
-            set_value_handler(*self.update_and_context)
-        assert 'No valid value for key invalid-key.' in e.exception.args[0]
 
     def test_del_handler(self):
         with self.assert_log(
@@ -191,7 +238,7 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.assert_reply('I don\'t know anything about \'key\'.')
         assert {} == fake_config
 
-    def test_config_del_exists(self):
+    def test_del_var_handler_exists(self):
         fake_config = {'key': 'val'}
         patcher = patch(f'{MODULE_PATH}.config', fake_config)
         patcher.start()
@@ -208,9 +255,17 @@ class ConfigHandlersTests(BotHandlerTestCase):
     @patch(f'{MODULE_PATH}.config.__setitem__', side_effect=ValueError)
     def test_del_var_handler_invalid_key(self, _config):
         self.set_string_command('invalid-key')
-        with self.assertRaises(ValueError) as e:
-            del_var_handler(*self.update_and_context)
-        assert 'No valid value for key invalid-key.' in e.exception.args[0]
+        with self.assert_log(
+            'Can\'t delete invalid config key \'invalid-key\'.', logger
+        ):
+            assert DEL_VAR == del_var_handler(*self.update_and_context)
+        self.assert_edit(
+            'The key \'invalid-key\' is not a valid key. '
+            'Tell me another key you want to clear. '
+            'If you want to do something else, /config_cancel .',
+            1,
+            2,
+        )
 
     def test_cancel_handler(self):
         self.user_data.update({'key': 'key', 'some': 'content'})

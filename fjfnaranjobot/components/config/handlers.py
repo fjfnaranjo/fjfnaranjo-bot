@@ -44,6 +44,15 @@ def get_var_handler(update, context):
     key = update.message.text
     try:
         result = config[key]
+    except ValueError:
+        logger.info(f"Can't get invalid config key '{key}'.")
+        context.bot.edit_message_text(
+            f"The key '{key}' is not a valid key. "
+            "Tell me another key you want to get. "
+            "If you want to do something else, /config_cancel .",
+            *context.user_data['message_ids'],
+        )
+        return GET_VAR
     except KeyError:
         logger.info(f"Replying with 'no value' message for key '{key}'.")
         context.bot.delete_message(*context.user_data['message_ids'])
@@ -72,6 +81,19 @@ def set_handler(_update, context):
 
 def set_var_handler(update, context):
     key = update.message.text
+    try:
+        config[key]
+    except ValueError:
+        logger.info(f"Can't set invalid config key '{key}'.")
+        context.bot.edit_message_text(
+            f"The key '{key}' is not a valid key. "
+            "Tell me another key you want to set. "
+            "If you want to do something else, /config_cancel .",
+            *context.user_data['message_ids'],
+        )
+        return SET_VAR
+    except KeyError:
+        pass
     context.user_data['key'] = key
     logger.info("Requesting value to set the key.")
     context.bot.edit_message_text(
@@ -109,6 +131,15 @@ def del_var_handler(update, context):
     key = update.message.text
     try:
         del config[key]
+    except ValueError:
+        logger.info(f"Can't delete invalid config key '{key}'.")
+        context.bot.edit_message_text(
+            f"The key '{key}' is not a valid key. "
+            "Tell me another key you want to clear. "
+            "If you want to do something else, /config_cancel .",
+            *context.user_data['message_ids'],
+        )
+        return DEL_VAR
     except KeyError:
         logger.info(f"Tried to delete config with key '{key}' but it didn't exists.")
         context.bot.delete_message(*context.user_data['message_ids'])
