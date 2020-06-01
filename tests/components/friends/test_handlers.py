@@ -12,9 +12,11 @@ from fjfnaranjobot.components.friends.handlers import (
     GET_PAGE,
     ONLY_PAGE,
     add_friend_handler,
+    add_friend_id_handler,
     add_handler,
     cancel_handler,
     del_friend_handler,
+    del_friend_id_handler,
     del_handler,
     friends_handler,
     get_page_handler,
@@ -279,6 +281,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             assert ADD_FRIEND == add_handler(*self.update_and_context)
         self.assert_edit(
             'Send me the contact of the friend you want to add. '
+            'Or its id. '
             'If you want to do something else, /friends_cancel .',
             1,
             2,
@@ -311,6 +314,47 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 assert '1fna 1lna' == friend.username
         assert found
 
+    def test_add_friend_id_handler_number_ok(self):
+        self.set_string_command('9')
+        with self.assert_log('Adding ID 9 as a friend.', logger):
+            assert ConversationHandler.END == add_friend_id_handler(
+                *self.update_and_context
+            )
+        self.assert_delete(1, 2)
+        self.assert_reply('Added ID 9 as a friend.')
+        assert {} == self.user_data
+        assert User(9, None) in friends
+
+    def test_add_friend_id_handler_number_multiple_str(self):
+        self.set_string_command('9 9')
+        with self.assert_log(
+            'Received and invalid id \'9 9\' trying to add a friend.', logger
+        ):
+            assert ADD_FRIEND == add_friend_id_handler(*self.update_and_context)
+        self.assert_edit(
+            'That\'s not a contact nor a single valid id. '
+            'Send me the contact of the friend you want to add. '
+            'Or its id. '
+            'If you want to do something else, /friends_cancel .',
+            1,
+            2,
+        )
+
+    def test_add_friend_id_handler_number_less_zero(self):
+        self.set_string_command('-3')
+        with self.assert_log(
+            'Received and invalid number in id \'-3\' trying to add a friend.', logger
+        ):
+            assert ADD_FRIEND == add_friend_id_handler(*self.update_and_context)
+        self.assert_edit(
+            'That\'s not a contact nor a valid id. '
+            'Send me the contact of the friend you want to add. '
+            'Or its id. '
+            'If you want to do something else, /friends_cancel .',
+            1,
+            2,
+        )
+
     def test_del_handler(self):
         with self.assert_log(
             'Requesting contact to remove as a friend.', logger,
@@ -318,6 +362,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             assert DEL_FRIEND == del_handler(*self.update_and_context)
         self.assert_edit(
             'Send me the contact of the friend you want to remove. '
+            'Or its id. '
             'If you want to do something else, /friends_cancel .',
             1,
             2,
@@ -347,6 +392,50 @@ class FriendsHandlersTests(BotHandlerTestCase):
         self.assert_delete(1, 2)
         self.assert_reply('9fn 9ln isn\'t a friend.')
         assert {} == self.user_data
+
+    def test_del_friend_id_handler_number_ok(self):
+        self.set_string_command('1')
+        with self.assert_log(
+            'Removing 1un as a friend.', logger,
+        ):
+            assert ConversationHandler.END == del_friend_id_handler(
+                *self.update_and_context
+            )
+        self.assert_delete(1, 2)
+        self.assert_reply('Removed 1un as a friend.')
+        assert {} == self.user_data
+        assert User(1, None) not in friends
+
+    def test_del_friend_id_handler_number_multiple_str(self):
+        self.set_string_command('9 9')
+        with self.assert_log(
+            'Received and invalid id \'9 9\' trying to remove a friend.', logger
+        ):
+            assert DEL_FRIEND == del_friend_id_handler(*self.update_and_context)
+        self.assert_edit(
+            'That\'s not a contact nor a single valid id. '
+            'Send me the contact of the friend you want to remove. '
+            'Or its id. '
+            'If you want to do something else, /friends_cancel .',
+            1,
+            2,
+        )
+
+    def test_del_friend_id_handler_number_less_zero(self):
+        self.set_string_command('-3')
+        with self.assert_log(
+            'Received and invalid number in id \'-3\' trying to remove a friend.',
+            logger,
+        ):
+            assert DEL_FRIEND == del_friend_id_handler(*self.update_and_context)
+        self.assert_edit(
+            'That\'s not a contact nor a valid id. '
+            'Send me the contact of the friend you want to remove. '
+            'Or its id. '
+            'If you want to do something else, /friends_cancel .',
+            1,
+            2,
+        )
 
     def test_cancel_handler(self):
         self.user_data.update({'page': 0, 'some': 'content'})

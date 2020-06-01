@@ -1,5 +1,6 @@
 from math import floor
 
+from telegram import Contact
 from telegram.ext import CommandHandler, ConversationHandler, Filters, MessageHandler
 
 from fjfnaranjobot.auth import friends, only_owner
@@ -134,6 +135,7 @@ def add_handler(_update, context):
     logger.info("Requesting contact to add as a friend.")
     context.bot.edit_message_text(
         "Send me the contact of the friend you want to add. "
+        "Or its id. "
         "If you want to do something else, /friends_cancel .",
         *context.user_data['message_ids'],
     )
@@ -151,10 +153,48 @@ def add_friend_handler(update, context):
     return ConversationHandler.END
 
 
+def add_friend_id_handler(update, context):
+    try:
+        (user_id,) = update.message.text.split()
+    except ValueError:
+        logger.info(
+            f"Received and invalid id '{update.message.text}' trying to add a friend."
+        )
+        context.bot.edit_message_text(
+            "That's not a contact nor a single valid id. "
+            "Send me the contact of the friend you want to add. "
+            "Or its id. "
+            "If you want to do something else, /friends_cancel .",
+            *context.user_data['message_ids'],
+        )
+        return ADD_FRIEND
+    else:
+        try:
+            user_id_int = int(user_id)
+            if user_id_int < 0:
+                raise ValueError()
+        except ValueError:
+            logger.info(
+                f"Received and invalid number in id '{user_id}' trying to add a friend."
+            )
+            context.bot.edit_message_text(
+                "That's not a contact nor a valid id. "
+                "Send me the contact of the friend you want to add. "
+                "Or its id. "
+                "If you want to do something else, /friends_cancel .",
+                *context.user_data['message_ids'],
+            )
+            return ADD_FRIEND
+        else:
+            update.message.contact = Contact('', 'ID', str(user_id_int), user_id_int)
+            return add_friend_handler(update, context)
+
+
 def del_handler(_update, context):
     logger.info("Requesting contact to remove as a friend.")
     context.bot.edit_message_text(
         "Send me the contact of the friend you want to remove. "
+        "Or its id. "
         "If you want to do something else, /friends_cancel .",
         *context.user_data['message_ids'],
     )
@@ -181,6 +221,43 @@ def del_friend_handler(update, context):
         update.message.reply_text(f"{user.username} isn't a friend.")
 
     return ConversationHandler.END
+
+
+def del_friend_id_handler(update, context):
+    try:
+        (user_id,) = update.message.text.split()
+    except ValueError:
+        logger.info(
+            f"Received and invalid id '{update.message.text}' trying to remove a friend."
+        )
+        context.bot.edit_message_text(
+            "That's not a contact nor a single valid id. "
+            "Send me the contact of the friend you want to remove. "
+            "Or its id. "
+            "If you want to do something else, /friends_cancel .",
+            *context.user_data['message_ids'],
+        )
+        return DEL_FRIEND
+    else:
+        try:
+            user_id_int = int(user_id)
+            if user_id_int < 0:
+                raise ValueError()
+        except ValueError:
+            logger.info(
+                f"Received and invalid number in id '{user_id}' trying to remove a friend."
+            )
+            context.bot.edit_message_text(
+                "That's not a contact nor a valid id. "
+                "Send me the contact of the friend you want to remove. "
+                "Or its id. "
+                "If you want to do something else, /friends_cancel .",
+                *context.user_data['message_ids'],
+            )
+            return DEL_FRIEND
+        else:
+            update.message.contact = Contact('', 'ID', str(user_id_int), user_id_int)
+            return del_friend_handler(update, context)
 
 
 def cancel_handler(update, context):
@@ -212,10 +289,12 @@ handlers = (
             ADD_FRIEND: [
                 CommandHandler('config_cancel', cancel_handler),
                 MessageHandler(Filters.contact, add_friend_handler),
+                MessageHandler(Filters.text, add_friend_id_handler),
             ],
             DEL_FRIEND: [
                 CommandHandler('config_cancel', cancel_handler),
                 MessageHandler(Filters.contact, del_friend_handler),
+                MessageHandler(Filters.text, del_friend_id_handler),
             ],
         },
         fallbacks=[CommandHandler('friends_cancel', cancel_handler)],
