@@ -22,7 +22,9 @@ logger = getLogger(__name__)
 BOT_TOKEN = environ.get('BOT_TOKEN')
 BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
 BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
-BOT_COMPONENTS = environ.get('BOT_COMPONENTS', 'config,friends,commands,terraria,sorry')
+BOT_COMPONENTS = environ.get(
+    'BOT_COMPONENTS', 'start,config,friends,commands,terraria,sorry'
+)
 
 _BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.handlers'
 
