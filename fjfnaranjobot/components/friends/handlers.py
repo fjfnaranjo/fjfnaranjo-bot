@@ -12,14 +12,15 @@ logger = getLogger(__name__)
 
 PAGE_SIZE = 5
 
-
+#
+# friends_handler states
 #
 # cmd --> GET_ADD_OR_DEL --> GET_PAGE   --> GET_PAGE
 #                                       --> ONLY_PAGE
 #                        --> ADD_FRIEND --> end
 #                        --> DEL_FRIEND --> end
 #
-# GET_ADD_OR_DEL, GET_PAGE, ONLY_PAGE, ADD_FRIEND, DEL_FRIEND --> end
+# * --> end
 #
 
 GET_ADD_OR_DEL, GET_PAGE, ONLY_PAGE, ADD_FRIEND, DEL_FRIEND = range(5)

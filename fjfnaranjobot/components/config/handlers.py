@@ -7,11 +7,13 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 #
+# config_handler states
+#
 # cmd --> GET_SET_OR_DEL --> GET_VAR --> end
 #                        --> SET_VAR --> SET_VALUE --> end
 #                        --> DEL_VAR --> end
 #
-# GET_SET_OR_DEL, GET_VAR, SET_VAR, DEL_VAR, SET_VALUE --> end
+# * --> end
 #
 
 GET_SET_OR_DEL, GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(5)
