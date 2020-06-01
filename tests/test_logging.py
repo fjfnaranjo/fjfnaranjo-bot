@@ -8,6 +8,7 @@ from fjfnaranjobot.logging import _get_log_path, getLogger, reset
 from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.logging'
+
 BOT_LOGFILE_DEFAULT = 'bot.log'
 BOT_LOGFILE_TEST = 'bot.a.test.name.log'
 LOGFILE_TEST_FILE = mkstemp()[1]

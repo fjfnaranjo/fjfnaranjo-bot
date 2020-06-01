@@ -6,8 +6,6 @@ from fjfnaranjobot.components.terraria.handlers import (
 
 from ...base import BotHandlerTestCase
 
-MODULE_PATH = 'fjfnaranjobot.components.terraria.handlers'
-
 
 class TerrariaHandlersTests(BotHandlerTestCase):
     def setUp(self, *args, **kwargs):

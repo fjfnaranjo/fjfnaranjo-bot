@@ -11,6 +11,7 @@ from fjfnaranjobot.db import cursor, get_db_path, logger, reset
 from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.db'
+
 BOT_DB_NAME_DEFAULT = 'bot.db'
 BOT_DB_NAME_TEST = 'bot.a.test.name.db'
 
