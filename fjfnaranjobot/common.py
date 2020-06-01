@@ -1,12 +1,17 @@
 from os import environ
 
 _BOT_DATA_DIR_DEFAULT = 'botdata'
+_BOT_OWNER_NAME_DEFAULT = 'fjfnaranjo'
 
 SORRY_TEXT = "I don't know what to do about that. Sorry :("
 
 
 def get_bot_data_dir():
     return environ.get('BOT_DATA_DIR', _BOT_DATA_DIR_DEFAULT)
+
+
+def get_bot_owner_name():
+    return environ.get('BOT_OWNER_NAME', _BOT_OWNER_NAME_DEFAULT)
 
 
 class User:
