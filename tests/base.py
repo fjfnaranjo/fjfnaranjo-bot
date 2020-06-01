@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from logging import INFO
 from os import environ
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from telegram.ext import DispatcherHandlerStop
 
@@ -133,9 +133,7 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
     def assert_replies(self, texts=[]):
         assert len(texts) == self._update_mock.message.reply_text.call_count
         for idx in range(len(texts)):
-            assert (texts[idx],) == (
-                self._update_mock.message.reply_text.call_args_list[idx][0]
-            )
+            self._update_mock.message.reply_text.assert_has_calls([call(texts[idx])])
 
     def assert_edit(self, text, chat_id, message_id):
         self._context_mock.bot.edit_message_text.assert_called_once_with(

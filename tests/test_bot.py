@@ -213,5 +213,11 @@ class BotComponentLoaderTests(BotTestCase):
         command_list_dev_mock = command_list_dev_patcher.start()
         self.addCleanup(command_list_dev_patcher.stop)
         Bot()
-        assert ['only_prod', 'both_prod_and_dev'] == command_list_mock
-        assert ['only_dev', 'both_prod_and_dev'] == command_list_dev_mock
+        assert [
+            ('desc1', 'only_prod',),
+            ('desc3', 'both_prod_and_dev',),
+        ] == command_list_mock
+        assert [
+            ('desc2', 'only_dev',),
+            ('desc3', 'both_prod_and_dev',),
+        ] == command_list_dev_mock

@@ -222,4 +222,4 @@ handlers = (
     ),
 )
 
-commands = ((None, 'friends',),)
+commands = (("Manage friends.", None, 'friends',),)

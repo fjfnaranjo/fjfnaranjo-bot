@@ -195,4 +195,4 @@ handlers = (
     ),
 )
 
-commands = ((None, 'config',),)
+commands = (("Edit bot configuration.", None, 'config',),)

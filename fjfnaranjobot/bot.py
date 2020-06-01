@@ -115,10 +115,10 @@ class Bot:
                     pass
                 else:
                     for command in commands:
-                        if command[0] is not None:
-                            command_list.append(command[0])
                         if command[1] is not None:
-                            command_list_dev.append(command[1])
+                            command_list.append((command[0], command[1],))
+                        if command[2] is not None:
+                            command_list_dev.append((command[0], command[2],))
 
             except ModuleNotFoundError:
                 pass
