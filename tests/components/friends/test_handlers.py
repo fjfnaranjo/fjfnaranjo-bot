@@ -298,6 +298,43 @@ class FriendsHandlersTests(BotHandlerTestCase):
         assert {} == self.user_data
         assert User(9, None) in friends
 
+    def test_add_friend_handler_no_id(self):
+        self.set_contact(None, 'nfn', 'nln')
+        with self.assert_log(
+            'Received a contact without ID to add as a friend.', logger
+        ):
+            assert ADD_FRIEND == add_friend_handler(*self.update_and_context)
+        self.assert_edit(
+            'That doesn\'t look like a user with Telegram. '
+            'Send me the contact of the friend you want to add. '
+            'Or its id. '
+            'If you want to do something else, /friends_cancel .',
+            1,
+            2,
+        )
+
+    def test_add_friend_handler_no_first_name(self):
+        self.set_contact(9, None, '9ln')
+        with self.assert_log('Adding 9ln as a friend.', logger):
+            assert ConversationHandler.END == add_friend_handler(
+                *self.update_and_context
+            )
+        self.assert_delete(1, 2)
+        self.assert_reply('Added 9ln as a friend.')
+        assert {} == self.user_data
+        assert User(9, None) in friends
+
+    def test_add_friend_handler_no_last_name(self):
+        self.set_contact(9, '9fn', None)
+        with self.assert_log('Adding 9fn as a friend.', logger):
+            assert ConversationHandler.END == add_friend_handler(
+                *self.update_and_context
+            )
+        self.assert_delete(1, 2)
+        self.assert_reply('Added 9fn as a friend.')
+        assert {} == self.user_data
+        assert User(9, None) in friends
+
     def test_add_friend_handler_existing(self):
         self.set_contact(1, '1fna', '1lna')
         with self.assert_log('Adding 1fna 1lna as a friend.', logger):
@@ -370,6 +407,47 @@ class FriendsHandlersTests(BotHandlerTestCase):
 
     def test_del_friend_handler(self):
         self.set_contact(1, '1fn', '1ln')
+        with self.assert_log(
+            'Removing 1un as a friend.', logger,
+        ):
+            assert ConversationHandler.END == del_friend_handler(
+                *self.update_and_context
+            )
+        self.assert_delete(1, 2)
+        self.assert_reply('Removed 1un as a friend.')
+        assert {} == self.user_data
+        assert User(1, None) not in friends
+
+    def test_del_friend_handler_no_id(self):
+        self.set_contact(None, 'nfn', 'nln')
+        with self.assert_log(
+            'Received a contact without ID to remove as a friend.', logger
+        ):
+            assert DEL_FRIEND == del_friend_handler(*self.update_and_context)
+        self.assert_edit(
+            'That doesn\'t look like a user with Telegram. '
+            'Send me the contact of the friend you want to remove. '
+            'Or its id. '
+            'If you want to do something else, /friends_cancel .',
+            1,
+            2,
+        )
+
+    def test_del_friend_handler_no_first_name(self):
+        self.set_contact(1, None, '1ln')
+        with self.assert_log(
+            'Removing 1un as a friend.', logger,
+        ):
+            assert ConversationHandler.END == del_friend_handler(
+                *self.update_and_context
+            )
+        self.assert_delete(1, 2)
+        self.assert_reply('Removed 1un as a friend.')
+        assert {} == self.user_data
+        assert User(1, None) not in friends
+
+    def test_del_friend_handler_no_last_name(self):
+        self.set_contact(1, '1fn', None)
         with self.assert_log(
             'Removing 1un as a friend.', logger,
         ):

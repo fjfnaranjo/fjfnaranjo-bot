@@ -144,7 +144,23 @@ def add_handler(_update, context):
 
 def add_friend_handler(update, context):
     contact = update.message.contact
-    user = User(contact.user_id, ' '.join([contact.first_name, contact.last_name]))
+    if contact.user_id is None:
+        logger.info("Received a contact without ID to add as a friend.")
+        context.bot.edit_message_text(
+            "That doesn't look like a user with Telegram. "
+            "Send me the contact of the friend you want to add. "
+            "Or its id. "
+            "If you want to do something else, /friends_cancel .",
+            *context.user_data['message_ids'],
+        )
+        return ADD_FRIEND
+    contact_first_name = getattr(contact, 'first_name', '')
+    contact_last_name = getattr(contact, 'last_name', '')
+    first_name = contact_first_name if contact_first_name is not None else ''
+    last_name = contact_last_name if contact_last_name is not None else ''
+    username = ' '.join([first_name, last_name]).strip()
+    user = User(contact.user_id, username)
+
     logger.info(f"Adding {user.username} as a friend.")
     friends.add(user)
     context.bot.delete_message(*context.user_data['message_ids'])
@@ -203,7 +219,22 @@ def del_handler(_update, context):
 
 def del_friend_handler(update, context):
     contact = update.message.contact
-    user = User(contact.user_id, ' '.join([contact.first_name, contact.last_name]))
+    if contact.user_id is None:
+        logger.info("Received a contact without ID to remove as a friend.")
+        context.bot.edit_message_text(
+            "That doesn\'t look like a user with Telegram. "
+            "Send me the contact of the friend you want to remove. "
+            "Or its id. "
+            "If you want to do something else, /friends_cancel .",
+            *context.user_data['message_ids'],
+        )
+        return DEL_FRIEND
+    contact_first_name = getattr(contact, 'first_name', '')
+    contact_last_name = getattr(contact, 'last_name', '')
+    first_name = contact_first_name if contact_first_name is not None else ''
+    last_name = contact_last_name if contact_last_name is not None else ''
+    username = ' '.join([first_name, last_name]).strip()
+    user = User(contact.user_id, username)
 
     if user in friends:
         for friend in friends:
