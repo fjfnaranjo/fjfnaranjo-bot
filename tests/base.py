@@ -130,6 +130,13 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
     def assert_reply(self, text):
         self._update_mock.message.reply_text.assert_called_once_with(text)
 
+    def assert_replies(self, texts=[]):
+        assert len(texts) == self._update_mock.message.reply_text.call_count
+        for idx in range(len(texts)):
+            assert (texts[idx],) == (
+                self._update_mock.message.reply_text.call_args_list[idx][0]
+            )
+
     def assert_edit(self, text, chat_id, message_id):
         self._context_mock.bot.edit_message_text.assert_called_once_with(
             text, chat_id, message_id
