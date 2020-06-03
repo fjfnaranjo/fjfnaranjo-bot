@@ -3,11 +3,11 @@ from unittest.mock import patch
 from telegram.ext import DispatcherHandlerStop
 
 from fjfnaranjobot.auth import logger as auth_logger
-from fjfnaranjobot.components.commands.handlers import commands_handler, logger
+from fjfnaranjobot.components.commands.info import commands_handler, logger
 
 from ...base import BotHandlerTestCase
 
-MODULE_PATH = 'fjfnaranjobot.components.commands.handlers'
+MODULE_PATH = 'fjfnaranjobot.components.commands.info'
 
 
 class CommandsHandlersTests(BotHandlerTestCase):

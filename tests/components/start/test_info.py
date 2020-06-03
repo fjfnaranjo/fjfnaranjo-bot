@@ -1,10 +1,10 @@
 from unittest.mock import patch
 
-from fjfnaranjobot.components.start.handlers import logger, start_handler
+from fjfnaranjobot.components.start.info import logger, start_handler
 
 from ...base import BotHandlerTestCase
 
-MODULE_PATH = 'fjfnaranjobot.components.start.handlers'
+MODULE_PATH = 'fjfnaranjobot.components.start.info'
 
 
 @patch(f'{MODULE_PATH}.get_bot_owner_name', return_value='test')

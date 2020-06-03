@@ -1,4 +1,4 @@
-from fjfnaranjobot.components.terraria.handlers import (
+from fjfnaranjobot.components.terraria.info import (
     logger,
     terraria_admin_handler,
     terraria_handler,

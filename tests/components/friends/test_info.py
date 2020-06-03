@@ -5,7 +5,7 @@ from telegram.ext import ConversationHandler, DispatcherHandlerStop
 from fjfnaranjobot.auth import friends
 from fjfnaranjobot.auth import logger as auth_logger
 from fjfnaranjobot.common import User
-from fjfnaranjobot.components.friends.handlers import (
+from fjfnaranjobot.components.friends.info import (
     ADD_FRIEND,
     DEL_FRIEND,
     GET_ADD_OR_DEL,
@@ -25,7 +25,7 @@ from fjfnaranjobot.components.friends.handlers import (
 
 from ...base import BotHandlerTestCase
 
-MODULE_PATH = 'fjfnaranjobot.components.friends.handlers'
+MODULE_PATH = 'fjfnaranjobot.components.friends.info'
 
 
 @patch(f'{MODULE_PATH}.PAGE_SIZE', 2)

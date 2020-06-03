@@ -1,4 +1,4 @@
-from fjfnaranjobot.components.sorry.handlers import logger, sorry_handler
+from fjfnaranjobot.components.sorry.info import logger, sorry_handler
 
 from ...base import BotHandlerTestCase
 

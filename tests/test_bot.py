@@ -111,7 +111,7 @@ class BotTests(BotTestCase):
 
 @patch(f'{MODULE_PATH}.TBot')
 @patch(f'{MODULE_PATH}.Dispatcher')
-@patch(f'{MODULE_PATH}._BOT_COMPONENTS_TEMPLATE', 'tests.component_mocks.{}.handlers')
+@patch(f'{MODULE_PATH}._BOT_COMPONENTS_TEMPLATE', 'tests.component_mocks.{}.info')
 class BotComponentLoaderTests(BotTestCase):
     @patch(f'{MODULE_PATH}.BOT_COMPONENTS', '')
     def test_no_components(self, _dispatcher, _tbot):

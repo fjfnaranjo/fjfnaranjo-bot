@@ -3,7 +3,7 @@ from unittest.mock import patch
 from telegram.ext import ConversationHandler, DispatcherHandlerStop
 
 from fjfnaranjobot.auth import logger as auth_logger
-from fjfnaranjobot.components.config.handlers import (
+from fjfnaranjobot.components.config.info import (
     DEL_VAR,
     GET_SET_OR_DEL,
     GET_VAR,
@@ -23,7 +23,7 @@ from fjfnaranjobot.components.config.handlers import (
 
 from ...base import BotHandlerTestCase
 
-MODULE_PATH = 'fjfnaranjobot.components.config.handlers'
+MODULE_PATH = 'fjfnaranjobot.components.config.info'
 
 
 class ConfigHandlersTests(BotHandlerTestCase):

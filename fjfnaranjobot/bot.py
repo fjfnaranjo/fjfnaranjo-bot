@@ -26,7 +26,7 @@ BOT_COMPONENTS = environ.get(
     'BOT_COMPONENTS', 'start,config,friends,commands,terraria,sorry'
 )
 
-_BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.handlers'
+_BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.info'
 
 
 class BotJSONError(Exception):
@@ -74,7 +74,7 @@ class Bot:
         self.dispatcher.add_error_handler(self.log_error_from_context)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
-        self._init_handlers()
+        self._init_components()
         logger.debug("Bot handlers registered.")
 
     def log_error_from_context(self, _update, context):
@@ -83,7 +83,7 @@ class Bot:
             exc_info=context.error,
         )
 
-    def _init_handlers(self):
+    def _init_components(self):
         for component in BOT_COMPONENTS.split(','):
             try:
                 info = import_module(_BOT_COMPONENTS_TEMPLATE.format(component))
