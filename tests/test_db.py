@@ -18,7 +18,7 @@ BOT_DB_NAME_TEST = 'bot.a.test.name.db'
 
 class DbTests(BotTestCase):
     def setUp(self):
-        BotTestCase.setUp(self)
+        super().setUp()
         self._db_test_file = mkstemp()[1]
         self._db_test_dir = mkdtemp()
         self._get_db_path_mock = MagicMock(return_value=self._db_test_file)

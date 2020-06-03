@@ -14,7 +14,7 @@ from telegram.ext import (
 )
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
-from fjfnaranjobot.common import command_list, command_list_dev, get_bot_components
+from fjfnaranjobot.common import Command, command_list, get_bot_components
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -44,84 +44,90 @@ def _get_handler_callback_name(handler):
     )
 
 
-def get_names_callbacks(handler):
-    names_callbacks = []
-
-    if isinstance(handler, ConversationHandler):
-        for entry_point in handler.entry_points:
-            return get_names_callbacks(entry_point)
-    else:
-        callback_name = _get_handler_callback_name(handler)
-        if isinstance(handler, CommandHandler):
-            for command in handler.command:
-                names_callbacks.append((command, callback_name,))
-        elif isinstance(handler, StringCommandHandler):
-            names_callbacks.append((handler.command, callback_name,))
-        elif isinstance(handler, MessageHandler):
-            names_callbacks.append(('<message>', callback_name,))
-        else:
-            names_callbacks.append(('<unknown command>', callback_name,))
-
-    return names_callbacks
-
-
 class Bot:
     def __init__(self):
         self.bot = TBot(BOT_TOKEN)
         self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
-        self.dispatcher.add_error_handler(self.log_error_from_context)
+        self.dispatcher.add_error_handler(self._log_error_from_context)
         self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
-        self._init_components()
+        for component in get_bot_components().split(','):
+            self._parse_component_info(component)
         logger.debug("Bot handlers registered.")
 
-    def log_error_from_context(self, _update, context):
+    def _log_error_from_context(self, _update, context):
         logger.exception(
             "Error inside the framework raised by the dispatcher.",
             exc_info=context.error,
         )
 
-    def _init_components(self):
-        for component in get_bot_components().split(','):
-            try:
-                info = import_module(_BOT_COMPONENTS_TEMPLATE.format(component))
-                try:
-                    handlers = info.handlers
-                except AttributeError:
-                    pass
-                else:
-                    try:
-                        group = int(getattr(info, 'group', DEFAULT_GROUP))
-                    except ValueError:
-                        raise ValueError(f"Invalid group for component '{component}'.")
-                    for handler in handlers:
-                        if not isinstance(handler, Handler):
-                            raise ValueError(
-                                f"Invalid handler for component '{component}'."
-                            )
-                        else:
-                            self.dispatcher.add_handler(handler, group)
-                            callback_names = get_names_callbacks(handler)
-                            for command, callback in callback_names:
-                                logger.debug(
-                                    f"Registered command '{command}' "
-                                    f"with callback '{callback}' "
-                                    f"for component '{component}' "
-                                    f"and group number {group}."
-                                )
-                try:
-                    commands = info.commands
-                except AttributeError:
-                    pass
-                else:
-                    for command in commands:
-                        if command[1] is not None:
-                            command_list.append((command[0], command[1],))
-                        if command[2] is not None:
-                            command_list_dev.append((command[0], command[2],))
+    def _get_names_callbacks(self, handler):
+        names_callbacks = []
 
-            except ModuleNotFoundError:
-                pass
+        if isinstance(handler, ConversationHandler):
+            for entry_point in handler.entry_points:
+                return self._get_names_callbacks(entry_point)
+        else:
+            callback_name = _get_handler_callback_name(handler)
+            if isinstance(handler, CommandHandler):
+                for command in handler.command:
+                    names_callbacks.append((command, callback_name,))
+            elif isinstance(handler, StringCommandHandler):
+                names_callbacks.append((handler.command, callback_name,))
+            elif isinstance(handler, MessageHandler):
+                names_callbacks.append(('<message>', callback_name,))
+            else:
+                names_callbacks.append(('<unknown command>', callback_name,))
+
+        return names_callbacks
+
+    def _parse_component_handlers(self, component, info, group):
+        try:
+            handlers = list(info.handlers)
+        except AttributeError:
+            pass
+        except TypeError:
+            raise ValueError(
+                f"Invalid handlers definition for component '{component}'."
+            )
+        else:
+            for handler in handlers:
+                if not isinstance(handler, Handler):
+                    raise ValueError(f"Invalid handler for component '{component}'.")
+                else:
+                    self.dispatcher.add_handler(handler, group)
+                    callback_names = self._get_names_callbacks(handler)
+                    for command, callback in callback_names:
+                        logger.debug(
+                            f"Registered command '{command}' "
+                            f"with callback '{callback}' "
+                            f"for component '{component}' "
+                            f"and group number {group}."
+                        )
+
+    def _parse_component_commands(self, component, info):
+        try:
+            commands = info.commands
+        except AttributeError:
+            pass
+        else:
+            for command in commands:
+                if not isinstance(command, Command):
+                    raise ValueError(f"Invalid command for component '{component}'.")
+                command_list.append(command)
+
+    def _parse_component_info(self, component):
+        try:
+            info = import_module(_BOT_COMPONENTS_TEMPLATE.format(component))
+        except ModuleNotFoundError:
+            pass
+        else:
+            try:
+                group = int(getattr(info, 'group', DEFAULT_GROUP))
+            except ValueError:
+                raise ValueError(f"Invalid group for component '{component}'.")
+            self._parse_component_handlers(component, info, group)
+            self._parse_component_commands(component, info)
 
     def process_request(self, url_path, update):
 

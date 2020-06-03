@@ -8,8 +8,8 @@ from ...base import BotHandlerTestCase
 
 
 class TerrariaHandlersTests(BotHandlerTestCase):
-    def setUp(self, *args, **kwargs):
-        BotHandlerTestCase.setUp(self, *args, **kwargs)
+    def setUp(self):
+        super().setUp()
         self.user_is_owner()
 
     def test_terraria_admin_handler_does_nothing(self):

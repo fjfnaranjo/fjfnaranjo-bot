@@ -28,7 +28,7 @@ MODULE_PATH = 'fjfnaranjobot.components.config.info'
 
 class ConfigHandlersTests(BotHandlerTestCase):
     def setUp(self):
-        BotHandlerTestCase.setUp(self)
+        super().setUp()
         self.user_data = {'message_ids': (1, 2)}
         self.user_is_owner()
 

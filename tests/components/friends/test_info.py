@@ -31,7 +31,7 @@ MODULE_PATH = 'fjfnaranjobot.components.friends.info'
 @patch(f'{MODULE_PATH}.PAGE_SIZE', 2)
 class FriendsHandlersTests(BotHandlerTestCase):
     def setUp(self):
-        BotHandlerTestCase.setUp(self)
+        super().setUp()
         self.user_data = {'message_ids': (1, 2)}
         self.user_is_owner()
         friends.clear()

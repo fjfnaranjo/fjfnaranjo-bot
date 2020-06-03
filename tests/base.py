@@ -34,8 +34,8 @@ class BotTestCase(TestCase):
 
 
 class BotUpdateContextTestCase(BotTestCase):
-    def setUp(self, *args, **kwargs):
-        BotTestCase.setUp(self, *args, **kwargs)
+    def setUp(self):
+        super().setUp()
         self._update_mock = MagicMock()
         self.user_is_unknown()
         self._context_mock = MagicMock()
@@ -93,8 +93,8 @@ class BotUpdateContextTestCase(BotTestCase):
 
 
 class BotHandlerTestCase(BotUpdateContextTestCase):
-    def setUp(self, *args, **kwargs):
-        BotUpdateContextTestCase.setUp(self, *args, **kwargs)
+    def setUp(self):
+        super().setUp()
 
         self._message_reply_text_mock = MagicMock()
         self._message_reply_text_mock.message_id = 101

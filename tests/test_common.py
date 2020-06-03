@@ -1,4 +1,8 @@
+from unittest import TestCase
+
 from fjfnaranjobot.common import (
+    Command,
+    ScheduleEntry,
     User,
     get_bot_components,
     get_bot_data_dir,
@@ -55,12 +59,36 @@ class BotComponentsTests(BotTestCase):
             assert get_bot_components() == BOT_COMPONENTS_TEST
 
 
-class UserTestCase(BotTestCase):
-    def test_create_friend(self):
+class UserTests(TestCase):
+    def test_init_friend(self):
         friend = User(0, 'a')
         assert 0 == friend.id
         assert 'a' == friend.username
 
-    def test_create_friend_not_int(self):
+    def test_init_friend_not_int(self):
         with self.assertRaises(ValueError):
             User('i', 'a')
+
+
+class CommandTests(TestCase):
+    def test_init_command(self):
+        command = Command('desc', 'prod', 'dev')
+        assert 'desc' == command.description
+        assert 'prod' == command.prod_command
+        assert 'dev' == command.dev_command
+
+
+class ScheduleEntryTests(TestCase):
+    def test_init_command(self):
+        entry = ScheduleEntry('n', 's', 'si')
+        assert 'n' == entry.name
+        assert 's' == entry.schedule
+        assert 'si' == entry.signature
+        assert entry.extra_args == {}
+
+    def test_init_command_with_extra(self):
+        entry = ScheduleEntry('n', 's', 'si', extra_arg='extra_value')
+        assert 'n' == entry.name
+        assert 's' == entry.schedule
+        assert 'si' == entry.signature
+        assert {'extra_arg': 'extra_value'} == entry.extra_args

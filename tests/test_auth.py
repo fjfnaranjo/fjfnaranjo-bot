@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from unittest import TestCase
 from unittest.mock import patch
 
 from telegram.ext.dispatcher import DispatcherHandlerStop
@@ -19,7 +20,6 @@ from .base import (
     FIRST_FRIEND_USER,
     OWNER_USER,
     UNKNOWN_USER,
-    BotTestCase,
     BotUpdateContextTestCase,
 )
 
@@ -223,9 +223,9 @@ class AuthTests(BotUpdateContextTestCase):
             assert noop(self.update) is True
 
 
-class FriendsTestCase(BotTestCase):
+class FriendsTests(TestCase):
     def setUp(self):
-        BotTestCase.setUp(self)
+        super().setUp()
         friends.clear()
 
     @contextmanager

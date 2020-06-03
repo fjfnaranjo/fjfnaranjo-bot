@@ -1,7 +1,7 @@
 from telegram.ext import CommandHandler, DispatcherHandlerStop
 
 from fjfnaranjobot.auth import only_owner
-from fjfnaranjobot.common import command_list, command_list_dev
+from fjfnaranjobot.common import Command, command_list
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -10,19 +10,26 @@ logger = getLogger(__name__)
 @only_owner
 def commands_handler(update, _context):
     logger.info("Sending list of commands.")
-    prod_commands_text = "\n".join(
-        command[1] + ' - ' + command[0] for command in command_list
-    )
-    dev_commands_text = "\n".join(
-        command[1] + ' - ' + command[0] for command in command_list_dev
+    prod_commands = [
+        command.prod_command + ' - ' + command.description
+        for command in command_list
+        if command.prod_command is not None
+    ]
+
+    dev_commands = [
+        command.dev_command + ' - ' + command.description
+        for command in command_list
+        if command.dev_command is not None
+    ]
+    update.message.reply_text(
+        "\n".join(prod_commands) if len(prod_commands) > 1 else 'no commands'
     )
     update.message.reply_text(
-        prod_commands_text if prod_commands_text else 'no commands'
+        "\n".join(dev_commands) if len(dev_commands) > 1 else 'no commands'
     )
-    update.message.reply_text(dev_commands_text if dev_commands_text else 'no commands')
     raise DispatcherHandlerStop()
 
 
 handlers = (CommandHandler('commands', commands_handler),)
 
-commands = (("Print the list of bot commands.", None, 'commands'),)
+commands = (Command("Print the list of bot commands.", None, 'commands'),)

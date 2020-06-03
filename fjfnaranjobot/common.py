@@ -25,5 +25,19 @@ class User:
         self.username = username
 
 
+class Command:
+    def __init__(self, description, prod_command, dev_command):
+        self.description = description
+        self.prod_command = prod_command
+        self.dev_command = dev_command
+
+
+class ScheduleEntry:
+    def __init__(self, name, schedule, signature, **kwargs):
+        self.name = name
+        self.schedule = schedule
+        self.signature = signature
+        self.extra_args = kwargs
+
+
 command_list = []
-command_list_dev = []

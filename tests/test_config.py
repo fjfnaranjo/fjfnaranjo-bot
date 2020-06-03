@@ -1,15 +1,14 @@
 from logging import DEBUG
+from unittest import TestCase
 
 from fjfnaranjobot.config import config, logger
-
-from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.config'
 
 
-class ConfigTests(BotTestCase):
+class ConfigTests(TestCase):
     def setUp(self):
-        BotTestCase.setUp(self)
+        super().setUp()
         config.clear()
 
     def test_get_config_valid(self):

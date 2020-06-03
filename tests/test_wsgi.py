@@ -1,18 +1,17 @@
 from io import BytesIO
 from logging import DEBUG
+from unittest.case import TestCase
 from unittest.mock import MagicMock, patch
 
 from fjfnaranjobot.bot import BotJSONError, BotTokenError
 from fjfnaranjobot.wsgi import application
 from fjfnaranjobot.wsgi import logger as wsgi_logger
 
-from .base import BotTestCase
-
 MODULE_PATH = 'fjfnaranjobot.wsgi'
 
 
 @patch(f'{MODULE_PATH}.bot')
-class WSGITests(BotTestCase):
+class WsgiTests(TestCase):
     def _fake_request(self, environ):
         def start_response_mock(status, headers):
             self._response_status = status

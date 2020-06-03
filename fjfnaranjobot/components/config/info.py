@@ -1,6 +1,7 @@
 from telegram.ext import CommandHandler, ConversationHandler, Filters, MessageHandler
 
 from fjfnaranjobot.auth import only_owner
+from fjfnaranjobot.common import Command
 from fjfnaranjobot.config import config
 from fjfnaranjobot.logging import getLogger
 
@@ -197,4 +198,4 @@ handlers = (
     ),
 )
 
-commands = (("Edit bot configuration.", None, 'config',),)
+commands = (Command("Edit bot configuration.", None, 'config',),)

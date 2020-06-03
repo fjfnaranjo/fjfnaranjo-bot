@@ -4,7 +4,7 @@ from telegram import Contact
 from telegram.ext import CommandHandler, ConversationHandler, Filters, MessageHandler
 
 from fjfnaranjobot.auth import friends, only_owner
-from fjfnaranjobot.common import User
+from fjfnaranjobot.common import Command, User
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -333,4 +333,4 @@ handlers = (
     ),
 )
 
-commands = (("Manage friends.", None, 'friends',),)
+commands = (Command("Manage friends.", None, 'friends',),)

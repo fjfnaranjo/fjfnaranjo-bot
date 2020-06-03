@@ -2,7 +2,7 @@ from importlib import import_module
 
 from celery import Celery
 
-from fjfnaranjobot.common import get_bot_components
+from fjfnaranjobot.common import ScheduleEntry, get_bot_components
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -22,24 +22,28 @@ def setup_periodic_tasks(sender, **_kwargs):
             component_tasks = import_module(
                 _TASKS_COMPONENTS_TEMPLATE.format(component)
             )
-
         except ModuleNotFoundError:
             pass
         else:
             try:
-                schedule = component_tasks.schedule
+                schedule = list(component_tasks.schedule)
             except AttributeError:
                 pass
+            except TypeError:
+                raise ValueError(
+                    f"Invalid schedule definitions for component '{component}'."
+                )
             else:
                 for entry in schedule:
-                    schedule_def = schedule[entry].copy()
-                    del schedule_def['schedule']
-                    del schedule_def['signature']
+                    if not isinstance(entry, ScheduleEntry):
+                        raise ValueError(
+                            f"Invalid schedule entry for component '{component}'."
+                        )
                     sender.add_periodic_task(
-                        schedule[entry]['schedule'],
-                        schedule[entry]['signature'],
-                        name=entry,
-                        **schedule_def
+                        entry.schedule,
+                        entry.signature,
+                        name=entry.name,
+                        **entry.extra_args,
                     )
 
 

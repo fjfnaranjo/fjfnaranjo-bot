@@ -1,7 +1,7 @@
 from .base import BotHandlerTestCase
 
 
-class TestBaseTestCase(BotHandlerTestCase):
+class BaseTests(BotHandlerTestCase):
     def test_no_command_raises_not_implemented(self):
         with self.assertRaises(NotImplementedError):
             self.user_is_unknown(True)

@@ -1,6 +1,7 @@
 from telegram.ext import CommandHandler, DispatcherHandlerStop
 
 from fjfnaranjobot.auth import only_owner, only_real
+from fjfnaranjobot.common import Command
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -95,6 +96,6 @@ handlers = (
 )
 
 commands = (
-    ("Manage Terraria servers.", 'terraria', 'terraria'),
-    ("Manage Terraria servers (admin).", None, 'terraria_admin'),
+    Command("Manage Terraria servers.", 'terraria', 'terraria'),
+    Command("Manage Terraria servers (admin).", None, 'terraria_admin'),
 )
