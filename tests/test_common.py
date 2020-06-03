@@ -1,4 +1,9 @@
-from fjfnaranjobot.common import User, get_bot_data_dir, get_bot_owner_name
+from fjfnaranjobot.common import (
+    User,
+    get_bot_components,
+    get_bot_data_dir,
+    get_bot_owner_name,
+)
 
 from .base import BotTestCase
 
@@ -9,6 +14,9 @@ BOT_DATA_DIR_TEST = '/bot/data/test'
 
 BOT_OWNER_NAME_DEFAULT = 'fjfnaranjo'
 BOT_OWNER_NAME_TEST = 'owner'
+
+BOT_COMPONENTS_DEFAULT = 'start,config,friends,commands,terraria,sorry'
+BOT_COMPONENTS_TEST = 'comp1,comp2'
 
 
 class BotDataDirTests(BotTestCase):
@@ -33,6 +41,18 @@ class BotOwnerNameTests(BotTestCase):
             f'{MODULE_PATH}.environ', {'BOT_OWNER_NAME': BOT_OWNER_NAME_TEST}
         ):
             assert get_bot_owner_name() == BOT_OWNER_NAME_TEST
+
+
+class BotComponentsTests(BotTestCase):
+    def test_get_owner_name_default(self):
+        with self.mocked_environ(f'{MODULE_PATH}.environ', None, ['BOT_COMPONENTS']):
+            assert get_bot_components() == BOT_COMPONENTS_DEFAULT
+
+    def test_get_owner_name_env(self):
+        with self.mocked_environ(
+            f'{MODULE_PATH}.environ', {'BOT_COMPONENTS': BOT_COMPONENTS_TEST}
+        ):
+            assert get_bot_components() == BOT_COMPONENTS_TEST
 
 
 class UserTestCase(BotTestCase):

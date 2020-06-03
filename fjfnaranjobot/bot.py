@@ -14,7 +14,7 @@ from telegram.ext import (
 )
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
-from fjfnaranjobot.common import command_list, command_list_dev
+from fjfnaranjobot.common import command_list, command_list_dev, get_bot_components
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -22,9 +22,7 @@ logger = getLogger(__name__)
 BOT_TOKEN = environ.get('BOT_TOKEN')
 BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
 BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
-BOT_COMPONENTS = environ.get(
-    'BOT_COMPONENTS', 'start,config,friends,commands,terraria,sorry'
-)
+
 
 _BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.info'
 
@@ -84,7 +82,7 @@ class Bot:
         )
 
     def _init_components(self):
-        for component in BOT_COMPONENTS.split(','):
+        for component in get_bot_components().split(','):
             try:
                 info = import_module(_BOT_COMPONENTS_TEMPLATE.format(component))
                 try:
