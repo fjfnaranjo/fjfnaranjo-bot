@@ -27,6 +27,15 @@ services:
     links:
       - rabbitmq
       - redis
+  celery-beat:
+    build: .
+    image: fjfnaranjo-bot
+    working_dir: /bot
+    env_file: .env
+    command: celery -A fjfnaranjobot.tasks beat --loglevel=debug -s /bot/botdata/celerybeat-schedule --pidfile=/bot/botdata/celerybeat.pid
+    links:
+      - rabbitmq
+      - redis
   rabbitmq:
     image: rabbitmq:3.8-management-alpine
     hostname: rabbitmq

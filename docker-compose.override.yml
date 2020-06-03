@@ -8,6 +8,9 @@ services:
     volumes:
       - bot-data:/bot/botdata
     command: celery -A fjfnaranjobot.tasks worker --loglevel=info
+  celery-beat:
+    volumes:
+      - bot-data:/bot/botdata
   rabbitmq:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq

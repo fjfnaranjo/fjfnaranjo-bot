@@ -9,6 +9,10 @@ services:
     volumes:
       - .:/bot
     user: "${CONTAINER_UID}:${CONTAINER_UID}"
+  celery-beat:
+    volumes:
+      - .:/bot
+    user: "${CONTAINER_UID}:${CONTAINER_UID}"
   rabbitmq:
     volumes:
       - rabbitmq-data-dev:/var/lib/rabbitmq
