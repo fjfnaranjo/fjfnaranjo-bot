@@ -53,3 +53,107 @@ def cursor():
     yield cur
     conn.commit()
     conn.close()
+
+
+class DbField:
+    def __init__(self, name, definition=None):
+        self.name = name
+        self.definition = definition
+
+
+class DbRelation:
+    @staticmethod
+    def _insert_under_before_upper(class_name):
+        for char in enumerate(class_name):
+            if char[0] == 0:
+                first_lower = class_name[0].lower() + class_name[1:]
+                continue
+            if char[1].isupper():
+                if char[0] == len(first_lower):
+                    new_class_name = first_lower[: char[0]] + '_' + char[1].lower()
+                else:
+                    new_class_name = (
+                        first_lower[: char[0]]
+                        + '_'
+                        + char[1].lower()
+                        + first_lower[char[0] + 1 :]
+                    )
+                return DbRelation._insert_under_before_upper(new_class_name)
+        return class_name
+
+    @staticmethod
+    @contextmanager
+    def _cursor(relation_name, fields):
+        with cursor() as cur:
+            cur.execute(
+                f'CREATE TABLE IF NOT EXISTS {relation_name} ('
+                + (
+                    ','.join(
+                        [
+                            field.name
+                            + (
+                                f' {field.definition}'
+                                if field.definition is not None
+                                else ''
+                            )
+                            for field in fields
+                        ]
+                    )
+                )
+                + ')'
+            )
+            yield cur
+
+    def __new__(cls, pk=None):
+        new_relation = super().__new__(cls)
+        new_relation.relation_name = DbRelation._insert_under_before_upper(cls.__name__)
+        for field in cls.fields:
+            setattr(new_relation, field.name, None)
+        if pk is not None:
+            DbRelation._from_db(
+                new_relation, pk, new_relation.relation_name, cls.fields
+            )
+        return new_relation
+
+    @staticmethod
+    def _from_db(instance, pk, relation_name, fields):
+        with DbRelation._cursor(relation_name, fields) as cur:
+            cur.execute(f'SELECT * FROM {relation_name} WHERE id=?', (pk,))
+            values = cur.fetchone()
+            if values is None:
+                raise RuntimeError(
+                    f"Row with id {pk} doesn't exists in relation '{relation_name}'."
+                )
+            for field in zip(fields, values):
+                setattr(instance, field[0].name, field[1])
+
+    def _commit_new(self, cur):
+        cur.execute(
+            f'INSERT INTO {self.relation_name} VALUES ('
+            + ', '.join(['?' for _ in self.fields])
+            + ')',
+            [getattr(self, field.name) for field in self.fields],
+        )
+        return cur.lastrowid
+
+    def _commit_replace(self, cur):
+        cur.execute(
+            f'UPDATE {self.relation_name} SET '
+            + ', '.join([f'{field.name}=?' for field in self.fields][1:])
+            + ' WHERE id=?',
+            [getattr(self, field.name) for field in self.fields[1:]] + [self.id],
+        )
+
+    def commit(self):
+        with self._cursor(self.relation_name, self.fields) as cur:
+            if self.id is not None:
+                cur.execute(
+                    f'SELECT * FROM {self.relation_name} WHERE id=?', (self.id,)
+                )
+                values = cur.fetchone()
+                if values is None:
+                    self.id = self._commit_new(cur)
+                else:
+                    self._commit_replace(cur)
+            else:
+                self.id = self._commit_new(cur)
