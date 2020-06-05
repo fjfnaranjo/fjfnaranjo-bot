@@ -300,10 +300,10 @@ def del_friend_id_handler(update, context):
 
 
 def cancel_handler(update, context):
+    logger.info("Abort friends conversation.")
     if 'message_ids' in context.user_data:
         context.bot.delete_message(*context.user_data['message_ids'])
     _clear_user_data(context)
-    logger.info("Abort friends conversation.")
     update.message.reply_text("Ok.")
     return ConversationHandler.END
 
