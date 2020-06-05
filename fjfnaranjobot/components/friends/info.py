@@ -27,10 +27,13 @@ GET_ADD_OR_DEL, GET_PAGE, ONLY_PAGE, ADD_FRIEND, DEL_FRIEND = range(5)
 
 
 def _clear_user_data(context):
-    if 'message_ids' in context.user_data:
-        del context.user_data['message_ids']
-    if 'page' in context.user_data:
-        del context.user_data['page']
+    known_keys = [
+        'message_ids',
+        'page',
+    ]
+    for key in known_keys:
+        if key in context.user_data:
+            del context.user_data[key]
 
 
 @only_owner

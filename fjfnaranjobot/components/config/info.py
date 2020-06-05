@@ -21,10 +21,13 @@ GET_SET_OR_DEL, GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(5)
 
 
 def _clear_user_data(context):
-    if 'message_ids' in context.user_data:
-        del context.user_data['message_ids']
-    if 'key' in context.user_data:
-        del context.user_data['key']
+    known_keys = [
+        'message_ids',
+        'key',
+    ]
+    for key in known_keys:
+        if key in context.user_data:
+            del context.user_data[key]
 
 
 @only_owner
