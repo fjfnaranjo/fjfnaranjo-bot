@@ -157,3 +157,18 @@ class DbRelation:
                     self._commit_replace(cur)
             else:
                 self.id = self._commit_new(cur)
+
+    @classmethod
+    def all(cls):
+        all_values = []
+        dummy = cls()
+        with DbRelation._cursor(dummy.relation_name, cls.fields) as cur:
+            cur.execute(f'SELECT * FROM {dummy.relation_name}')
+            rows = cur.fetchall()
+            for row in rows:
+                new_relation = cls()
+                for field in zip(cls.fields, row):
+                    setattr(new_relation, field[0].name, field[1])
+                all_values.append(new_relation)
+        for value in all_values:
+            yield value

@@ -208,3 +208,28 @@ class DbObjectsTests(DbTests):
         replaced_object = DbRelationMock(new_object_pk)
         assert 1 == replaced_object.field1
         assert 'f' == replaced_object.field2
+
+    def test_object_all(self):
+        new_object1 = DbRelationMock()
+        new_object1.field1 = 0
+        new_object1.field2 = 'new_object1'
+        new_object1.commit()
+        del new_object1
+        new_object2 = DbRelationMock()
+        new_object2.field1 = 1
+        new_object2.field2 = 'new_object2'
+        new_object2.commit()
+        del new_object2
+        new_object3 = DbRelationMock()
+        new_object3.field1 = 2
+        new_object3.field2 = 'new_object3'
+        new_object3.commit()
+        del new_object3
+
+        all_objects = list(DbRelationMock.all())
+        assert 0 == all_objects[0].field1
+        assert 'new_object1' == all_objects[0].field2
+        assert 1 == all_objects[1].field1
+        assert 'new_object2' == all_objects[1].field2
+        assert 2 == all_objects[2].field1
+        assert 'new_object3' == all_objects[2].field2
