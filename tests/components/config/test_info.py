@@ -1,8 +1,9 @@
 from unittest.mock import patch
 
-from telegram.ext import ConversationHandler, DispatcherHandlerStop
+from telegram.ext import ConversationHandler
 
 from fjfnaranjobot.auth import logger as auth_logger
+from fjfnaranjobot.common import SORRY_TEXT
 from fjfnaranjobot.components.config.info import (
     DEL_VAR,
     GET_SET_OR_DEL,
@@ -21,7 +22,13 @@ from fjfnaranjobot.components.config.info import (
     set_var_handler,
 )
 
-from ...base import BotHandlerTestCase
+from ...base import (
+    LOG_BOT_UNAUTHORIZED_HEAD,
+    LOG_FRIEND_UNAUTHORIZED_HEAD,
+    LOG_NO_USER_HEAD,
+    LOG_USER_UNAUTHORIZED_HEAD,
+    BotHandlerTestCase,
+)
 
 MODULE_PATH = 'fjfnaranjobot.components.config.info'
 
@@ -32,26 +39,29 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.user_data = {'message_ids': (1, 2)}
         self.user_is_owner()
 
+    def test_config_handler_user_is_none(self):
+        self.user_is_none()
+        with self.assert_log_dispatch(LOG_NO_USER_HEAD, auth_logger):
+            config_handler(*self.update_and_context)
+        self.assert_reply(SORRY_TEXT)
+
     def test_config_handler_unknown_unauthorized(self):
         self.user_is_unknown()
-        with self.assertLogs(auth_logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
-                config_handler(*self.update_and_context)
-        assert 1 == len(logs.output)
+        with self.assert_log_dispatch(LOG_USER_UNAUTHORIZED_HEAD, auth_logger):
+            config_handler(*self.update_and_context)
+        self.assert_reply(SORRY_TEXT)
 
     def test_config_handler_bot_unauthorized(self):
         self.user_is_bot()
-        with self.assertLogs(auth_logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
-                config_handler(*self.update_and_context)
-        assert 1 == len(logs.output)
+        with self.assert_log_dispatch(LOG_BOT_UNAUTHORIZED_HEAD, auth_logger):
+            config_handler(*self.update_and_context)
+        self.assert_reply(SORRY_TEXT)
 
     def test_config_handler_friend_unauthorized(self):
         self.user_is_friend()
-        with self.assertLogs(auth_logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
-                config_handler(*self.update_and_context)
-        assert 1 == len(logs.output)
+        with self.assert_log_dispatch(LOG_FRIEND_UNAUTHORIZED_HEAD, auth_logger):
+            config_handler(*self.update_and_context)
+        self.assert_reply(SORRY_TEXT)
 
     def test_config_handler(self):
         self.user_data = {}

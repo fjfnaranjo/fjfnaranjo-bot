@@ -14,6 +14,15 @@ SECOND_FRIEND_USER = User(22, 's')
 UNKNOWN_USER = User(31, 'u')
 BOT_USER = User(41, 'b')
 
+LOG_NO_USER_HEAD = 'Message received with no user'
+LOG_USER_UNAUTHORIZED_HEAD = f'User {UNKNOWN_USER.username} with id {UNKNOWN_USER.id}'
+LOG_BOT_UNAUTHORIZED_HEAD = (
+    f'Bot with username {BOT_USER.username} and id {BOT_USER.id}'
+)
+LOG_FRIEND_UNAUTHORIZED_HEAD = (
+    f'User {FIRST_FRIEND_USER.username} with id {FIRST_FRIEND_USER.id}'
+)
+
 
 class BotTestCase(TestCase):
     @contextmanager
@@ -153,6 +162,6 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
 
     @contextmanager
     def assert_log_dispatch(self, log_text, logger, min_log_level=None):
-        with self.assertRaises(DispatcherHandlerStop):
-            with self.assert_log(log_text, logger, min_log_level):
+        with self.assert_log(log_text, logger, min_log_level):
+            with self.assertRaises(DispatcherHandlerStop):
                 yield

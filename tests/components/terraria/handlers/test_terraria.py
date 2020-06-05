@@ -1,4 +1,4 @@
-from fjfnaranjobot.components.terraria.info import logger, terraria_handler
+from fjfnaranjobot.components.terraria.handlers.terraria import logger, terraria_handler
 
 from ....base import BotHandlerTestCase
 
