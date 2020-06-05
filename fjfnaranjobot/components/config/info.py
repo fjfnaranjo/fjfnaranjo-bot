@@ -20,6 +20,13 @@ logger = getLogger(__name__)
 GET_SET_OR_DEL, GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(5)
 
 
+def _clear_user_data(context):
+    if 'message_ids' in context.user_data:
+        del context.user_data['message_ids']
+    if 'key' in context.user_data:
+        del context.user_data['key']
+
+
 @only_owner
 def config_handler(update, context):
     logger.info("Entering config conversation.")
@@ -157,11 +164,9 @@ def del_var_handler(update, context):
 
 
 def cancel_handler(update, context):
-    if 'key' in context.user_data:
-        del context.user_data['key']
     if 'message_ids' in context.user_data:
         context.bot.delete_message(*context.user_data['message_ids'])
-        del context.user_data['message_ids']
+    _clear_user_data(context)
     logger.info("Abort config conversation.")
     update.message.reply_text("Ok.")
     return ConversationHandler.END

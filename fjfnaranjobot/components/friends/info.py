@@ -26,6 +26,13 @@ PAGE_SIZE = 5
 GET_ADD_OR_DEL, GET_PAGE, ONLY_PAGE, ADD_FRIEND, DEL_FRIEND = range(5)
 
 
+def _clear_user_data(context):
+    if 'message_ids' in context.user_data:
+        del context.user_data['message_ids']
+    if 'page' in context.user_data:
+        del context.user_data['page']
+
+
 @only_owner
 def friends_handler(update, context):
     logger.info("Entering friends conversation.")
@@ -295,9 +302,7 @@ def del_friend_id_handler(update, context):
 def cancel_handler(update, context):
     if 'message_ids' in context.user_data:
         context.bot.delete_message(*context.user_data['message_ids'])
-        del context.user_data['message_ids']
-    if 'page' in context.user_data:
-        del context.user_data['page']
+    _clear_user_data(context)
     logger.info("Abort friends conversation.")
     update.message.reply_text("Ok.")
     return ConversationHandler.END
