@@ -69,8 +69,8 @@ class DbRelation:
                 first_lower = class_name[0].lower() + class_name[1:]
                 continue
             if char[1].isupper():
-                if char[0] == len(first_lower):
-                    new_class_name = first_lower[: char[0]] + '_' + char[1].lower()
+                if char[0] == len(first_lower) - 1:
+                    return first_lower[: char[0]] + '_' + char[1].lower()
                 else:
                     new_class_name = (
                         first_lower[: char[0]]
@@ -79,7 +79,7 @@ class DbRelation:
                         + first_lower[char[0] + 1 :]
                     )
                 return DbRelation._insert_under_before_upper(new_class_name)
-        return class_name
+        return first_lower
 
     @staticmethod
     @contextmanager

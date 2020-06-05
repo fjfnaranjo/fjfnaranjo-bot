@@ -6,7 +6,7 @@ from stat import S_IRWXU
 from tempfile import mkdtemp, mkstemp
 from unittest.mock import MagicMock, patch
 
-from fjfnaranjobot.db import cursor, get_db_path, logger, reset
+from fjfnaranjobot.db import DbField, DbRelation, cursor, get_db_path, logger, reset
 
 from .base import BotTestCase
 
@@ -14,6 +14,20 @@ MODULE_PATH = 'fjfnaranjobot.db'
 
 BOT_DB_NAME_DEFAULT = 'bot.db'
 BOT_DB_NAME_TEST = 'bot.a.test.name.db'
+
+
+class DbGetPathTests(BotTestCase):
+    @patch(f'{MODULE_PATH}.get_bot_data_dir', return_value='dir')
+    def test_get_db_path_join_and_default(self, _get_bot_data_dir):
+        with self.mocked_environ(f'{MODULE_PATH}.environ', None, ['BOT_DB_NAME',]):
+            assert get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
+
+    @patch(f'{MODULE_PATH}.get_bot_data_dir', return_value='dir')
+    def test_get_db_path_join_and_env(self, _get_bot_data_dir):
+        with self.mocked_environ(
+            f'{MODULE_PATH}.environ', {'BOT_DB_NAME': BOT_DB_NAME_TEST},
+        ):
+            assert get_db_path() == join('dir', BOT_DB_NAME_TEST)
 
 
 class DbTests(BotTestCase):
@@ -34,18 +48,8 @@ class DbTests(BotTestCase):
             rmtree(self._db_test_dir)
         BotTestCase.tearDown(self)
 
-    @patch(f'{MODULE_PATH}.get_bot_data_dir', return_value='dir')
-    def test_get_db_path_join_and_default(self, _get_bot_data_dir):
-        with self.mocked_environ(f'{MODULE_PATH}.environ', None, ['BOT_DB_NAME',]):
-            assert get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
 
-    @patch(f'{MODULE_PATH}.get_bot_data_dir', return_value='dir')
-    def test_get_db_path_join_and_env(self, _get_bot_data_dir):
-        with self.mocked_environ(
-            f'{MODULE_PATH}.environ', {'BOT_DB_NAME': BOT_DB_NAME_TEST},
-        ):
-            assert get_db_path() == join('dir', BOT_DB_NAME_TEST)
-
+class DbResetTests(DbTests):
     def test_reset_only_reset(self):
         self._get_db_path_mock.return_value = self._db_test_file
         remove(self._db_test_file)
@@ -83,6 +87,8 @@ class DbTests(BotTestCase):
             reset()
         assert 'Invalid file name in BOT_DB_NAME var.' == e.exception.args[0]
 
+
+class DbCursorTests(DbTests):
     def test_cursor_creates_new(self):
         self._get_db_path_mock.return_value = self._db_test_file
         reset(False)
@@ -105,14 +111,100 @@ class DbTests(BotTestCase):
             cursor().__enter__()
         assert 'Invalid file name in BOT_DB_NAME var.' == e.exception.args[0]
 
-    def test_cursor_persist(self):
-        self._get_db_path_mock.return_value = self._db_test_file
-        reset()
+
+class DbRelationMock(DbRelation):
+    fields = [
+        DbField('id', 'INTEGER PRIMARY KEY'),
+        DbField('field1', 'INTEGER'),
+        DbField('field2'),
+    ]
+
+
+class A(DbRelation):
+    fields = [
+        DbField('id', 'INTEGER PRIMARY KEY'),
+    ]
+
+
+class DbRelationEndingUpperMockA(DbRelation):
+    fields = [
+        DbField('id', 'INTEGER PRIMARY KEY'),
+    ]
+
+
+class DbObjectsTests(DbTests):
+    def test_db_field(self):
+        field = DbField('a', 'b')
+        assert 'a' == field.name
+        assert 'b' == field.definition
+
+    def test_db_object_relation_name(self):
+        new_object = DbRelationMock()
+        assert 'db_relation_mock' == new_object.relation_name
+
+    def test_db_object_relation_name_single(self):
+        new_object = A()
+        assert 'a' == new_object.relation_name
+
+    def test_db_object_relation_name_ending_upper(self):
+        new_object = DbRelationEndingUpperMockA()
+        assert 'db_relation_ending_upper_mock_a' == new_object.relation_name
+
+    def test_db_object_creates_table(self):
+        new_object = DbRelationMock()
+        new_object.commit()
         with cursor() as cur:
-            cur.execute('CREATE TABLE dummy (key PRIMARY KEY)')
-            cur.execute('INSERT INTO dummy VALUES (123)')
-        with cursor() as cur:
-            cur.execute('SELECT key FROM dummy')
-            data = cur.fetchall()
-        assert 1 == len(data)
-        assert 123 == data[0][0]
+            cur.execute("select name, sql from sqlite_master where type='table'")
+            values = cur.fetchone()
+            create_statement = values[1]
+            fields_section = create_statement[
+                create_statement.find('(') + 1 : create_statement.find(')')
+            ]
+            fields = fields_section.split(',')
+            assert 'db_relation_mock' == values[0]
+            assert 3 == len(fields)
+            assert 'id INTEGER PRIMARY KEY' in fields
+            assert 'field1 INTEGER' in fields
+            assert 'field2' in fields
+
+    def test_object_dont_exists(self):
+        with self.assertRaises(RuntimeError) as e:
+            DbRelationMock(1)
+        assert (
+            'Row with id 1 doesn\'t exists in relation \'db_relation_mock\'.'
+            == e.exception.args[0]
+        )
+
+    def test_object_create_with_id(self):
+        new_object = DbRelationMock()
+        new_object.id = 1
+        new_object.field1 = 0
+        new_object.commit()
+        del new_object
+        created_object = DbRelationMock(1)
+        assert 0 == created_object.field1
+
+    def test_object_persist(self):
+        new_object = DbRelationMock()
+        new_object.field1 = 0
+        new_object.commit()
+        new_object_pk = new_object.id
+        del new_object
+        created_object = DbRelationMock(new_object_pk)
+        assert 0 == created_object.field1
+        assert None == created_object.field2
+
+    def test_object_replace_existing(self):
+        new_object = DbRelationMock()
+        new_object.field1 = 0
+        new_object.commit()
+        new_object_pk = new_object.id
+        del new_object
+        created_object = DbRelationMock(new_object_pk)
+        created_object.field1 = 1
+        created_object.field2 = 'f'
+        created_object.commit()
+        del created_object
+        replaced_object = DbRelationMock(new_object_pk)
+        assert 1 == replaced_object.field1
+        assert 'f' == replaced_object.field2
