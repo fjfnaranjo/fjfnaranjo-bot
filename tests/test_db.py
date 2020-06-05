@@ -133,6 +133,10 @@ class DbRelationEndingUpperMockA(DbRelation):
 
 
 class DbObjectsTests(DbTests):
+    def setUp(self):
+        super().setUp()
+        reset()
+
     def test_db_field(self):
         field = DbField('a', 'b')
         assert 'a' == field.name
@@ -227,9 +231,54 @@ class DbObjectsTests(DbTests):
         del new_object3
 
         all_objects = list(DbRelationMock.all())
+        assert 3 == len(all_objects)
         assert 0 == all_objects[0].field1
         assert 'new_object1' == all_objects[0].field2
         assert 1 == all_objects[1].field1
         assert 'new_object2' == all_objects[1].field2
         assert 2 == all_objects[2].field1
         assert 'new_object3' == all_objects[2].field2
+
+    def test_object_select_one(self):
+        new_object1 = DbRelationMock()
+        new_object1.field1 = 0
+        new_object1.field2 = 'new_object1'
+        new_object1.commit()
+        del new_object1
+        new_object2 = DbRelationMock()
+        new_object2.field1 = 1
+        new_object2.field2 = 'new_object2'
+        new_object2.commit()
+        lookup_key = new_object2.id
+        del new_object2
+        new_object3 = DbRelationMock()
+        new_object3.field1 = 2
+        new_object3.field2 = 'new_object3'
+        new_object3.commit()
+        del new_object3
+
+        selected_object = DbRelationMock.select_one(id=lookup_key)
+        assert 1 == selected_object.field1
+        assert 'new_object2' == selected_object.field2
+
+    def test_object_select_many(self):
+        new_object1 = DbRelationMock()
+        new_object1.field1 = 0
+        new_object1.field2 = 'me'
+        new_object1.commit()
+        del new_object1
+        new_object2 = DbRelationMock()
+        new_object2.field1 = 1
+        new_object2.field2 = 'me'
+        new_object2.commit()
+        del new_object2
+        new_object3 = DbRelationMock()
+        new_object3.field1 = 2
+        new_object3.field2 = 'new_object3'
+        new_object3.commit()
+        del new_object3
+
+        selected_objects = list(DbRelationMock.select_many(field2='me'))
+        assert 2 == len(selected_objects)
+        assert 0 == selected_objects[0].field1
+        assert 1 == selected_objects[1].field1

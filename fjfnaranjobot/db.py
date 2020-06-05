@@ -172,3 +172,30 @@ class DbRelation:
                 all_values.append(new_relation)
         for value in all_values:
             yield value
+
+    @classmethod
+    def select_many(cls, **kwargs):
+        all_values = []
+        dummy = cls()
+        with DbRelation._cursor(dummy.relation_name, cls.fields) as cur:
+            where_keys = []
+            where_values = []
+            for key in kwargs:
+                where_keys.append(key)
+                where_values.append(kwargs[key])
+            where_conditions = [f'{key}=?' for key in where_keys]
+            where_body = ' AND '.join(where_conditions)
+            cur.execute(
+                f'SELECT * FROM {dummy.relation_name} WHERE {where_body}', where_values
+            )
+            rows = cur.fetchall()
+            for row in rows:
+                relation = cls()
+                for field in zip(cls.fields, row):
+                    setattr(relation, field[0].name, field[1])
+                all_values.append(relation)
+            return all_values
+
+    @classmethod
+    def select_one(cls, **kwargs):
+        return cls.select_many(**kwargs)[0]
