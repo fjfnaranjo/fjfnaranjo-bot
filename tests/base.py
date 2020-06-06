@@ -1,3 +1,4 @@
+# Full test review: magic constants, reply/message/edit/delete mas call/callwithmk/params, default cancel inline
 from contextlib import contextmanager
 from logging import INFO
 from os import environ
@@ -22,6 +23,12 @@ LOG_BOT_UNAUTHORIZED_HEAD = (
 LOG_FRIEND_UNAUTHORIZED_HEAD = (
     f'User {FIRST_FRIEND_USER.username} with id {FIRST_FRIEND_USER.id}'
 )
+
+
+class CallWithMarkup:
+    def __init__(self, *args, reply_markup_dict=None, **kwargs):
+        self.reply_markup_dict = reply_markup_dict
+        self.call = call(*args, **kwargs)
 
 
 class BotTestCase(TestCase):
@@ -106,14 +113,14 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
         super().setUp()
 
         self._message_reply_text_mock = MagicMock()
-        self._message_reply_text_mock.message_id = 101
-        self._message_reply_text_mock.chat.id = 102
+        self._message_reply_text_mock.chat.id = 201
+        self._message_reply_text_mock.message_id = 202
+        self._update_mock.message.chat.id = 101
         self._update_mock.message.reply_text.return_value = (
             self._message_reply_text_mock
         )
-
-        self.user_data = None
-        self.args = None
+        self._context_mock.user_data = None
+        self._context_mock.chat_data = None
 
     def update_mock_spec(self, no_message=None, empty_command=None):
         if no_message or empty_command:
@@ -136,18 +143,86 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
     def user_data(self, new_user_data):
         self._context_mock.user_data = new_user_data
 
-    def assert_reply(self, text):
-        self._update_mock.message.reply_text.assert_called_once_with(text)
+    @property
+    def chat_data(self):
+        return self._context_mock.chat_data
 
-    def assert_replies(self, texts=[]):
-        assert len(texts) == self._update_mock.message.reply_text.call_count
-        for idx in range(len(texts)):
-            self._update_mock.message.reply_text.assert_has_calls([call(texts[idx])])
+    @chat_data.setter
+    def chat_data(self, new_chat_data):
+        self._context_mock.chat_data = new_chat_data
 
-    def assert_edit(self, text, chat_id, message_id):
-        self._context_mock.bot.edit_message_text.assert_called_once_with(
-            text, chat_id, message_id
+    def _assert_replies(self, calls_with_markup=[]):
+        self.assertEqual(
+            len(calls_with_markup), self._update_mock.message.reply_text.call_count
         )
+        for item in enumerate(calls_with_markup):
+            idx = item[0]
+            call = item[1].call
+            reply_markup_dict = item[1].reply_markup_dict
+            called = self._update_mock.message.reply_text.mock_calls[idx]
+            call_args = called[1]
+            call_kwargs = called[2].copy()
+            reply_markup_call = call_kwargs.get('reply_markup')
+            if 'reply_markup' in call_kwargs:
+                del call_kwargs['reply_markup']
+            self.assertEqual(call, call(*call_args, **call_kwargs))
+            if reply_markup_call is not None:
+                self.assertEqual(reply_markup_dict, reply_markup_call.to_dict())
+
+    def assert_reply_calls(self, calls):
+        self._assert_replies(calls)
+
+    def assert_reply_call(self, call):
+        self._assert_replies([call])
+
+    def assert_reply_text(self, text):
+        self._assert_replies([CallWithMarkup(text)])
+
+    def _assert_messages(self, messages=tuple()):
+        self.assertEqual(len(messages), self._context_mock.bot.send_message.call_count)
+        for item in enumerate(messages):
+            idx = item[0]
+            call = item[1].call
+            reply_markup_dict = item[1].reply_markup_dict
+            called = self._context_mock.bot.send_message.mock_calls[idx]
+            call_args = called[1]
+            call_kwargs = called[2].copy()
+            reply_markup_call = call_kwargs.get('reply_markup')
+            if 'reply_markup' in call_kwargs:
+                del call_kwargs['reply_markup']
+            self.assertEqual(call, call(*call_args, **call_kwargs))
+            if reply_markup_call is not None:
+                self.assertEqual(reply_markup_dict, reply_markup_call.to_dict())
+
+    def assert_message_call(self, call):
+        self._assert_messages([call])
+
+    def assert_message_chat_text(self, chat_id, text):
+        self._assert_messages([CallWithMarkup(chat_id, text)])
+
+    def _assert_edit_text_chat_message(self, edits=tuple()):
+        self.assertEqual(
+            len(edits), self._context_mock.bot.edit_message_text.call_count
+        )
+        for item in enumerate(edits):
+            idx = item[0]
+            call = item[1].call
+            reply_markup_dict = item[1].reply_markup_dict
+            called = self._context_mock.bot.edit_message_text.mock_calls[idx]
+            call_args = called[1]
+            call_kwargs = called[2].copy()
+            reply_markup_call = call_kwargs.get('reply_markup')
+            if 'reply_markup' in call_kwargs:
+                del call_kwargs['reply_markup']
+            self.assertEqual(call, call(*call_args, **call_kwargs))
+            if reply_markup_call is not None:
+                self.assertEqual(reply_markup_dict, reply_markup_call.to_dict())
+
+    def assert_edit_call(self, call):
+        self._assert_edit_text_chat_message([call])
+
+    def assert_edit_text_chat_message(self, text, chat_id, message_id):
+        self._assert_edit_text_chat_message([CallWithMarkup(text, chat_id, message_id)])
 
     def assert_delete(self, chat_id, message_id):
         self._context_mock.bot.delete_message.assert_called_once_with(

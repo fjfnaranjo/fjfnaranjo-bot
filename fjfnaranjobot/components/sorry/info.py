@@ -6,9 +6,11 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 
-def sorry_handler(update, _context):
+def sorry_handler(update, context):
     logger.info("Sending 'sorry' back to the user.")
-    update.message.reply_text(SORRY_TEXT)
+    context.bot.send_message(
+        update.message.chat.id, SORRY_TEXT,
+    )
     raise DispatcherHandlerStop()
 
 

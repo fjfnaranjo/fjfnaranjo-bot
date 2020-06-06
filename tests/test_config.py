@@ -27,6 +27,7 @@ class ConfigTests(TestCase):
             'key.',
             'key key',
             '!a_invalid_key',
+            'this.key.is.ok.but.very.long',
         ]:
             with self.subTest(key=key):
                 with self.assertRaises(ValueError) as e:
@@ -49,6 +50,7 @@ class ConfigTests(TestCase):
             'key.',
             'key key',
             '!a_invalid_key',
+            'this.key.is.ok.but.very.long',
         ]:
             with self.subTest(key=key):
                 with self.assertRaises(ValueError) as e:

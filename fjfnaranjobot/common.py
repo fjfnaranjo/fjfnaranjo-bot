@@ -6,6 +6,11 @@ _BOT_COMPONENTS_DEFAULT = "start,config,friends,commands,terraria,sorry"
 
 SORRY_TEXT = "I don't know what to do about that. Sorry :("
 
+LOG_VALUE_MAX_LENGHT = 16
+
+
+command_list = []
+
 
 def get_bot_data_dir():
     return environ.get('BOT_DATA_DIR', _BOT_DATA_DIR_DEFAULT)
@@ -40,4 +45,22 @@ class ScheduleEntry:
         self.extra_args = kwargs
 
 
-command_list = []
+# TODO: Test
+def inline_handler(inlines, logger):
+    def inline_handler_function(update, context):
+        logger.info("Received inline selection.")
+        query = update.callback_query.data
+        logger.info(f"Inline selection was '{query}'.")
+        if query in inlines:
+            return inlines[query](update, context)
+
+    return inline_handler_function
+
+
+# TODO: Test
+def quote_value_for_log(value):
+    if len(value) <= LOG_VALUE_MAX_LENGHT:
+        return f"'{value}'"
+    else:
+        shown_value = value[:LOG_VALUE_MAX_LENGHT]
+        return f"'{shown_value}' (cropped to 10 chars)"

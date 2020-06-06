@@ -1,170 +1,181 @@
-from math import floor
-
-from telegram import Contact
-from telegram.ext import CommandHandler, ConversationHandler, Filters, MessageHandler
+# TODO: Review all tests
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (
+    CallbackQueryHandler,
+    CommandHandler,
+    ConversationHandler,
+    Filters,
+    MessageHandler,
+)
 
 from fjfnaranjobot.auth import friends, only_owner
-from fjfnaranjobot.common import Command, User
+from fjfnaranjobot.common import Command, User, inline_handler, quote_value_for_log
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
-
-PAGE_SIZE = 5
+KEYBOARD_ROWS = 5
 
 #
 # friends_handler states
 #
-# cmd --> GET_ADD_OR_DEL --> GET_PAGE   --> GET_PAGE
-#                                       --> ONLY_PAGE
+# cmd --> GET_ADD_OR_DEL --> LIST       --> LIST
+#                                       --> DEL_FRIEND_CONFIRM --> end
+#                                       --> end
 #                        --> ADD_FRIEND --> end
 #                        --> DEL_FRIEND --> end
 #
 # * --> end
 #
 
-GET_ADD_OR_DEL, GET_PAGE, ONLY_PAGE, ADD_FRIEND, DEL_FRIEND = range(5)
+GET_ADD_OR_DEL, LIST, DEL_FRIEND_CONFIRM, ADD_FRIEND, DEL_FRIEND = range(5)
 
 
-def _clear_user_data(context):
-    known_keys = [
-        'message_ids',
-        'page',
+def _clear_context_data(context):
+    chat_data_known_keys = [
+        'chat_id',
+        'message_id',
+        'offset',
+        'delete_user',
+        'keyboard_users',
     ]
-    for key in known_keys:
-        if key in context.user_data:
-            del context.user_data[key]
+    for key in chat_data_known_keys:
+        if key in context.chat_data:
+            del context.chat_data[key]
+
+
+_cancel_markup = InlineKeyboardMarkup(
+    [[InlineKeyboardButton("Cancel", callback_data='cancel')]]
+)
 
 
 @only_owner
 def friends_handler(update, context):
     logger.info("Entering friends conversation.")
+    keyboard = [
+        [
+            InlineKeyboardButton("List", callback_data='list'),
+            InlineKeyboardButton("Add", callback_data='add'),
+            InlineKeyboardButton("Delete", callback_data='del'),
+        ],
+        [InlineKeyboardButton("Cancel", callback_data='cancel')],
+    ]
     reply = update.message.reply_text(
-        "If you want to see your friends, use /friends_getpage . "
-        "If you want to add a friend, /friends_add . "
-        "If you want to remove a friend, /friends_del . "
-        "If you want to do something else, /friends_cancel ."
+        "You can list all your friends. "
+        "Also, you can add or remove Telegram contacts and IDs to the list. "
+        "You can also cancel the friends command at any time. ",
+        reply_markup=InlineKeyboardMarkup(keyboard),
     )
-    context.user_data['message_ids'] = (reply.chat.id, reply.message_id)
+    context.chat_data['chat_id'] = reply.chat.id
+    context.chat_data['message_id'] = reply.message_id
     return GET_ADD_OR_DEL
 
 
-def get_page_handler(_update, context):
-    if len(context.args) == 1:
-        try:
-            page = int(context.args[0])
-            if page < 1:
-                raise ValueError()
-        except ValueError:
-            logger.info(f"Received an invalid page number '{context.args[0]}'.")
-            context.bot.edit_message_text(
-                f"The page '{context.args[0]}' is not a valid page number. "
-                "Send the /friends_getpage command to request more pages (if aplicable)."
-                "If you want to do something else, /friends_cancel .",
-                *context.user_data['message_ids'],
-            )
-            return GET_PAGE
+# TODO: Tests!
+def list_handler(_update, context):
+    offset = context.chat_data.get('offset', 0)
+    logger.info(f"List of friends requested. Offset: {offset}.")
+
+    if len(friends) == 0:
+        context.bot.delete_message(
+            context.chat_data['chat_id'], context.chat_data['message_id'],
+        )
+        context.bot.send_message(context.chat_data['chat_id'], "You have no friends.")
+        _clear_context_data(context)
+        return ConversationHandler.END
+
+    show_button = None
+    keyboard = []
+    keyboard_users = []
+    if len(friends) <= KEYBOARD_ROWS:
+        page_friends = friends.sorted()
     else:
-        page = context.user_data.get('page', 1) if context.user_data is not None else 1
-
-    num_friends = len(friends)
-    num_pages = floor(num_friends / PAGE_SIZE) + (
-        1 if num_friends % PAGE_SIZE > 0 else 0
-    )
-
-    if page > num_pages:
-        logger.info(
-            f"Not sending the page {page} of friends because it doesn't exists."
-        )
-        context.bot.edit_message_text(
-            f"The page {page} doesn't exists. "
-            "Send the /friends_getpage command again to start from the first page."
-            "If you want to do something else, /friends_cancel .",
-            *context.user_data['message_ids'],
-        )
-        return GET_PAGE
-
-    else:
-
-        sorted_friends = list(friends.sorted())
-        friends_page = "\n".join(
-            [
-                f"{friend.username}"
-                for friend in sorted_friends[
-                    (page - 1) * PAGE_SIZE : ((page - 1) * PAGE_SIZE) + PAGE_SIZE
-                ]
-            ]
-        )
-
-        if page == num_pages and num_pages > 1:
-            logger.info(f"Sending the last page (page {page}) of friends.")
-            context.bot.edit_message_text(
-                f"This is the last page (page {page}) of your friends list. "
-                "Send the /friends_getpage command again to start from the first page."
-                "If you want to do something else, /friends_cancel ."
-                f"\n\n{friends_page}",
-                *context.user_data['message_ids'],
-            )
-
-        elif page == 1 and num_pages == 1:
-            logger.info(f"Sending the only page of friends.")
-            context.bot.edit_message_text(
-                f"This is the only page of your friends list. "
-                "If you want to do something else, /friends_cancel ."
-                f"\n\n{friends_page}",
-                *context.user_data['message_ids'],
-            )
-            return ONLY_PAGE
-        elif page == 1:
-            logger.info(f"Sending the first page of friends.")
-            context.bot.edit_message_text(
-                f"This is the first page of your friends list. "
-                "Send the /friends_getpage command to request more pages."
-                "If you want to do something else, /friends_cancel ."
-                f"\n\n{friends_page}",
-                *context.user_data['message_ids'],
-            )
+        pending_friends = list(friends.sorted())[offset:]
+        if len(pending_friends) < KEYBOARD_ROWS:
+            show_button = 'restart'
+            offset = 0
+            page_friends = pending_friends
         else:
-            logger.info(f"Sending the page {page} of friends.")
-            context.bot.edit_message_text(
-                f"This is the page {page} of your friends list. "
-                "Send the /friends_getpage command to request more pages."
-                "If you want to do something else, /friends_cancel ."
-                f"\n\n{friends_page}",
-                *context.user_data['message_ids'],
-            )
+            show_button = 'next'
+            offset += KEYBOARD_ROWS
+            page_friends = pending_friends[:KEYBOARD_ROWS]
 
-    page += 1
-    if page > num_pages:
-        page = 1
-    context.user_data['page'] = page
+    for friend in enumerate(page_friends):
+        keyboard.append(
+            [InlineKeyboardButton(friend[1].username, callback_data=f'{friend[0]}')]
+        )
+        keyboard_users.append((friend[1].id, friend[1].username))
 
-    return GET_PAGE
+    if show_button == 'restart':
+        keyboard.append([InlineKeyboardButton("Start again", callback_data='next')])
+    elif show_button == 'next':
+        keyboard.append([InlineKeyboardButton("Next page", callback_data='next')])
+
+    keyboard.append([InlineKeyboardButton("Cancel", callback_data='cancel')])
+    friends_markup = InlineKeyboardMarkup(keyboard)
+    context.chat_data['offset'] = offset
+    context.chat_data['keyboard_users'] = keyboard_users
+    context.bot.edit_message_text(
+        "Your friends will be listed below in pages. "
+        "You can request the next page (if apply) or "
+        "select a friend if you want to remove it.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=friends_markup,
+    )
+    return LIST
+
+
+def list_del_confirm_handler(update, context):
+    query = update.callback_query.data
+    logger.info(
+        f"Received in-list friend deletion request for position {query}. "
+        "Asking to confirm."
+    )
+    user_to_delete = User(*context.chat_data['keyboard_users'][int(query)])
+    del context.chat_data['keyboard_users']
+    context.chat_data['delete_user'] = (user_to_delete.id, user_to_delete.username)
+    confirm_markup = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("Confirm", callback_data='confirm')],
+            [InlineKeyboardButton("Cancel", callback_data='cancel')],
+        ]
+    )
+    context.bot.edit_message_text(
+        f"Are you sure that you want to remove '{user_to_delete.username}' as a friend. ",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=confirm_markup,
+    )
+    return DEL_FRIEND_CONFIRM
+
+
+def list_del_confirmed_handler(_update, context):
+    logger.info("Received confirmation for deletion.")
+    delete_user = User(*context.chat_data['delete_user'])
+    del context.chat_data['delete_user']
+    friends.discard(delete_user)
+    context.bot.delete_message(
+        context.chat_data['chat_id'], context.chat_data['message_id'],
+    )
+    context.bot.send_message(context.chat_data['chat_id'], "Ok.")
+    _clear_context_data(context)
+    return ConversationHandler.END
 
 
 def add_handler(_update, context):
     logger.info("Requesting contact to add as a friend.")
     context.bot.edit_message_text(
-        "Send me the contact of the friend you want to add. "
-        "Or its id. "
-        "If you want to do something else, /friends_cancel .",
-        *context.user_data['message_ids'],
+        "Send me the contact of the friend you want to add. Or its id. ",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=_cancel_markup,
     )
     return ADD_FRIEND
 
 
 def add_friend_handler(update, context):
     contact = update.message.contact
-    if contact.user_id is None:
-        logger.info("Received a contact without ID to add as a friend.")
-        context.bot.edit_message_text(
-            "That doesn't look like a user with Telegram. "
-            "Send me the contact of the friend you want to add. "
-            "Or its id. "
-            "If you want to do something else, /friends_cancel .",
-            *context.user_data['message_ids'],
-        )
-        return ADD_FRIEND
     contact_first_name = getattr(contact, 'first_name', '')
     contact_last_name = getattr(contact, 'last_name', '')
     first_name = contact_first_name if contact_first_name is not None else ''
@@ -172,11 +183,15 @@ def add_friend_handler(update, context):
     username = ' '.join([first_name, last_name]).strip()
     user = User(contact.user_id, username)
 
-    logger.info(f"Adding {user.username} as a friend.")
+    logger.info(f"Received a contact. Adding {user.username} as a friend.")
     friends.add(user)
-    context.bot.delete_message(*context.user_data['message_ids'])
-    del context.user_data['message_ids']
-    update.message.reply_text(f"Added {user.username} as a friend.")
+    context.bot.delete_message(
+        context.chat_data['chat_id'], context.chat_data['message_id'],
+    )
+    context.bot.send_message(
+        context.chat_data['chat_id'], f"Added {user.username} as a friend."
+    )
+    _clear_context_data(context)
     return ConversationHandler.END
 
 
@@ -184,17 +199,16 @@ def add_friend_id_handler(update, context):
     try:
         (user_id,) = update.message.text.split()
     except ValueError:
-        logger.info(
-            f"Received and invalid id '{update.message.text}' trying to add a friend."
+        shown_id = quote_value_for_log(update.message.text)
+        logger.info(f"Received and invalid id {shown_id} trying to add a friend.")
+        context.bot.delete_message(
+            context.chat_data['chat_id'], context.chat_data['message_id'],
         )
-        context.bot.edit_message_text(
-            "That's not a contact nor a single valid id. "
-            "Send me the contact of the friend you want to add. "
-            "Or its id. "
-            "If you want to do something else, /friends_cancel .",
-            *context.user_data['message_ids'],
+        context.bot.send_message(
+            context.chat_data['chat_id'], "That's not a contact nor a single valid id.",
         )
-        return ADD_FRIEND
+        _clear_context_data(context)
+        return ConversationHandler.END
     else:
         try:
             user_id_int = int(user_id)
@@ -204,42 +218,40 @@ def add_friend_id_handler(update, context):
             logger.info(
                 f"Received and invalid number in id '{user_id}' trying to add a friend."
             )
-            context.bot.edit_message_text(
-                "That's not a contact nor a valid id. "
-                "Send me the contact of the friend you want to add. "
-                "Or its id. "
-                "If you want to do something else, /friends_cancel .",
-                *context.user_data['message_ids'],
+            context.bot.delete_message(
+                context.chat_data['chat_id'], context.chat_data['message_id'],
             )
-            return ADD_FRIEND
+            context.bot.send_message(
+                context.chat_data['chat_id'], "That's not a contact nor a valid id.",
+            )
+            _clear_context_data(context)
+            return ConversationHandler.END
         else:
-            update.message.contact = Contact('', 'ID', str(user_id_int), user_id_int)
-            return add_friend_handler(update, context)
+            user = User(user_id_int, f"ID {user_id_int}")
+            friends.add(user)
+            context.bot.delete_message(
+                context.chat_data['chat_id'], context.chat_data['message_id'],
+            )
+            context.bot.send_message(
+                context.chat_data['chat_id'], f"Added {user.username} as a friend."
+            )
+            _clear_context_data(context)
+            return ConversationHandler.END
 
 
 def del_handler(_update, context):
     logger.info("Requesting contact to remove as a friend.")
     context.bot.edit_message_text(
-        "Send me the contact of the friend you want to remove. "
-        "Or its id. "
-        "If you want to do something else, /friends_cancel .",
-        *context.user_data['message_ids'],
+        "Send me the contact of the friend you want to remove. " "Or its id.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=_cancel_markup,
     )
     return DEL_FRIEND
 
 
 def del_friend_handler(update, context):
     contact = update.message.contact
-    if contact.user_id is None:
-        logger.info("Received a contact without ID to remove as a friend.")
-        context.bot.edit_message_text(
-            "That doesn\'t look like a user with Telegram. "
-            "Send me the contact of the friend you want to remove. "
-            "Or its id. "
-            "If you want to do something else, /friends_cancel .",
-            *context.user_data['message_ids'],
-        )
-        return DEL_FRIEND
     contact_first_name = getattr(contact, 'first_name', '')
     contact_last_name = getattr(contact, 'last_name', '')
     first_name = contact_first_name if contact_first_name is not None else ''
@@ -253,33 +265,37 @@ def del_friend_handler(update, context):
                 friend_username = friend.username
         logger.info(f"Removing {friend_username} as a friend.")
         friends.discard(user)
-        context.bot.delete_message(*context.user_data['message_ids'])
-        del context.user_data['message_ids']
-        update.message.reply_text(f"Removed {friend_username} as a friend.")
+        context.bot.delete_message(
+            context.chat_data['chat_id'], context.chat_data['message_id'],
+        )
+        context.bot.send_message(
+            context.chat_data['chat_id'], f"Removed {friend_username} as a friend."
+        )
+        _clear_context_data(context)
+        return ConversationHandler.END
     else:
-        logger.info(f"Not removing {user.username} because not a friend.")
-        context.bot.delete_message(*context.user_data['message_ids'])
-        del context.user_data['message_ids']
-        update.message.reply_text(f"{user.username} isn't a friend.")
-
-    return ConversationHandler.END
+        logger.info(f"Not removing {user.username} because its not a friend.")
+        context.bot.delete_message(
+            context.chat_data['chat_id'], context.chat_data['message_id'],
+        )
+        context.bot.send_message(
+            context.chat_data['chat_id'], f"{user.username} isn't a friend."
+        )
+        _clear_context_data(context)
+        return ConversationHandler.END
 
 
 def del_friend_id_handler(update, context):
     try:
         (user_id,) = update.message.text.split()
     except ValueError:
-        logger.info(
-            f"Received and invalid id '{update.message.text}' trying to remove a friend."
+        shown_id = quote_value_for_log(update.message.text)
+        logger.info(f"Received and invalid id {shown_id} trying to remove a friend.")
+        context.bot.send_message(
+            context.chat_data['chat_id'], "That's not a contact nor a single valid id.",
         )
-        context.bot.edit_message_text(
-            "That's not a contact nor a single valid id. "
-            "Send me the contact of the friend you want to remove. "
-            "Or its id. "
-            "If you want to do something else, /friends_cancel .",
-            *context.user_data['message_ids'],
-        )
-        return DEL_FRIEND
+        _clear_context_data(context)
+        return ConversationHandler.END
     else:
         try:
             user_id_int = int(user_id)
@@ -289,26 +305,73 @@ def del_friend_id_handler(update, context):
             logger.info(
                 f"Received and invalid number in id '{user_id}' trying to remove a friend."
             )
-            context.bot.edit_message_text(
-                "That's not a contact nor a valid id. "
-                "Send me the contact of the friend you want to remove. "
-                "Or its id. "
-                "If you want to do something else, /friends_cancel .",
-                *context.user_data['message_ids'],
+            context.bot.send_message(
+                context.chat_data['chat_id'], "That's not a contact nor a valid id.",
             )
-            return DEL_FRIEND
+            _clear_context_data(context)
+            return ConversationHandler.END
         else:
-            update.message.contact = Contact('', 'ID', str(user_id_int), user_id_int)
-            return del_friend_handler(update, context)
+            user = User(user_id_int, f"ID {user_id_int}")
+            if user in friends:
+                for friend in friends:
+                    if friend.id == user.id:
+                        friend_username = friend.username
+                logger.info(f"Removing {friend_username} as a friend.")
+                friends.discard(user)
+                context.bot.delete_message(
+                    context.chat_data['chat_id'], context.chat_data['message_id'],
+                )
+                context.bot.send_message(
+                    context.chat_data['chat_id'],
+                    f"Removed {user.username} as a friend.",
+                )
+                _clear_context_data(context)
+                return ConversationHandler.END
+            else:
+                logger.info(f"Not removing {user.username} because its not a friend.")
+                context.bot.delete_message(
+                    context.chat_data['chat_id'], context.chat_data['message_id'],
+                )
+                context.bot.send_message(
+                    context.chat_data['chat_id'], f"{user.username} isn't a friend."
+                )
+                _clear_context_data(context)
+                return ConversationHandler.END
 
 
-def cancel_handler(update, context):
+def cancel_handler(_update, context):
     logger.info("Abort friends conversation.")
-    if 'message_ids' in context.user_data:
-        context.bot.delete_message(*context.user_data['message_ids'])
-    _clear_user_data(context)
-    update.message.reply_text("Ok.")
+    if 'message_id' in context.chat_data:
+        context.bot.delete_message(
+            context.chat_data['chat_id'], context.chat_data['message_id'],
+        )
+    context.bot.send_message(context.chat_data['chat_id'], "Ok.")
+    _clear_context_data(context)
     return ConversationHandler.END
+
+
+cancel_inlines = {
+    'cancel': cancel_handler,
+}
+action_inlines = {
+    'list': list_handler,
+    'add': add_handler,
+    'del': del_handler,
+    'cancel': cancel_handler,
+}
+list_pos_next_inlines = {
+    '0': list_del_confirm_handler,
+    '1': list_del_confirm_handler,
+    '2': list_del_confirm_handler,
+    '3': list_del_confirm_handler,
+    '4': list_del_confirm_handler,
+    'next': list_handler,
+    'cancel': cancel_handler,
+}
+list_del_confirm_inlines = {
+    'confirm': list_del_confirmed_handler,
+    'cancel': cancel_handler,
+}
 
 
 handlers = (
@@ -316,28 +379,26 @@ handlers = (
         entry_points=[CommandHandler('friends', friends_handler)],
         states={
             GET_ADD_OR_DEL: [
-                CommandHandler('friends_cancel', cancel_handler),
-                CommandHandler('friends_getpage', get_page_handler),
-                CommandHandler('friends_add', add_handler),
-                CommandHandler('friends_del', del_handler),
+                CallbackQueryHandler(inline_handler(action_inlines, logger)),
             ],
-            GET_PAGE: [
-                CommandHandler('config_cancel', cancel_handler),
-                CommandHandler('friends_getpage', get_page_handler),
+            LIST: [
+                CallbackQueryHandler(inline_handler(list_pos_next_inlines, logger)),
             ],
-            ONLY_PAGE: [CommandHandler('config_cancel', cancel_handler),],
+            DEL_FRIEND_CONFIRM: [
+                CallbackQueryHandler(inline_handler(list_del_confirm_inlines, logger)),
+            ],
             ADD_FRIEND: [
-                CommandHandler('config_cancel', cancel_handler),
+                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
                 MessageHandler(Filters.contact, add_friend_handler),
                 MessageHandler(Filters.text, add_friend_id_handler),
             ],
             DEL_FRIEND: [
-                CommandHandler('config_cancel', cancel_handler),
+                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
                 MessageHandler(Filters.contact, del_friend_handler),
                 MessageHandler(Filters.text, del_friend_id_handler),
             ],
         },
-        fallbacks=[CommandHandler('friends_cancel', cancel_handler)],
+        fallbacks=[],
     ),
 )
 

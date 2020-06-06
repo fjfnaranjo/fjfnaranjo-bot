@@ -7,12 +7,14 @@ from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
+MAX_KEY_LENGHT = 16
+
 
 class _ConfigurationProxy(MutableMapping):
     @staticmethod
     def _validate_key(key):
         validator = compile(r'^([a-zA-Z]+\.)*([a-zA-Z]+)+$')
-        if validator.fullmatch(key) is None:
+        if validator.fullmatch(key) is None or len(key) > MAX_KEY_LENGHT:
             raise ValueError(f"No valid value for key {key}.")
 
     @staticmethod

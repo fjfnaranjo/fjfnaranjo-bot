@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ConversationHandler
 
 from fjfnaranjobot.auth import friends
@@ -9,8 +10,6 @@ from fjfnaranjobot.components.friends.info import (
     ADD_FRIEND,
     DEL_FRIEND,
     GET_ADD_OR_DEL,
-    GET_PAGE,
-    ONLY_PAGE,
     add_friend_handler,
     add_friend_id_handler,
     add_handler,
@@ -19,9 +18,9 @@ from fjfnaranjobot.components.friends.info import (
     del_friend_id_handler,
     del_handler,
     friends_handler,
-    get_page_handler,
     logger,
 )
+from tests.base import CallWithMarkup
 
 from ...base import (
     LOG_BOT_UNAUTHORIZED_HEAD,
@@ -34,11 +33,14 @@ from ...base import (
 MODULE_PATH = 'fjfnaranjobot.components.friends.info'
 
 
-@patch(f'{MODULE_PATH}.PAGE_SIZE', 2)
+@patch(f'{MODULE_PATH}.KEYBOARD_ROWS', 2)
 class FriendsHandlersTests(BotHandlerTestCase):
     def setUp(self):
         super().setUp()
-        self.user_data = {'message_ids': (1, 2)}
+        self.chat_data = {
+            'chat_id': 1,
+            'message_id': 2,
+        }
         self.user_is_owner()
         friends.clear()
         friends.add(User(1, '1un'))
@@ -46,6 +48,17 @@ class FriendsHandlersTests(BotHandlerTestCase):
         friends.add(User(3, '3un'))
         friends.add(User(4, '4un'))
         friends.add(User(5, '5un'))
+
+        self.action_markup_dict = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("List", callback_data='list'),
+                    InlineKeyboardButton("Add", callback_data='add'),
+                    InlineKeyboardButton("Delete", callback_data='del'),
+                ],
+                [InlineKeyboardButton("Cancel", callback_data='cancel')],
+            ]
+        ).to_dict()
 
     def set_contact(self, id_, first_name, last_name):
         self._message_contact_mock = MagicMock()
@@ -58,237 +71,51 @@ class FriendsHandlersTests(BotHandlerTestCase):
         self.user_is_none()
         with self.assert_log_dispatch(LOG_NO_USER_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_reply(SORRY_TEXT)
+        self.assert_reply_text(SORRY_TEXT)
 
     def test_friends_handler_unknown_unauthorized(self):
         self.user_is_unknown()
         with self.assert_log_dispatch(LOG_USER_UNAUTHORIZED_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_reply(SORRY_TEXT)
+        self.assert_reply_text(SORRY_TEXT)
 
     def test_friends_handler_bot_unauthorized(self):
         self.user_is_bot()
         with self.assert_log_dispatch(LOG_BOT_UNAUTHORIZED_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_reply(SORRY_TEXT)
+        self.assert_reply_text(SORRY_TEXT)
 
     def test_friends_handler_friend_unauthorized(self):
         self.user_is_friend()
         with self.assert_log_dispatch(LOG_FRIEND_UNAUTHORIZED_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_reply(SORRY_TEXT)
+        self.assert_reply_text(SORRY_TEXT)
 
     def test_friends_handler(self):
-        self.user_data = {}
+        self.chat_data = {}
         with self.assert_log('Entering friends conversation.', logger):
             assert GET_ADD_OR_DEL == friends_handler(*self.update_and_context)
-        self.assert_reply(
-            (
-                'If you want to see your friends, use /friends_getpage . '
-                'If you want to add a friend, /friends_add . '
-                'If you want to remove a friend, /friends_del . '
-                'If you want to do something else, /friends_cancel .'
+        self.assert_reply_call(
+            CallWithMarkup(
+                (
+                    'You can list all your friends. '
+                    'Also, you can add or remove Telegram contacts and IDs to the list. '
+                    'You can also cancel the friends command at any time. '
+                ),
+                reply_markup_dict=self.action_markup_dict,
             )
         )
         assert {
-            'message_ids': (
-                self.message_reply_text.chat.id,
-                self.message_reply_text.message_id,
-            )
-        } == self.user_data
-
-    def test_get_page_handler_arg_is_not_number(self):
-        self.set_string_command('/friends_getpage', ['a'])
-        with self.assert_log('Received an invalid page number \'a\'.', logger):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'The page \'a\' is not a valid page number. '
-            'Send the /friends_getpage command to request more pages (if aplicable).'
-            'If you want to do something else, /friends_cancel .',
-            1,
-            2,
-        )
-
-    def test_get_page_handler_arg_is_zero(self):
-        self.set_string_command('/friends_getpage', ['0'])
-        with self.assert_log('Received an invalid page number \'0\'.', logger):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'The page \'0\' is not a valid page number. '
-            'Send the /friends_getpage command to request more pages (if aplicable).'
-            'If you want to do something else, /friends_cancel .',
-            1,
-            2,
-        )
-
-    def test_get_page_handler_arg_minus_one(self):
-        self.set_string_command('/friends_getpage', ['-1'])
-        with self.assert_log('Received an invalid page number \'-1\'.', logger):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'The page \'-1\' is not a valid page number. '
-            'Send the /friends_getpage command to request more pages (if aplicable).'
-            'If you want to do something else, /friends_cancel .',
-            1,
-            2,
-        )
-
-    def test_get_page_handler_dont_exists_in_args(self):
-        self.set_string_command('/friends_getpage', ['4'])
-        with self.assert_log(
-            'Not sending the page 4 of friends because it doesn\'t exists.', logger
-        ):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'The page 4 doesn\'t exists. '
-            'Send the /friends_getpage command again to start from the first page.'
-            'If you want to do something else, /friends_cancel .',
-            1,
-            2,
-        )
-        assert 'page' not in self.user_data
-
-    def test_get_page_handler_last_page_in_command(self):
-        self.set_string_command('/friends_getpage', ['3'])
-        with self.assert_log('Sending the last page (page 3) of friends.', logger):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'This is the last page (page 3) of your friends list. '
-            'Send the /friends_getpage command again to start from the first page.'
-            'If you want to do something else, /friends_cancel .'
-            '\n\n5un',
-            1,
-            2,
-        )
-        assert 'page' in self.user_data
-        assert 1 == self.user_data['page']
-
-    def test_get_page_handler_last_page_in_context(self):
-        self.user_data.update({'page': 3})
-        with self.assert_log('Sending the last page (page 3) of friends.', logger):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'This is the last page (page 3) of your friends list. '
-            'Send the /friends_getpage command again to start from the first page.'
-            'If you want to do something else, /friends_cancel .'
-            '\n\n5un',
-            1,
-            2,
-        )
-        assert 'page' in self.user_data
-        assert 1 == self.user_data['page']
-
-    def test_get_page_handler_only_page(self):
-        friends.clear()
-        friends.add(User(1, '1un'))
-        friends.add(User(2, '2un'))
-        with self.assert_log('Sending the only page of friends.', logger):
-            assert ONLY_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'This is the only page of your friends list. '
-            'If you want to do something else, /friends_cancel .'
-            '\n\n1un\n2un',
-            1,
-            2,
-        )
-        assert 'page' not in self.user_data
-
-    def test_get_page_handler_only_page_in_command(self):
-        friends.clear()
-        friends.add(User(1, '1un'))
-        friends.add(User(2, '2un'))
-        self.set_string_command('/friends_getpage', ['1'])
-        with self.assert_log('Sending the only page of friends.', logger):
-            assert ONLY_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'This is the only page of your friends list. '
-            'If you want to do something else, /friends_cancel .'
-            '\n\n1un\n2un',
-            1,
-            2,
-        )
-        assert 'page' not in self.user_data
-
-    def test_get_page_handler_first_page(self):
-        with self.assert_log('Sending the first page of friends.', logger):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'This is the first page of your friends list. '
-            'Send the /friends_getpage command to request more pages.'
-            'If you want to do something else, /friends_cancel .'
-            '\n\n1un\n2un',
-            1,
-            2,
-        )
-        assert 'page' in self.user_data
-        assert 2 == self.user_data['page']
-
-    def test_get_page_handler_first_page_in_command(self):
-        self.set_string_command('/friends_getpage', ['1'])
-        with self.assert_log('Sending the first page of friends.', logger):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'This is the first page of your friends list. '
-            'Send the /friends_getpage command to request more pages.'
-            'If you want to do something else, /friends_cancel .'
-            '\n\n1un\n2un',
-            1,
-            2,
-        )
-        assert 'page' in self.user_data
-        assert 2 == self.user_data['page']
-
-    def test_get_page_handler_first_page_in_context(self):
-        self.user_data.update({'page': 1})
-        with self.assert_log('Sending the first page of friends.', logger):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'This is the first page of your friends list. '
-            'Send the /friends_getpage command to request more pages.'
-            'If you want to do something else, /friends_cancel .'
-            '\n\n1un\n2un',
-            1,
-            2,
-        )
-        assert 'page' in self.user_data
-        assert 2 == self.user_data['page']
-
-    def test_get_page_handler_second_page_in_command(self):
-        self.set_string_command('/friends_getpage', ['2'])
-        with self.assert_log('Sending the page 2 of friends.', logger):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'This is the page 2 of your friends list. '
-            'Send the /friends_getpage command to request more pages.'
-            'If you want to do something else, /friends_cancel .'
-            '\n\n3un\n4un',
-            1,
-            2,
-        )
-        assert 'page' in self.user_data
-        assert 3 == self.user_data['page']
-
-    def test_get_page_handler_second_page_in_context(self):
-        self.user_data.update({'page': 2})
-        with self.assert_log('Sending the page 2 of friends.', logger):
-            assert GET_PAGE == get_page_handler(*self.update_and_context)
-        self.assert_edit(
-            'This is the page 2 of your friends list. '
-            'Send the /friends_getpage command to request more pages.'
-            'If you want to do something else, /friends_cancel .'
-            '\n\n3un\n4un',
-            1,
-            2,
-        )
-        assert 'page' in self.user_data
-        assert 3 == self.user_data['page']
+            'chat_id': self.message_reply_text.chat.id,
+            'message_id': self.message_reply_text.message_id,
+        } == self.chat_data
 
     def test_add_handler(self):
         with self.assert_log(
             'Requesting contact to add as a friend.', logger,
         ):
             assert ADD_FRIEND == add_handler(*self.update_and_context)
-        self.assert_edit(
+        self.assert_edit_text_chat_message(
             'Send me the contact of the friend you want to add. '
             'Or its id. '
             'If you want to do something else, /friends_cancel .',
@@ -303,8 +130,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
-        self.assert_reply('Added 9fn 9ln as a friend.')
-        assert {} == self.user_data
+        self.assert_reply_text('Added 9fn 9ln as a friend.')
+        assert {} == self.chat_data
         assert User(9, None) in friends
 
     def test_add_friend_handler_no_id(self):
@@ -313,7 +140,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             'Received a contact without ID to add as a friend.', logger
         ):
             assert ADD_FRIEND == add_friend_handler(*self.update_and_context)
-        self.assert_edit(
+        self.assert_edit_text_chat_message(
             'That doesn\'t look like a user with Telegram. '
             'Send me the contact of the friend you want to add. '
             'Or its id. '
@@ -329,8 +156,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
-        self.assert_reply('Added 9ln as a friend.')
-        assert {} == self.user_data
+        self.assert_reply_text('Added 9ln as a friend.')
+        assert {} == self.chat_data
         assert User(9, None) in friends
 
     def test_add_friend_handler_no_last_name(self):
@@ -340,8 +167,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
-        self.assert_reply('Added 9fn as a friend.')
-        assert {} == self.user_data
+        self.assert_reply_text('Added 9fn as a friend.')
+        assert {} == self.chat_data
         assert User(9, None) in friends
 
     def test_add_friend_handler_existing(self):
@@ -351,8 +178,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
-        self.assert_reply('Added 1fna 1lna as a friend.')
-        assert {} == self.user_data
+        self.assert_reply_text('Added 1fna 1lna as a friend.')
+        assert {} == self.chat_data
         found = False
         for friend in friends:
             if friend.id == 1:
@@ -367,8 +194,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
-        self.assert_reply('Added ID 9 as a friend.')
-        assert {} == self.user_data
+        self.assert_reply_text('Added ID 9 as a friend.')
+        assert {} == self.chat_data
         assert User(9, None) in friends
 
     def test_add_friend_id_handler_number_multiple_str(self):
@@ -377,7 +204,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             'Received and invalid id \'9 9\' trying to add a friend.', logger
         ):
             assert ADD_FRIEND == add_friend_id_handler(*self.update_and_context)
-        self.assert_edit(
+        self.assert_edit_text_chat_message(
             'That\'s not a contact nor a single valid id. '
             'Send me the contact of the friend you want to add. '
             'Or its id. '
@@ -392,7 +219,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             'Received and invalid number in id \'-3\' trying to add a friend.', logger
         ):
             assert ADD_FRIEND == add_friend_id_handler(*self.update_and_context)
-        self.assert_edit(
+        self.assert_edit_text_chat_message(
             'That\'s not a contact nor a valid id. '
             'Send me the contact of the friend you want to add. '
             'Or its id. '
@@ -406,7 +233,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             'Requesting contact to remove as a friend.', logger,
         ):
             assert DEL_FRIEND == del_handler(*self.update_and_context)
-        self.assert_edit(
+        self.assert_edit_text_chat_message(
             'Send me the contact of the friend you want to remove. '
             'Or its id. '
             'If you want to do something else, /friends_cancel .',
@@ -423,8 +250,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
-        self.assert_reply('Removed 1un as a friend.')
-        assert {} == self.user_data
+        self.assert_reply_text('Removed 1un as a friend.')
+        assert {} == self.chat_data
         assert User(1, None) not in friends
 
     def test_del_friend_handler_no_id(self):
@@ -433,7 +260,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             'Received a contact without ID to remove as a friend.', logger
         ):
             assert DEL_FRIEND == del_friend_handler(*self.update_and_context)
-        self.assert_edit(
+        self.assert_edit_text_chat_message(
             'That doesn\'t look like a user with Telegram. '
             'Send me the contact of the friend you want to remove. '
             'Or its id. '
@@ -451,8 +278,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
-        self.assert_reply('Removed 1un as a friend.')
-        assert {} == self.user_data
+        self.assert_reply_text('Removed 1un as a friend.')
+        assert {} == self.chat_data
         assert User(1, None) not in friends
 
     def test_del_friend_handler_no_last_name(self):
@@ -464,8 +291,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
-        self.assert_reply('Removed 1un as a friend.')
-        assert {} == self.user_data
+        self.assert_reply_text('Removed 1un as a friend.')
+        assert {} == self.chat_data
         assert User(1, None) not in friends
 
     def test_del_friend_handler_dont_exists(self):
@@ -477,8 +304,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
-        self.assert_reply('9fn 9ln isn\'t a friend.')
-        assert {} == self.user_data
+        self.assert_reply_text('9fn 9ln isn\'t a friend.')
+        assert {} == self.chat_data
 
     def test_del_friend_id_handler_number_ok(self):
         self.set_string_command('1')
@@ -489,8 +316,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
-        self.assert_reply('Removed 1un as a friend.')
-        assert {} == self.user_data
+        self.assert_reply_text('Removed 1un as a friend.')
+        assert {} == self.chat_data
         assert User(1, None) not in friends
 
     def test_del_friend_id_handler_number_multiple_str(self):
@@ -499,7 +326,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             'Received and invalid id \'9 9\' trying to remove a friend.', logger
         ):
             assert DEL_FRIEND == del_friend_id_handler(*self.update_and_context)
-        self.assert_edit(
+        self.assert_edit_text_chat_message(
             'That\'s not a contact nor a single valid id. '
             'Send me the contact of the friend you want to remove. '
             'Or its id. '
@@ -515,7 +342,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             logger,
         ):
             assert DEL_FRIEND == del_friend_id_handler(*self.update_and_context)
-        self.assert_edit(
+        self.assert_edit_text_chat_message(
             'That\'s not a contact nor a valid id. '
             'Send me the contact of the friend you want to remove. '
             'Or its id. '
@@ -525,11 +352,20 @@ class FriendsHandlersTests(BotHandlerTestCase):
         )
 
     def test_cancel_handler(self):
-        self.user_data.update({'page': 0, 'some': 'content'})
+        self.chat_data.update(
+            {
+                'chat_id': 1,
+                'message_id': 2,
+                'delete_user': 'delete_user',
+                'keyboard_users': 'keyboard_users',
+                'offset': 0,
+                'some': 'content',
+            }
+        )
         with self.assert_log(
             'Abort friends conversation.', logger,
         ):
             assert ConversationHandler.END == cancel_handler(*self.update_and_context)
         self.assert_delete(1, 2)
-        self.assert_reply('Ok.')
-        assert {'some': 'content'} == self.user_data
+        self.assert_message_chat_text(1, 'Ok.')
+        assert {'some': 'content'} == self.chat_data
