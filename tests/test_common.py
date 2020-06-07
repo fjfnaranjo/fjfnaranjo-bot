@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import MagicMock, call, patch, sentinel
 
 from fjfnaranjobot.common import (
     Command,
@@ -7,6 +8,8 @@ from fjfnaranjobot.common import (
     get_bot_components,
     get_bot_data_dir,
     get_bot_owner_name,
+    inline_handler,
+    quote_value_for_log,
 )
 
 from .base import BotTestCase
@@ -92,3 +95,61 @@ class ScheduleEntryTests(TestCase):
         assert 's' == entry.schedule
         assert 'si' == entry.signature
         assert {'extra_arg': 'extra_value'} == entry.extra_args
+
+
+class InlineHandlerTests(TestCase):
+    def test_inline_handler_has_query(self):
+        mocked_logger = MagicMock()
+        mocker_update = MagicMock()
+        mocker_update.callback_query.data = 'data'
+
+        def handler(_update=None, _context=None):
+            return sentinel.handler_return
+
+        result_function = inline_handler({'data': handler}, mocked_logger)
+        result = result_function(mocker_update, None)
+        mocked_logger.info.assert_has_calls(
+            [
+                call('Received inline selection.'),
+                call('Inline selection was \'data\'.'),
+            ]
+        )
+        assert sentinel.handler_return == result
+
+    def test_inline_handler_hasnt_query(self):
+        mocked_logger = MagicMock()
+        mocker_update = MagicMock()
+        mocker_update.callback_query.data = 'other'
+
+        def handler(_update=None, _context=None):
+            return sentinel.handler_return
+
+        result_function = inline_handler({'data': handler}, mocked_logger)
+        with self.assertRaises(ValueError) as e:
+            result_function(mocker_update, None)
+        mocked_logger.info.assert_has_calls(
+            [
+                call('Received inline selection.'),
+                call('Inline selection was \'other\'.'),
+            ]
+        )
+        assert 'No valid handlers for query \'other\'.' == e.exception.args[0]
+
+
+@patch(f'{MODULE_PATH}.LOG_VALUE_MAX_LENGHT', 6)
+class QuoteValueForLogTests(TestCase):
+    def test_quote_value_for_log_empty(self):
+        result = quote_value_for_log('')
+        assert "''" == result
+
+    def test_quote_value_for_log_single(self):
+        result = quote_value_for_log('a')
+        assert "'a'" == result
+
+    def test_quote_value_for_log_short(self):
+        result = quote_value_for_log('aaa')
+        assert "'aaa'" == result
+
+    def test_quote_value_for_log_long(self):
+        result = quote_value_for_log('aaabbbcccdddeeefffggghhhiii')
+        assert "'aaabbb' (cropped to 6 chars)" == result
