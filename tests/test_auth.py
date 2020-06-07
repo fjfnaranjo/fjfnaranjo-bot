@@ -12,7 +12,7 @@ from fjfnaranjobot.auth import (
     only_owner,
     only_real,
 )
-from fjfnaranjobot.common import SORRY_TEXT, User
+from fjfnaranjobot.common import User
 from tests.base import SECOND_FRIEND_USER, BotTestCase
 
 from .base import (
@@ -20,7 +20,7 @@ from .base import (
     FIRST_FRIEND_USER,
     OWNER_USER,
     UNKNOWN_USER,
-    BotUpdateContextTestCase,
+    BotHandlerTestCase,
 )
 
 MODULE_PATH = 'fjfnaranjobot.auth'
@@ -44,11 +44,7 @@ class AuthGetEnvTests(BotTestCase):
             assert get_owner_id() == 1
 
 
-class AuthTests(BotUpdateContextTestCase):
-    def setUp(self):
-        super().setUp()
-        self._update_mock.message.chat.id = sentinel.chat_id
-
+class AuthTests(BotHandlerTestCase):
     @staticmethod
     @contextmanager
     def owner():

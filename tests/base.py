@@ -49,7 +49,7 @@ class BotTestCase(TestCase):
             yield
 
 
-class BotUpdateContextTestCase(BotTestCase):
+class BotHandlerTestCase(BotTestCase):
     def setUp(self):
         super().setUp()
 
@@ -65,6 +65,8 @@ class BotUpdateContextTestCase(BotTestCase):
         self._context_mock.bot.send_message.return_value = self._message_mock
 
         self.user_is_unknown()
+
+        self._context_mock.chat_data = None
 
     @property
     def update_and_context(self):
@@ -112,21 +114,6 @@ class BotUpdateContextTestCase(BotTestCase):
         self._update_mock.effective_user.is_bot = False
         self._update_mock.effective_user.id = OWNER_USER.id
         self._update_mock.effective_user.username = OWNER_USER.username
-
-
-class BotHandlerTestCase(BotUpdateContextTestCase):
-    def setUp(self):
-        super().setUp()
-        self._context_mock.chat_data = None
-
-    def update_mock_spec(self, no_message=None, empty_command=None):
-        if no_message or empty_command:
-            raise NotImplementedError(
-                "The arguments for methods of the user_is_* family destroy the "
-                "mocked telegram.Update object inside the test case. "
-                f"{self.__class__.__name__} use this mock to store state and to "
-                "prevent malfunction the former functionality is disabled."
-            )
 
     @property
     def chat_data(self):
