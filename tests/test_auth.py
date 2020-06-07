@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, sentinel
 
 from telegram.ext.dispatcher import DispatcherHandlerStop
 
@@ -12,7 +12,7 @@ from fjfnaranjobot.auth import (
     only_owner,
     only_real,
 )
-from fjfnaranjobot.common import User
+from fjfnaranjobot.common import SORRY_TEXT, User
 from tests.base import SECOND_FRIEND_USER, BotTestCase
 
 from .base import (
@@ -62,7 +62,7 @@ class AuthTests(BotHandlerTestCase):
 
     def test_only_real_no_user_no_message(self):
         noop = only_real(lambda _update, _context: True)
-        self.user_is_none(True)
+        self.user_is_none(remove_message=True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
@@ -74,7 +74,7 @@ class AuthTests(BotHandlerTestCase):
 
     def test_only_real_no_user_empty_command(self):
         noop = only_real(lambda _update, _context: True)
-        self.user_is_none(None, True)
+        self.user_is_none(remove_text=True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
@@ -83,6 +83,7 @@ class AuthTests(BotHandlerTestCase):
             'trying to access a only_real command. '
             'Command text: \'<empty>\' (cropped to 10 chars).'
         ) in logs.output[0]
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_real_no_user(self):
         noop = only_real(lambda _update, _context: True)
@@ -96,10 +97,11 @@ class AuthTests(BotHandlerTestCase):
             'trying to access a only_real command. '
             'Command text: \'cmd\' (cropped to 10 chars).'
         ) in logs.output[0]
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_real_bot_no_message(self):
         noop = only_real(lambda _update, _context: True)
-        self.user_is_bot(True)
+        self.user_is_bot(remove_message=True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
@@ -111,7 +113,7 @@ class AuthTests(BotHandlerTestCase):
 
     def test_only_real_bot_empty_command(self):
         noop = only_real(lambda _update, _context: True)
-        self.user_is_bot(None, True)
+        self.user_is_bot(remove_text=True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
@@ -120,6 +122,7 @@ class AuthTests(BotHandlerTestCase):
             'tried to access a only_real command. '
             'Command text: \'<empty>\' (cropped to 10 chars).'
         ) in logs.output[0]
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_real_bot(self):
         noop = only_real(lambda _update, _context: True)
@@ -137,10 +140,11 @@ class AuthTests(BotHandlerTestCase):
     def test_only_real_user_ok(self):
         noop = only_real(lambda _update, _context: True)
         assert noop(*self.update_and_context) is True
+        self.assert_message_calls([])
 
     def test_only_owner_no_message(self):
         noop = only_owner(lambda _update, _context: True)
-        self.user_is_unknown(True)
+        self.user_is_unknown(remove_message=True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
@@ -152,7 +156,7 @@ class AuthTests(BotHandlerTestCase):
 
     def test_only_owner_empty_command(self):
         noop = only_owner(lambda _update, _context: True)
-        self.user_is_unknown(None, True)
+        self.user_is_unknown(remove_text=True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
@@ -161,6 +165,7 @@ class AuthTests(BotHandlerTestCase):
             'tried to access a only_owner command. '
             'Command text: \'<empty>\' (cropped to 10 chars).'
         ) in logs.output[0]
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_owner_no_owner(self):
         noop = only_owner(lambda _update, _context: True)
@@ -174,16 +179,18 @@ class AuthTests(BotHandlerTestCase):
             'tried to access a only_owner command. '
             'Command text: \'cmd\' (cropped to 10 chars).'
         ) in logs.output[0]
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_owner_ok(self):
         with self.owner():
             noop = only_owner(lambda _update, _context: True)
             self.user_is_owner()
             assert noop(*self.update_and_context) is True
+            self.assert_message_calls([])
 
     def test_only_friends_no_message(self):
         noop = only_friends(lambda _update, _context: True)
-        self.user_is_unknown(True)
+        self.user_is_unknown(remove_message=True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
@@ -195,7 +202,7 @@ class AuthTests(BotHandlerTestCase):
 
     def test_only_friends_empty_command(self):
         noop = only_friends(lambda _update, _context: True)
-        self.user_is_unknown(None, True)
+        self.user_is_unknown(remove_text=True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
@@ -204,6 +211,7 @@ class AuthTests(BotHandlerTestCase):
             'tried to access a only_friends command. '
             'Command text: \'<empty>\' (cropped to 10 chars).'
         ) in logs.output[0]
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_friends_not_friend(self):
         noop = only_friends(lambda _update, _context: True)
@@ -217,12 +225,14 @@ class AuthTests(BotHandlerTestCase):
                 'tried to access a only_friends command. '
                 'Command text: \'cmd\' (cropped to 10 chars).'
             ) in logs.output[0]
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_friends_ok(self):
         noop = only_friends(lambda _update, _context: True)
         self.user_is_friend(FIRST_FRIEND_USER)
         with self.owner_and_friends([FIRST_FRIEND_USER]):
             assert noop(*self.update_and_context) is True
+            self.assert_message_calls([])
 
 
 class FriendsTests(TestCase):

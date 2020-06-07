@@ -54,14 +54,20 @@ class BotHandlerTestCase(BotTestCase):
         super().setUp()
 
         self._update_mock = MagicMock()
-        self._update_mock.message.chat.id = sentinel.chat_id_from_update
-        self._update_mock.message.message_id = sentinel.message_id_from_update
+        self._message_from_update_mock = MagicMock()
+        self._message_from_update_mock.chat.id = sentinel.chat_id_from_update
+        self._message_from_update_mock.message_id = sentinel.message_id_from_update
+        self._update_mock.message = self._message_from_update_mock
 
         self._context_mock = MagicMock()
-        self._message_mock = MagicMock()
-        self._message_mock.chat.id = sentinel.chat_id_from_send_message
-        self._message_mock.message_id = sentinel.message_id_from_send_message
-        self._context_mock.bot.send_message.return_value = self._message_mock
+        self._message_from_context_mock = MagicMock()
+        self._message_from_context_mock.chat.id = sentinel.chat_id_from_send_message
+        self._message_from_context_mock.message_id = (
+            sentinel.message_id_from_send_message
+        )
+        self._context_mock.bot.send_message.return_value = (
+            self._message_from_context_mock
+        )
         self._context_mock.chat_data = None
 
         self.user_is_unknown()
@@ -76,39 +82,38 @@ class BotHandlerTestCase(BotTestCase):
         )
         self._context_mock.args = cmd_args
 
-    def update_mock_spec(self, no_message=None, empty_command=None):
-        if no_message:
-            self._update_mock = MagicMock(spec=['effective_user'])
-        elif empty_command:
-            self._update_mock = MagicMock()
-            self._update_mock.message = MagicMock(spec=['reply_text'])
+    def update_mock_spec(self, remove_message=None, remove_text=None):
+        if remove_message:
+            del self._update_mock.message
+        elif remove_text:
+            del self._update_mock.message.text
 
-    def user_is_none(self, no_message=None, empty_command=None):
-        self.update_mock_spec(no_message, empty_command)
+    def user_is_none(self, remove_message=None, remove_text=None):
+        self.update_mock_spec(remove_message, remove_text)
         self._update_mock.effective_user = None
 
-    def user_is_bot(self, no_message=None, empty_command=None):
-        self.update_mock_spec(no_message, empty_command)
+    def user_is_bot(self, remove_message=None, remove_text=None):
+        self.update_mock_spec(remove_message, remove_text)
         self._update_mock.effective_user.is_bot = True
         self._update_mock.effective_user.id = BOT_USER.id
         self._update_mock.effective_user.username = BOT_USER.username
 
-    def user_is_unknown(self, no_message=None, empty_command=None):
-        self.update_mock_spec(no_message, empty_command)
+    def user_is_unknown(self, remove_message=None, remove_text=None):
+        self.update_mock_spec(remove_message, remove_text)
         self._update_mock.effective_user.is_bot = False
         self._update_mock.effective_user.id = UNKNOWN_USER.id
         self._update_mock.effective_user.username = UNKNOWN_USER.username
 
     def user_is_friend(
-        self, friend=FIRST_FRIEND_USER, no_message=None, empty_command=None
+        self, friend=FIRST_FRIEND_USER, remove_message=None, remove_text=None
     ):
-        self.update_mock_spec(no_message, empty_command)
+        self.update_mock_spec(remove_message, remove_text)
         self._update_mock.effective_user.is_bot = False
         self._update_mock.effective_user.id = friend.id
         self._update_mock.effective_user.username = friend.username
 
-    def user_is_owner(self, no_message=None, empty_command=None):
-        self.update_mock_spec(no_message, empty_command)
+    def user_is_owner(self, remove_message=None, remove_text=None):
+        self.update_mock_spec(remove_message, remove_text)
         self._update_mock.effective_user.is_bot = False
         self._update_mock.effective_user.id = OWNER_USER.id
         self._update_mock.effective_user.username = OWNER_USER.username
