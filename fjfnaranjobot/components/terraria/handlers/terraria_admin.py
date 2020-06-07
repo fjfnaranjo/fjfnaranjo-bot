@@ -1,3 +1,4 @@
+# TODO: Review all tests
 from telegram.ext import CommandHandler, ConversationHandler, Filters, MessageHandler
 
 from fjfnaranjobot.auth import only_owner
