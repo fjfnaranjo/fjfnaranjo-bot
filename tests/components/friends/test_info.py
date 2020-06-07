@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, sentinel
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ConversationHandler
@@ -79,25 +79,25 @@ class FriendsHandlersTests(BotHandlerTestCase):
         self.user_is_none()
         with self.assert_log_dispatch(LOG_NO_USER_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_friends_handler_unknown_unauthorized(self):
         self.user_is_unknown()
         with self.assert_log_dispatch(LOG_USER_UNAUTHORIZED_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_friends_handler_bot_unauthorized(self):
         self.user_is_bot()
         with self.assert_log_dispatch(LOG_BOT_UNAUTHORIZED_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_friends_handler_friend_unauthorized(self):
         self.user_is_friend()
         with self.assert_log_dispatch(LOG_FRIEND_UNAUTHORIZED_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_friends_handler(self):
         self.chat_data = {}

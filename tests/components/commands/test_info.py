@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import patch, sentinel
 
 from fjfnaranjobot.auth import logger as auth_logger
 from fjfnaranjobot.common import SORRY_TEXT, Command
@@ -21,25 +21,25 @@ class CommandsHandlersTests(BotHandlerTestCase):
         self.user_is_none()
         with self.assert_log_dispatch(LOG_NO_USER_HEAD, auth_logger):
             commands_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_commands_handler_unknown_unauthorized(self):
         self.user_is_unknown()
         with self.assert_log_dispatch(LOG_USER_UNAUTHORIZED_HEAD, auth_logger):
             commands_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_commands_handler_bot_unauthorized(self):
         self.user_is_bot()
         with self.assert_log_dispatch(LOG_BOT_UNAUTHORIZED_HEAD, auth_logger):
             commands_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_commands_handler_friend_unauthorized(self):
         self.user_is_friend()
         with self.assert_log_dispatch(LOG_FRIEND_UNAUTHORIZED_HEAD, auth_logger):
             commands_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     @patch(
         f'{MODULE_PATH}.command_list',

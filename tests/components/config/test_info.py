@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import patch, sentinel
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ConversationHandler
@@ -60,32 +60,30 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.user_is_none()
         with self.assert_log_dispatch(LOG_NO_USER_HEAD, auth_logger):
             config_handler(*self.update_and_context)
-        # TODO: Not replay but message
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_config_handler_unknown_unauthorized(self):
         self.user_is_unknown()
         with self.assert_log_dispatch(LOG_USER_UNAUTHORIZED_HEAD, auth_logger):
             config_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_config_handler_bot_unauthorized(self):
         self.user_is_bot()
         with self.assert_log_dispatch(LOG_BOT_UNAUTHORIZED_HEAD, auth_logger):
             config_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_config_handler_friend_unauthorized(self):
         self.user_is_friend()
         with self.assert_log_dispatch(LOG_FRIEND_UNAUTHORIZED_HEAD, auth_logger):
             config_handler(*self.update_and_context)
-        self.assert_reply_text(SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
 
     def test_config_handler(self):
         self.chat_data = {}
         with self.assert_log('Entering config conversation.', logger):
             assert GET_SET_OR_DEL == config_handler(*self.update_and_context)
-        # TODO: Not replay but message
         self.assert_reply_call(
             CallWithMarkup(
                 (

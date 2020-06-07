@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, sentinel
 
 from telegram.ext.dispatcher import DispatcherHandlerStop
 
@@ -12,8 +12,8 @@ from fjfnaranjobot.auth import (
     only_owner,
     only_real,
 )
-from fjfnaranjobot.common import User
-from tests.base import SECOND_FRIEND_USER
+from fjfnaranjobot.common import SORRY_TEXT, User
+from tests.base import SECOND_FRIEND_USER, BotTestCase
 
 from .base import (
     BOT_USER,
@@ -26,22 +26,7 @@ from .base import (
 MODULE_PATH = 'fjfnaranjobot.auth'
 
 
-class AuthTests(BotUpdateContextTestCase):
-    @staticmethod
-    @contextmanager
-    def owner():
-        with patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USER.id):
-            yield
-
-    @contextmanager
-    def owner_and_friends(self, friend_list):
-        with self.owner():
-            friends.clear()
-            for friend in friend_list:
-                friends.add(User(friend.id, friend.username))
-            yield
-            friends.clear()
-
+class AuthGetEnvTests(BotTestCase):
     def test_get_owner_id_no_default(self):
         with self.mocked_environ(f'{MODULE_PATH}.environ', None, ['BOT_OWNER_ID']):
             with self.assertRaises(ValueError) as e:
@@ -58,12 +43,38 @@ class AuthTests(BotUpdateContextTestCase):
         with self.mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': '1'}):
             assert get_owner_id() == 1
 
+
+class AuthTests(BotUpdateContextTestCase):
+    def setUp(self):
+        super().setUp()
+        self._update_mock.message.chat.id = sentinel.chat_id
+
+    def assert_replied(self):
+        self._context_mock.bot.send_message.assert_called_once_with(
+            sentinel.chat_id, SORRY_TEXT
+        )
+
+    @staticmethod
+    @contextmanager
+    def owner():
+        with patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USER.id):
+            yield
+
+    @contextmanager
+    def owner_and_friends(self, friend_list):
+        with self.owner():
+            friends.clear()
+            for friend in friend_list:
+                friends.add(User(friend.id, friend.username))
+            yield
+            friends.clear()
+
     def test_only_real_no_user_no_message(self):
-        noop = only_real(lambda _update: True)
+        noop = only_real(lambda _update, _context: True)
         self.user_is_none(True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
-                noop(self.update)
+                noop(*self.update_and_context)
         assert (
             'Message received with no user '
             'trying to access a only_real command. '
@@ -71,11 +82,11 @@ class AuthTests(BotUpdateContextTestCase):
         ) in logs.output[0]
 
     def test_only_real_no_user_empty_command(self):
-        noop = only_real(lambda _update: True)
+        noop = only_real(lambda _update, _context: True)
         self.user_is_none(None, True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
-                noop(self.update)
+                noop(*self.update_and_context)
         assert (
             'Message received with no user '
             'trying to access a only_real command. '
@@ -83,12 +94,12 @@ class AuthTests(BotUpdateContextTestCase):
         ) in logs.output[0]
 
     def test_only_real_no_user(self):
-        noop = only_real(lambda _update: True)
+        noop = only_real(lambda _update, _context: True)
         self.user_is_none()
         self.set_string_command('cmd')
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
-                noop(self.update)
+                noop(*self.update_and_context)
         assert (
             'Message received with no user '
             'trying to access a only_real command. '
@@ -96,11 +107,11 @@ class AuthTests(BotUpdateContextTestCase):
         ) in logs.output[0]
 
     def test_only_real_bot_no_message(self):
-        noop = only_real(lambda _update: True)
+        noop = only_real(lambda _update, _context: True)
         self.user_is_bot(True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
-                noop(self.update)
+                noop(*self.update_and_context)
         assert (
             f'Bot with username {BOT_USER.username} and id {BOT_USER.id} '
             'tried to access a only_real command. '
@@ -108,11 +119,11 @@ class AuthTests(BotUpdateContextTestCase):
         ) in logs.output[0]
 
     def test_only_real_bot_empty_command(self):
-        noop = only_real(lambda _update: True)
+        noop = only_real(lambda _update, _context: True)
         self.user_is_bot(None, True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
-                noop(self.update)
+                noop(*self.update_and_context)
         assert (
             f'Bot with username {BOT_USER.username} and id {BOT_USER.id} '
             'tried to access a only_real command. '
@@ -120,12 +131,12 @@ class AuthTests(BotUpdateContextTestCase):
         ) in logs.output[0]
 
     def test_only_real_bot(self):
-        noop = only_real(lambda _update: True)
+        noop = only_real(lambda _update, _context: True)
         self.user_is_bot()
         self.set_string_command('cmd')
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
-                noop(self.update)
+                noop(*self.update_and_context)
         assert (
             f'Bot with username {BOT_USER.username} and id {BOT_USER.id} '
             'tried to access a only_real command. '
@@ -133,15 +144,15 @@ class AuthTests(BotUpdateContextTestCase):
         ) in logs.output[0]
 
     def test_only_real_user_ok(self):
-        noop = only_real(lambda _update: True)
-        assert noop(self.update) is True
+        noop = only_real(lambda _update, _context: True)
+        assert noop(*self.update_and_context) is True
 
     def test_only_owner_no_message(self):
-        noop = only_owner(lambda _update: True)
+        noop = only_owner(lambda _update, _context: True)
         self.user_is_unknown(True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
-                noop(self.update)
+                noop(*self.update_and_context)
         assert (
             f'User u with id {UNKNOWN_USER.id} '
             'tried to access a only_owner command. '
@@ -149,11 +160,11 @@ class AuthTests(BotUpdateContextTestCase):
         ) in logs.output[0]
 
     def test_only_owner_empty_command(self):
-        noop = only_owner(lambda _update: True)
+        noop = only_owner(lambda _update, _context: True)
         self.user_is_unknown(None, True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
-                noop(self.update)
+                noop(*self.update_and_context)
         assert (
             f'User u with id {UNKNOWN_USER.id} '
             'tried to access a only_owner command. '
@@ -161,12 +172,12 @@ class AuthTests(BotUpdateContextTestCase):
         ) in logs.output[0]
 
     def test_only_owner_no_owner(self):
-        noop = only_owner(lambda _update: True)
+        noop = only_owner(lambda _update, _context: True)
         self.set_string_command('cmd')
         with self.owner():
             with self.assertLogs(logger) as logs:
                 with self.assertRaises(DispatcherHandlerStop):
-                    assert noop(self.update) is None
+                    assert noop(*self.update_and_context) is None
         assert (
             f'User u with id {UNKNOWN_USER.id} '
             'tried to access a only_owner command. '
@@ -175,16 +186,16 @@ class AuthTests(BotUpdateContextTestCase):
 
     def test_only_owner_ok(self):
         with self.owner():
-            noop = only_owner(lambda _update: True)
+            noop = only_owner(lambda _update, _context: True)
             self.user_is_owner()
-            assert noop(self.update) is True
+            assert noop(*self.update_and_context) is True
 
     def test_only_friends_no_message(self):
-        noop = only_friends(lambda _update: True)
+        noop = only_friends(lambda _update, _context: True)
         self.user_is_unknown(True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
-                noop(self.update)
+                noop(*self.update_and_context)
         assert (
             f'User u with id {UNKNOWN_USER.id} '
             'tried to access a only_friends command. '
@@ -192,11 +203,11 @@ class AuthTests(BotUpdateContextTestCase):
         ) in logs.output[0]
 
     def test_only_friends_empty_command(self):
-        noop = only_friends(lambda _update: True)
+        noop = only_friends(lambda _update, _context: True)
         self.user_is_unknown(None, True)
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
-                noop(self.update)
+                noop(*self.update_and_context)
         assert (
             f'User u with id {UNKNOWN_USER.id} '
             'tried to access a only_friends command. '
@@ -204,12 +215,12 @@ class AuthTests(BotUpdateContextTestCase):
         ) in logs.output[0]
 
     def test_only_friends_not_friend(self):
-        noop = only_friends(lambda _update: True)
+        noop = only_friends(lambda _update, _context: True)
         self.set_string_command('cmd')
         with self.owner_and_friends([FIRST_FRIEND_USER]):
             with self.assertLogs(logger) as logs:
                 with self.assertRaises(DispatcherHandlerStop):
-                    noop(self.update)
+                    noop(*self.update_and_context)
             assert (
                 f'User u with id {UNKNOWN_USER.id} '
                 'tried to access a only_friends command. '
@@ -217,10 +228,10 @@ class AuthTests(BotUpdateContextTestCase):
             ) in logs.output[0]
 
     def test_only_friends_ok(self):
-        noop = only_friends(lambda _update: True)
+        noop = only_friends(lambda _update, _context: True)
         self.user_is_friend(FIRST_FRIEND_USER)
         with self.owner_and_friends([FIRST_FRIEND_USER]):
-            assert noop(self.update) is True
+            assert noop(*self.update_and_context) is True
 
 
 class FriendsTests(TestCase):

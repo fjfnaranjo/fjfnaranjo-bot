@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import patch, sentinel
 
 from fjfnaranjobot.components.start.info import logger, start_handler
 
@@ -15,5 +15,5 @@ class StartHandlersTests(BotHandlerTestCase):
         ):
             start_handler(*self.update_and_context)
         self.assert_message_chat_text(
-            101, 'Welcome. I\'m test\'s bot. How can I help you?'
+            sentinel.chat_id, 'Welcome. I\'m test\'s bot. How can I help you?'
         )

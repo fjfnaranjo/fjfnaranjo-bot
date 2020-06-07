@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from logging import INFO
 from os import environ
 from unittest import TestCase
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, call, patch, sentinel
 
 from telegram.ext import DispatcherHandlerStop
 
@@ -112,10 +112,10 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
     def setUp(self):
         super().setUp()
 
+        self._update_mock.message.chat.id = sentinel.chat_id
         self._message_reply_text_mock = MagicMock()
         self._message_reply_text_mock.chat.id = 201
         self._message_reply_text_mock.message_id = 202
-        self._update_mock.message.chat.id = 101
         self._update_mock.message.reply_text.return_value = (
             self._message_reply_text_mock
         )

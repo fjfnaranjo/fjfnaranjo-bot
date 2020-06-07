@@ -21,6 +21,15 @@ def get_owner_id():
         raise ValueError("Invalid id in BOT_OWNER_ID var.")
 
 
+def _reply_unauthorized(update, context):
+    try:
+        chat_id = update.message.chat.id
+    except AttributeError:
+        pass
+    else:
+        context.bot.send_message(chat_id, SORRY_TEXT)
+
+
 def _parse_command(update):
     message = getattr(update, 'message', None)
     if message is not None:
@@ -58,19 +67,17 @@ def _report_user(update, user, permission):
 
 def only_real(f):
     @wraps(f)
-    def wrapper(update, *args, **kwargs):
+    def wrapper(update, context, *args, **kwargs):
         user = update.effective_user
         if user is None:
+            _reply_unauthorized(update, context)
             _report_no_user(update, 'only_real')
-            if hasattr(update, 'message'):
-                update.message.reply_text(SORRY_TEXT)
             raise DispatcherHandlerStop()
         if user.is_bot:
+            _reply_unauthorized(update, context)
             _report_bot(update, user, 'only_real')
-            if hasattr(update, 'message'):
-                update.message.reply_text(SORRY_TEXT)
             raise DispatcherHandlerStop()
-        return f(update, *args, **kwargs)
+        return f(update, context, *args, **kwargs)
 
     return wrapper
 
@@ -78,14 +85,13 @@ def only_real(f):
 def only_owner(f):
     @only_real
     @wraps(f)
-    def wrapper(update, *args, **kwargs):
+    def wrapper(update, context, *args, **kwargs):
         user = update.effective_user
         if user.id != get_owner_id():
+            _reply_unauthorized(update, context)
             _report_user(update, user, 'only_owner')
-            if hasattr(update, 'message'):
-                update.message.reply_text(SORRY_TEXT)
             raise DispatcherHandlerStop()
-        return f(update, *args, **kwargs)
+        return f(update, context, *args, **kwargs)
 
     return wrapper
 
@@ -166,14 +172,13 @@ friends = _FriendsProxy()
 def only_friends(f):
     @only_real
     @wraps(f)
-    def wrapper(update, *args, **kwargs):
+    def wrapper(update, context, *args, **kwargs):
         user = update.effective_user
         friend = User(user.id, user.username)
         if user.id != get_owner_id() and friend not in friends:
+            _reply_unauthorized(update, context)
             _report_user(update, user, 'only_friends')
-            if hasattr(update, 'message'):
-                update.message.reply_text(SORRY_TEXT)
             raise DispatcherHandlerStop()
-        return f(update, *args, **kwargs)
+        return f(update, context, *args, **kwargs)
 
     return wrapper
