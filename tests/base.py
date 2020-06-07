@@ -52,13 +52,19 @@ class BotTestCase(TestCase):
 class BotUpdateContextTestCase(BotTestCase):
     def setUp(self):
         super().setUp()
-        self._update_mock = MagicMock()
-        self.user_is_unknown()
-        self._context_mock = MagicMock()
 
-    @property
-    def update(self):
-        return self._update_mock
+        self._message_mock = MagicMock()
+        self._message_mock.chat.id = 201
+        self._message_mock.message_id = 202
+
+        self._update_mock = MagicMock()
+        self._update_mock.message.chat.id = sentinel.chat_id
+        self._update_mock.message.reply_text.return_value = self._message_mock
+
+        self._context_mock = MagicMock()
+        self._context_mock.bot.send_message.return_value = self._message_mock
+
+        self.user_is_unknown()
 
     @property
     def update_and_context(self):
@@ -111,15 +117,6 @@ class BotUpdateContextTestCase(BotTestCase):
 class BotHandlerTestCase(BotUpdateContextTestCase):
     def setUp(self):
         super().setUp()
-
-        self._update_mock.message.chat.id = sentinel.chat_id
-        self._message_reply_text_mock = MagicMock()
-        self._message_reply_text_mock.chat.id = 201
-        self._message_reply_text_mock.message_id = 202
-        self._update_mock.message.reply_text.return_value = (
-            self._message_reply_text_mock
-        )
-        self._context_mock.user_data = None
         self._context_mock.chat_data = None
 
     def update_mock_spec(self, no_message=None, empty_command=None):
@@ -130,18 +127,6 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
                 f"{self.__class__.__name__} use this mock to store state and to "
                 "prevent malfunction the former functionality is disabled."
             )
-
-    @property
-    def message_reply_text(self):
-        return self._message_reply_text_mock
-
-    @property
-    def user_data(self):
-        return self._context_mock.user_data
-
-    @user_data.setter
-    def user_data(self, new_user_data):
-        self._context_mock.user_data = new_user_data
 
     @property
     def chat_data(self):
@@ -193,6 +178,9 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
             self.assertEqual(call, call(*call_args, **call_kwargs))
             if reply_markup_call is not None:
                 self.assertEqual(reply_markup_dict, reply_markup_call.to_dict())
+
+    def assert_message_calls(self, calls):
+        self._assert_messages(calls)
 
     def assert_message_call(self, call):
         self._assert_messages([call])

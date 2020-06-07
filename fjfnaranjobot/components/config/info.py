@@ -52,7 +52,8 @@ def config_handler(update, context):
         [InlineKeyboardButton("Cancel", callback_data='cancel')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    reply = update.message.reply_text(
+    reply = context.bot.send_message(
+        update.message.chat.id,
         "You can get the value for a configuration key, "
         "set it of change it if exists, or clear the key. "
         "You can also cancel the config command at any time.",

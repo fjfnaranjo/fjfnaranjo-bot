@@ -60,7 +60,8 @@ def friends_handler(update, context):
         ],
         [InlineKeyboardButton("Cancel", callback_data='cancel')],
     ]
-    reply = update.message.reply_text(
+    reply = context.bot.send_message(
+        update.message.chat.id,
         "You can list all your friends. "
         "Also, you can add or remove Telegram contacts and IDs to the list. "
         "You can also cancel the friends command at any time.",

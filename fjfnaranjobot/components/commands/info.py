@@ -8,7 +8,7 @@ logger = getLogger(__name__)
 
 
 @only_owner
-def commands_handler(update, _context):
+def commands_handler(update, context):
     logger.info("Sending list of commands.")
     prod_commands = [
         command.prod_command + ' - ' + command.description
@@ -21,11 +21,13 @@ def commands_handler(update, _context):
         for command in command_list
         if command.dev_command is not None
     ]
-    update.message.reply_text(
-        "\n".join(prod_commands) if len(prod_commands) > 1 else 'no commands'
+    context.bot.send_message(
+        update.message.chat.id,
+        "\n".join(prod_commands) if len(prod_commands) > 1 else 'no commands',
     )
-    update.message.reply_text(
-        "\n".join(dev_commands) if len(dev_commands) > 1 else 'no commands'
+    context.bot.send_message(
+        update.message.chat.id,
+        "\n".join(dev_commands) if len(dev_commands) > 1 else 'no commands',
     )
     raise DispatcherHandlerStop()
 

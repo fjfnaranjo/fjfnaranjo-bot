@@ -54,10 +54,10 @@ class CommandsHandlersTests(BotHandlerTestCase):
         self.user_is_owner()
         with self.assert_log_dispatch('Sending list of commands.', logger):
             commands_handler(*self.update_and_context)
-        self.assert_reply_calls(
+        self.assert_message_calls(
             [
-                CallWithMarkup("a - a desc\nb - b desc"),
-                CallWithMarkup("c - c desc\nd - d desc"),
+                CallWithMarkup(sentinel.chat_id, "a - a desc\nb - b desc"),
+                CallWithMarkup(sentinel.chat_id, "c - c desc\nd - d desc"),
             ]
         )
 
@@ -69,8 +69,11 @@ class CommandsHandlersTests(BotHandlerTestCase):
         self.user_is_owner()
         with self.assert_log_dispatch('Sending list of commands.', logger):
             commands_handler(*self.update_and_context)
-        self.assert_reply_calls(
-            [CallWithMarkup("a - a desc\nb - b desc"), CallWithMarkup("no commands"),]
+        self.assert_message_calls(
+            [
+                CallWithMarkup(sentinel.chat_id, "a - a desc\nb - b desc"),
+                CallWithMarkup(sentinel.chat_id, "no commands"),
+            ]
         )
 
     @patch(
@@ -81,6 +84,9 @@ class CommandsHandlersTests(BotHandlerTestCase):
         self.user_is_owner()
         with self.assert_log_dispatch('Sending list of commands.', logger):
             commands_handler(*self.update_and_context)
-        self.assert_reply_calls(
-            [CallWithMarkup("no commands"), CallWithMarkup("c - c desc\nd - d desc"),]
+        self.assert_message_calls(
+            [
+                CallWithMarkup(sentinel.chat_id, "no commands"),
+                CallWithMarkup(sentinel.chat_id, "c - c desc\nd - d desc"),
+            ]
         )

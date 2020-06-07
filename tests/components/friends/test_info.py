@@ -103,20 +103,18 @@ class FriendsHandlersTests(BotHandlerTestCase):
         self.chat_data = {}
         with self.assert_log('Entering friends conversation.', logger):
             assert GET_ADD_OR_DEL == friends_handler(*self.update_and_context)
-        self.assert_reply_call(
+        self.assert_message_call(
             CallWithMarkup(
+                sentinel.chat_id,
                 (
                     'You can list all your friends. '
                     'Also, you can add or remove Telegram contacts and IDs to the list. '
                     'You can also cancel the friends command at any time.'
                 ),
                 reply_markup_dict=self.action_markup_dict,
-            )
+            ),
         )
-        assert {
-            'chat_id': self.message_reply_text.chat.id,
-            'message_id': self.message_reply_text.message_id,
-        } == self.chat_data
+        assert {'chat_id': 201, 'message_id': 202} == self.chat_data
 
     def test_add_handler(self):
         with self.assert_log(
