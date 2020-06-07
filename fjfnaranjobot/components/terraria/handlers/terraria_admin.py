@@ -93,6 +93,7 @@ def _clear_user_data(context):
 @only_owner
 def terraria_admin_handler(update, context):
     logger.info("Entering terraria_admin conversation.")
+
     reply = update.message.reply_text(
         "Create a new Terraria profile using /terraria_admin_create ."
         "Configure your existing Terraria profiles using /terraria_admin_select ."
@@ -104,6 +105,7 @@ def terraria_admin_handler(update, context):
 
 def terraria_admin_create_handler(_update, context):
     logger.info("Requesting new profile name.")
+
     context.bot.edit_message_text(
         "Tell me the name for the new profile. "
         "If you want to do something else, /terraria_admin_cancel .",
@@ -117,6 +119,7 @@ def terraria_admin_create_name_handler(update, context):
     new_profile = TerrariaProfile()
     new_profile.name = name
     new_profile.commit()
+
     context.bot.delete_message(*context.user_data['message_ids'])
     _clear_user_data(context)
     update.message.reply_text("Ok.")
@@ -125,6 +128,7 @@ def terraria_admin_create_name_handler(update, context):
 
 def terraria_admin_select_handler(_update, context):
     logger.info("Showing profiles and requesting selection.")
+
     profiles = [profile.name for profile in TerrariaProfile.all()]
     if len(profiles) == 0:
         context.bot.edit_message_text(
@@ -146,9 +150,11 @@ def terraria_admin_select_handler(_update, context):
 
 def terraria_admin_select_profile_handler(update, context):
     logger.info("Asking what to do with selected profile.")
+
     name = update.message.text
     profile = TerrariaProfile.select_one(name=name)
     context.user_data['selected_profile'] = profile.id
+
     context.bot.edit_message_text(
         f"What do you want to do about profile '{profile.name}'. "
         "To edit this profile: /terraria_admin_edit ."
@@ -160,6 +166,7 @@ def terraria_admin_select_profile_handler(update, context):
 
 def terraria_admin_edit_profile_handler(_update, context):
     logger.info("Editing profile: Requesting AWS_DEFAULT_REGION.")
+
     context.bot.edit_message_text(
         "Tell me the value for AWS_DEFAULT_REGION. "
         "If you want to do something else, /terraria_admin_cancel .",
@@ -170,8 +177,10 @@ def terraria_admin_edit_profile_handler(_update, context):
 
 def terraria_admin_edit_profile_aws_default_region_handler(update, context):
     logger.info("Editing profile: Requesting AWS_ACCESS_KEY_ID.")
+
     value = update.message.text
     context.user_data['aws_default_region'] = value
+
     context.bot.edit_message_text(
         "Tell me the value for AWS_ACCESS_KEY_ID. "
         "If you want to do something else, /terraria_admin_cancel .",
@@ -182,8 +191,10 @@ def terraria_admin_edit_profile_aws_default_region_handler(update, context):
 
 def terraria_admin_edit_profile_aws_access_key_id_handler(update, context):
     logger.info("Editing profile: Requesting AWS_SECRET_ACCESS_KEY.")
+
     value = update.message.text
     context.user_data['aws_access_key_id'] = value
+
     context.bot.edit_message_text(
         "Tell me the value for AWS_SECRET_ACCESS_KEY. "
         "If you want to do something else, /terraria_admin_cancel .",
@@ -194,8 +205,10 @@ def terraria_admin_edit_profile_aws_access_key_id_handler(update, context):
 
 def terraria_admin_edit_profile_aws_secret_access_key_handler(update, context):
     logger.info("Editing profile: Requesting microapi token.")
+
     value = update.message.text
     context.user_data['aws_secret_access_key'] = value
+
     context.bot.edit_message_text(
         "Tell me the value for microapi token. "
         "If you want to do something else, /terraria_admin_cancel .",
@@ -206,8 +219,10 @@ def terraria_admin_edit_profile_aws_secret_access_key_handler(update, context):
 
 def terraria_admin_edit_profile_microapi_token_handler(update, context):
     logger.info("Editing profile: Requesting tShock REST API token.")
+
     value = update.message.text
     context.user_data['microapi_token'] = value
+
     context.bot.edit_message_text(
         "Tell me the value for tShock REST API token. "
         "If you want to do something else, /terraria_admin_cancel .",
@@ -218,8 +233,10 @@ def terraria_admin_edit_profile_microapi_token_handler(update, context):
 
 def terraria_admin_edit_profile_tshock_rest_api_token_handler(update, context):
     logger.info("Editing profile: Requesting domain name.")
+
     value = update.message.text
     context.user_data['tshock_token'] = value
+
     context.bot.edit_message_text(
         "Tell me the value for domain name. "
         "If you want to do something else, /terraria_admin_cancel .",
@@ -230,8 +247,10 @@ def terraria_admin_edit_profile_tshock_rest_api_token_handler(update, context):
 
 def terraria_admin_edit_profile_domain_name_handler(update, context):
     logger.info("Editing profile: Requesting status.")
+
     value = update.message.text
     context.user_data['dns_name'] = value
+
     context.bot.edit_message_text(
         "Tell me the value for status (0 or 1). "
         "If you want to do something else, /terraria_admin_cancel .",
@@ -242,6 +261,7 @@ def terraria_admin_edit_profile_domain_name_handler(update, context):
 
 def terraria_admin_edit_profile_status_handler(update, context):
     logger.info("Editing profile: Saving changes.")
+
     value = update.message.text
     context.user_data['status'] = value
     profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
@@ -253,6 +273,7 @@ def terraria_admin_edit_profile_status_handler(update, context):
     profile.dns_name = context.user_data['dns_name']
     profile.status = bool(context.user_data['status'])
     profile.commit()
+
     context.bot.delete_message(*context.user_data['message_ids'])
     _clear_user_data(context)
     update.message.reply_text("Ok.")
@@ -261,6 +282,7 @@ def terraria_admin_edit_profile_status_handler(update, context):
 
 def terraria_admin_cancel_handler(update, context):
     logger.info("Abort terraria_admin conversation.")
+
     if 'message_ids' in context.user_data:
         context.bot.delete_message(*context.user_data['message_ids'])
     _clear_user_data(context)

@@ -43,6 +43,7 @@ _cancel_markup = InlineKeyboardMarkup(
 @only_owner
 def config_handler(update, context):
     logger.info("Entering config conversation.")
+
     keyboard = [
         [
             InlineKeyboardButton("Get", callback_data='get'),
@@ -66,6 +67,7 @@ def config_handler(update, context):
 
 def get_handler(_update, context):
     logger.info("Requesting key name to get its value.")
+
     context.bot.edit_message_text(
         "Tell me what key do you want to get.",
         context.chat_data['chat_id'],
@@ -79,9 +81,11 @@ def get_var_handler(update, context):
     key = update.message.text
     shown_key = quote_value_for_log(key)
     logger.info(f"Received key name {shown_key}.")
+
     try:
         result = config[key]
     except (ValueError, KeyError) as e:
+
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id']
         )
@@ -97,9 +101,12 @@ def get_var_handler(update, context):
             )
         _clear_context_data(context)
         return ConversationHandler.END
+
     else:
+
         shown_result = quote_value_for_log(result)
         logger.info(f"Replying with result {shown_result}.")
+
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id']
         )
@@ -112,6 +119,7 @@ def get_var_handler(update, context):
 
 def set_handler(_update, context):
     logger.info("Requesting key name to set its value.")
+
     context.bot.edit_message_text(
         "Tell me what key do you want to set.",
         context.chat_data['chat_id'],
@@ -125,10 +133,13 @@ def set_var_handler(update, context):
     key = update.message.text
     shown_key = quote_value_for_log(key)
     logger.info(f"Received key name {shown_key}.")
+
     try:
         config[key]
     except ValueError:
+
         logger.info("Can't set invalid config key 'invalid-key'.")
+
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id'],
         )
@@ -137,10 +148,14 @@ def set_var_handler(update, context):
         )
         _clear_context_data(context)
         return ConversationHandler.END
+
     except KeyError:
         pass
+
     context.chat_data['key'] = key
+
     logger.info("Requesting value to set the key.")
+
     context.bot.edit_message_text(
         f"Tell me what value do you want to put in the key '{key}'.",
         context.chat_data['chat_id'],
@@ -154,10 +169,13 @@ def set_value_handler(update, context):
     value = update.message.text
     shown_value = quote_value_for_log(value)
     logger.info(f"Received value {shown_value}.")
+
     key = context.chat_data['key']
     del context.chat_data['key']
     config[key] = value
+
     logger.info(f"Stored {shown_value} in key '{key}'.")
+
     context.bot.delete_message(
         context.chat_data['chat_id'], context.chat_data['message_id'],
     )
@@ -168,6 +186,7 @@ def set_value_handler(update, context):
 
 def del_handler(_update, context):
     logger.info("Requesting key name to clear its value.")
+
     context.bot.edit_message_text(
         "Tell me what key do you want to clear.",
         context.chat_data['chat_id'],
@@ -181,9 +200,11 @@ def del_var_handler(update, context):
     key = update.message.text
     shown_key = quote_value_for_log(key)
     logger.info(f"Received key name {shown_key}.")
+
     try:
         del config[key]
     except (ValueError, KeyError) as e:
+
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id']
         )
@@ -199,8 +220,11 @@ def del_var_handler(update, context):
             )
         _clear_context_data(context)
         return ConversationHandler.END
+
     else:
+
         logger.info(f"Deleting config with key '{key}'.")
+
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id']
         )
@@ -211,6 +235,7 @@ def del_var_handler(update, context):
 
 def cancel_handler(_update, context):
     logger.info("Abort config conversation.")
+
     if 'message_id' in context.chat_data:
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id']

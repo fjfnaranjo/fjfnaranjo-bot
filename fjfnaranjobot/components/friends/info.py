@@ -52,6 +52,7 @@ _cancel_markup = InlineKeyboardMarkup(
 @only_owner
 def friends_handler(update, context):
     logger.info("Entering friends conversation.")
+
     keyboard = [
         [
             InlineKeyboardButton("List", callback_data='list'),
@@ -116,6 +117,7 @@ def list_handler(_update, context):
     friends_markup = InlineKeyboardMarkup(keyboard)
     context.chat_data['offset'] = offset
     context.chat_data['keyboard_users'] = keyboard_users
+
     context.bot.edit_message_text(
         "Your friends will be listed below in pages. "
         "You can request the next page (if apply) or "
@@ -133,9 +135,11 @@ def list_del_confirm_handler(update, context):
         f"Received in-list friend deletion request for position {query}. "
         "Asking to confirm."
     )
+
     user_to_delete = User(*context.chat_data['keyboard_users'][int(query)])
     del context.chat_data['keyboard_users']
     context.chat_data['delete_user'] = (user_to_delete.id, user_to_delete.username)
+
     confirm_markup = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("Confirm", callback_data='confirm')],
@@ -153,9 +157,11 @@ def list_del_confirm_handler(update, context):
 
 def list_del_confirmed_handler(_update, context):
     logger.info("Received confirmation for deletion.")
+
     delete_user = User(*context.chat_data['delete_user'])
     del context.chat_data['delete_user']
     friends.discard(delete_user)
+
     context.bot.delete_message(
         context.chat_data['chat_id'], context.chat_data['message_id'],
     )
@@ -166,6 +172,7 @@ def list_del_confirmed_handler(_update, context):
 
 def add_handler(_update, context):
     logger.info("Requesting contact to add as a friend.")
+
     context.bot.edit_message_text(
         "Send me the contact of the friend you want to add. Or its id.",
         context.chat_data['chat_id'],
@@ -177,7 +184,6 @@ def add_handler(_update, context):
 
 def add_friend_handler(update, context):
     contact = update.message.contact
-
     if contact.user_id is None:
         logger.info("Received a contact without a Telegram ID.")
         context.bot.delete_message(
@@ -212,8 +218,10 @@ def add_friend_id_handler(update, context):
     try:
         (user_id,) = update.message.text.split()
     except ValueError:
+
         shown_id = quote_value_for_log(update.message.text)
         logger.info(f"Received and invalid id {shown_id} trying to add a friend.")
+
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id'],
         )
@@ -222,12 +230,14 @@ def add_friend_id_handler(update, context):
         )
         _clear_context_data(context)
         return ConversationHandler.END
+
     else:
         try:
             user_id_int = int(user_id)
             if user_id_int < 0:
                 raise ValueError()
         except ValueError:
+
             logger.info(
                 f"Received and invalid number in id '{user_id}' trying to add a friend."
             )
@@ -239,10 +249,14 @@ def add_friend_id_handler(update, context):
             )
             _clear_context_data(context)
             return ConversationHandler.END
+
         else:
+
             user = User(user_id_int, f"ID {user_id_int}")
             logger.info(f"Adding {user.username} as a friend.")
+
             friends.add(user)
+
             context.bot.delete_message(
                 context.chat_data['chat_id'], context.chat_data['message_id'],
             )
@@ -255,6 +269,7 @@ def add_friend_id_handler(update, context):
 
 def del_handler(_update, context):
     logger.info("Requesting contact to remove as a friend.")
+
     context.bot.edit_message_text(
         "Send me the contact of the friend you want to remove. " "Or its id.",
         context.chat_data['chat_id'],
@@ -286,11 +301,14 @@ def del_friend_handler(update, context):
     user = User(contact.user_id, username)
 
     if user in friends:
+
         for friend in friends:
             if friend.id == user.id:
                 friend_username = friend.username
         logger.info(f"Removing {friend_username} as a friend.")
+
         friends.discard(user)
+
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id'],
         )
@@ -299,8 +317,11 @@ def del_friend_handler(update, context):
         )
         _clear_context_data(context)
         return ConversationHandler.END
+
     else:
+
         logger.info(f"Not removing {user.username} because its not a friend.")
+
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id'],
         )
@@ -315,8 +336,10 @@ def del_friend_id_handler(update, context):
     try:
         (user_id,) = update.message.text.split()
     except ValueError:
+
         shown_id = quote_value_for_log(update.message.text)
         logger.info(f"Received and invalid id {shown_id} trying to remove a friend.")
+
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id'],
         )
@@ -325,12 +348,14 @@ def del_friend_id_handler(update, context):
         )
         _clear_context_data(context)
         return ConversationHandler.END
+
     else:
         try:
             user_id_int = int(user_id)
             if user_id_int < 0:
                 raise ValueError()
         except ValueError:
+
             logger.info(
                 f"Received and invalid number in id '{user_id}' trying to remove a friend."
             )
@@ -342,14 +367,18 @@ def del_friend_id_handler(update, context):
             )
             _clear_context_data(context)
             return ConversationHandler.END
+
         else:
             user = User(user_id_int, f"ID {user_id_int}")
             if user in friends:
+
                 for friend in friends:
                     if friend.id == user.id:
                         friend_username = friend.username
                 logger.info(f"Removing {friend_username} as a friend.")
+
                 friends.discard(user)
+
                 context.bot.delete_message(
                     context.chat_data['chat_id'], context.chat_data['message_id'],
                 )
@@ -359,8 +388,10 @@ def del_friend_id_handler(update, context):
                 )
                 _clear_context_data(context)
                 return ConversationHandler.END
+
             else:
                 logger.info(f"Not removing {user.username} because its not a friend.")
+
                 context.bot.delete_message(
                     context.chat_data['chat_id'], context.chat_data['message_id'],
                 )
@@ -373,6 +404,7 @@ def del_friend_id_handler(update, context):
 
 def cancel_handler(_update, context):
     logger.info("Abort friends conversation.")
+
     if 'message_id' in context.chat_data:
         context.bot.delete_message(
             context.chat_data['chat_id'], context.chat_data['message_id'],

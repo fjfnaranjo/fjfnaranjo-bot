@@ -10,12 +10,12 @@ logger = getLogger(__name__)
 @only_owner
 def commands_handler(update, context):
     logger.info("Sending list of commands.")
+
     prod_commands = [
         command.prod_command + ' - ' + command.description
         for command in command_list
         if command.prod_command is not None
     ]
-
     dev_commands = [
         command.dev_command + ' - ' + command.description
         for command in command_list
