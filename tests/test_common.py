@@ -121,10 +121,9 @@ class InlineHandlerTests(TestCase):
         mocker_update = MagicMock()
         mocker_update.callback_query.data = 'other'
 
-        def handler(_update=None, _context=None):
-            return sentinel.handler_return
-
-        result_function = inline_handler({'data': handler}, mocked_logger)
+        result_function = inline_handler(
+            {'data': lambda _update, _context: None}, mocked_logger,
+        )
         with self.assertRaises(ValueError) as e:
             result_function(mocker_update, None)
         mocked_logger.info.assert_has_calls(

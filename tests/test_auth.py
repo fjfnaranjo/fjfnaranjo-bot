@@ -49,11 +49,6 @@ class AuthTests(BotUpdateContextTestCase):
         super().setUp()
         self._update_mock.message.chat.id = sentinel.chat_id
 
-    def assert_replied(self):
-        self._context_mock.bot.send_message.assert_called_once_with(
-            sentinel.chat_id, SORRY_TEXT
-        )
-
     @staticmethod
     @contextmanager
     def owner():
