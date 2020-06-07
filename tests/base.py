@@ -136,33 +136,6 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
     def chat_data(self, new_chat_data):
         self._context_mock.chat_data = new_chat_data
 
-    def _assert_replies(self, calls_with_markup=[]):
-        self.assertEqual(
-            len(calls_with_markup), self._update_mock.message.reply_text.call_count
-        )
-        for item in enumerate(calls_with_markup):
-            idx = item[0]
-            call = item[1].call
-            reply_markup_dict = item[1].reply_markup_dict
-            called = self._update_mock.message.reply_text.mock_calls[idx]
-            call_args = called[1]
-            call_kwargs = called[2].copy()
-            reply_markup_call = call_kwargs.get('reply_markup')
-            if 'reply_markup' in call_kwargs:
-                del call_kwargs['reply_markup']
-            self.assertEqual(call, call(*call_args, **call_kwargs))
-            if reply_markup_call is not None:
-                self.assertEqual(reply_markup_dict, reply_markup_call.to_dict())
-
-    def assert_reply_calls(self, calls):
-        self._assert_replies(calls)
-
-    def assert_reply_call(self, call):
-        self._assert_replies([call])
-
-    def assert_reply_text(self, text):
-        self._assert_replies([CallWithMarkup(text)])
-
     def _assert_messages(self, messages=tuple()):
         self.assertEqual(len(messages), self._context_mock.bot.send_message.call_count)
         for item in enumerate(messages):
@@ -208,9 +181,6 @@ class BotHandlerTestCase(BotUpdateContextTestCase):
 
     def assert_edit_call(self, call):
         self._assert_edit_text_chat_message([call])
-
-    def assert_edit_text_chat_message(self, text, chat_id, message_id):
-        self._assert_edit_text_chat_message([CallWithMarkup(text, chat_id, message_id)])
 
     def assert_delete(self, chat_id, message_id):
         self._context_mock.bot.delete_message.assert_called_once_with(
