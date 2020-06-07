@@ -60,25 +60,25 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.user_is_none()
         with self.assert_log_dispatch(LOG_NO_USER_HEAD, auth_logger):
             config_handler(*self.update_and_context)
-        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_config_handler_unknown_unauthorized(self):
         self.user_is_unknown()
         with self.assert_log_dispatch(LOG_USER_UNAUTHORIZED_HEAD, auth_logger):
             config_handler(*self.update_and_context)
-        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_config_handler_bot_unauthorized(self):
         self.user_is_bot()
         with self.assert_log_dispatch(LOG_BOT_UNAUTHORIZED_HEAD, auth_logger):
             config_handler(*self.update_and_context)
-        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_config_handler_friend_unauthorized(self):
         self.user_is_friend()
         with self.assert_log_dispatch(LOG_FRIEND_UNAUTHORIZED_HEAD, auth_logger):
             config_handler(*self.update_and_context)
-        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_config_handler(self):
         self.chat_data = {}
@@ -86,7 +86,7 @@ class ConfigHandlersTests(BotHandlerTestCase):
             assert GET_SET_OR_DEL == config_handler(*self.update_and_context)
         self.assert_message_call(
             CallWithMarkup(
-                sentinel.chat_id,
+                sentinel.chat_id_from_update,
                 (
                     'You can get the value for a configuration key, '
                     'set it of change it if exists, or clear the key. '
@@ -95,7 +95,10 @@ class ConfigHandlersTests(BotHandlerTestCase):
                 reply_markup_dict=self.action_markup_dict,
             ),
         )
-        assert {'chat_id': 201, 'message_id': 202} == self.chat_data
+        assert {
+            'chat_id': sentinel.chat_id_from_send_message,
+            'message_id': sentinel.message_id_from_send_message,
+        } == self.chat_data
 
     def test_get_handler(self):
         with self.assert_log(

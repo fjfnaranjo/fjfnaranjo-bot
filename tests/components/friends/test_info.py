@@ -79,25 +79,25 @@ class FriendsHandlersTests(BotHandlerTestCase):
         self.user_is_none()
         with self.assert_log_dispatch(LOG_NO_USER_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_friends_handler_unknown_unauthorized(self):
         self.user_is_unknown()
         with self.assert_log_dispatch(LOG_USER_UNAUTHORIZED_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_friends_handler_bot_unauthorized(self):
         self.user_is_bot()
         with self.assert_log_dispatch(LOG_BOT_UNAUTHORIZED_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_friends_handler_friend_unauthorized(self):
         self.user_is_friend()
         with self.assert_log_dispatch(LOG_FRIEND_UNAUTHORIZED_HEAD, auth_logger):
             friends_handler(*self.update_and_context)
-        self.assert_message_chat_text(sentinel.chat_id, SORRY_TEXT)
+        self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_friends_handler(self):
         self.chat_data = {}
@@ -105,7 +105,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             assert GET_ADD_OR_DEL == friends_handler(*self.update_and_context)
         self.assert_message_call(
             CallWithMarkup(
-                sentinel.chat_id,
+                sentinel.chat_id_from_update,
                 (
                     'You can list all your friends. '
                     'Also, you can add or remove Telegram contacts and IDs to the list. '
@@ -114,7 +114,10 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 reply_markup_dict=self.action_markup_dict,
             ),
         )
-        assert {'chat_id': 201, 'message_id': 202} == self.chat_data
+        assert {
+            'chat_id': sentinel.chat_id_from_send_message,
+            'message_id': sentinel.message_id_from_send_message,
+        } == self.chat_data
 
     def test_add_handler(self):
         with self.assert_log(

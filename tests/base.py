@@ -53,20 +53,18 @@ class BotHandlerTestCase(BotTestCase):
     def setUp(self):
         super().setUp()
 
-        self._message_mock = MagicMock()
-        self._message_mock.chat.id = 201
-        self._message_mock.message_id = 202
-
         self._update_mock = MagicMock()
-        self._update_mock.message.chat.id = sentinel.chat_id
-        self._update_mock.message.reply_text.return_value = self._message_mock
+        self._update_mock.message.chat.id = sentinel.chat_id_from_update
+        self._update_mock.message.message_id = sentinel.message_id_from_update
 
         self._context_mock = MagicMock()
+        self._message_mock = MagicMock()
+        self._message_mock.chat.id = sentinel.chat_id_from_send_message
+        self._message_mock.message_id = sentinel.message_id_from_send_message
         self._context_mock.bot.send_message.return_value = self._message_mock
+        self._context_mock.chat_data = None
 
         self.user_is_unknown()
-
-        self._context_mock.chat_data = None
 
     @property
     def update_and_context(self):

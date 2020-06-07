@@ -15,5 +15,6 @@ class StartHandlersTests(BotHandlerTestCase):
         ):
             start_handler(*self.update_and_context)
         self.assert_message_chat_text(
-            sentinel.chat_id, 'Welcome. I\'m test\'s bot. How can I help you?'
+            sentinel.chat_id_from_update,
+            'Welcome. I\'m test\'s bot. How can I help you?',
         )
