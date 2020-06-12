@@ -13,3 +13,14 @@ class TerrariaProfile(DbRelation):
         DbField('dns_name'),
         DbField('status', 'BOOLEAN DEFAULT(0)'),
     ]
+
+
+class TerrariaActivityLogEntry(DbRelation):
+    fields = [
+        DbField('id', 'INTEGER PRIMARY KEY'),
+        DbField('nick'),
+        DbField('username'),
+        DbField('ip'),
+        DbField('date', 'date'),
+        DbField('portion'),
+    ]
