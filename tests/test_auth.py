@@ -13,14 +13,15 @@ from fjfnaranjobot.auth import (
     only_real,
 )
 from fjfnaranjobot.common import SORRY_TEXT, User
-from tests.base import SECOND_FRIEND_USER, BotTestCase
 
 from .base import (
     BOT_USER,
     FIRST_FRIEND_USER,
     OWNER_USER,
+    SECOND_FRIEND_USER,
     UNKNOWN_USER,
     BotHandlerTestCase,
+    BotTestCase,
 )
 
 MODULE_PATH = 'fjfnaranjobot.auth'

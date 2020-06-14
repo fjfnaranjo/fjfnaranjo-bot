@@ -21,12 +21,10 @@ def commands_handler(update, context):
         for command in command_list
         if command.dev_command is not None
     ]
-    context.bot.send_message(
-        update.message.chat.id,
+    update.message.reply_text(
         "\n".join(prod_commands) if len(prod_commands) > 1 else 'no commands',
     )
-    context.bot.send_message(
-        update.message.chat.id,
+    update.message.reply_text(
         "\n".join(dev_commands) if len(dev_commands) > 1 else 'no commands',
     )
     raise DispatcherHandlerStop()

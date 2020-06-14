@@ -9,6 +9,8 @@ from telegram.ext import DispatcherHandlerStop
 
 from fjfnaranjobot.common import User
 
+BOT_USERNAME = 'bu'
+
 OWNER_USER = User(11, 'o')
 FIRST_FRIEND_USER = User(21, 'f')
 SECOND_FRIEND_USER = User(22, 's')
@@ -57,9 +59,18 @@ class BotHandlerTestCase(BotTestCase):
         self._message_from_update_mock = MagicMock()
         self._message_from_update_mock.chat.id = sentinel.chat_id_from_update
         self._message_from_update_mock.message_id = sentinel.message_id_from_update
+        self._message_from_update_reply_text_mock = MagicMock()
+        self._message_from_update_reply_text_mock.chat.id = sentinel.chat_id_from_update
+        self._message_from_update_reply_text_mock.message_id = (
+            sentinel.message_id_from_reply_text
+        )
+        self._message_from_update_mock.reply_text.return_value = (
+            self._message_from_update_reply_text_mock
+        )
         self._update_mock.message = self._message_from_update_mock
 
         self._context_mock = MagicMock()
+        self._context_mock.bot.username = BOT_USERNAME
         self._message_from_context_mock = MagicMock()
         self._message_from_context_mock.chat.id = sentinel.chat_id_from_send_message
         self._message_from_context_mock.message_id = (
@@ -81,6 +92,9 @@ class BotHandlerTestCase(BotTestCase):
             (' ' + (' '.join(cmd_args))) if cmd_args is not None else ''
         )
         self._context_mock.args = cmd_args
+
+    def set_entities(self, entities):
+        self._update_mock.message.parse_entities.return_value = entities
 
     def update_mock_spec(self, remove_message=None, remove_text=None):
         if remove_message:
@@ -125,6 +139,31 @@ class BotHandlerTestCase(BotTestCase):
     @chat_data.setter
     def chat_data(self, new_chat_data):
         self._context_mock.chat_data = new_chat_data
+
+    def _assert_reply(self, replies=tuple()):
+        self.assertEqual(len(replies), self._update_mock.message.reply_text.call_count)
+        for item in enumerate(replies):
+            idx = item[0]
+            call = item[1].call
+            reply_markup_dict = item[1].reply_markup_dict
+            called = self._update_mock.message.reply_text.mock_calls[idx]
+            call_args = called[1]
+            call_kwargs = called[2].copy()
+            reply_markup_call = call_kwargs.get('reply_markup')
+            if 'reply_markup' in call_kwargs:
+                del call_kwargs['reply_markup']
+            self.assertEqual(call, call(*call_args, **call_kwargs))
+            if reply_markup_call is not None:
+                self.assertEqual(reply_markup_dict, reply_markup_call.to_dict())
+
+    def assert_reply_calls(self, calls):
+        self._assert_reply(calls)
+
+    def assert_reply_call(self, call):
+        self._assert_reply([call])
+
+    def assert_reply_text(self, text):
+        self._assert_reply([CallWithMarkup(text)])
 
     def _assert_messages(self, messages=tuple()):
         self.assertEqual(len(messages), self._context_mock.bot.send_message.call_count)

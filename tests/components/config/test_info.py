@@ -84,9 +84,8 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.chat_data = {}
         with self.assert_log('Entering config conversation.', logger):
             assert GET_SET_OR_DEL == config_handler(*self.update_and_context)
-        self.assert_message_call(
+        self.assert_reply_call(
             CallWithMarkup(
-                sentinel.chat_id_from_update,
                 (
                     'You can get the value for a configuration key, '
                     'set it of change it if exists, or clear the key. '
@@ -96,8 +95,8 @@ class ConfigHandlersTests(BotHandlerTestCase):
             ),
         )
         assert {
-            'chat_id': sentinel.chat_id_from_send_message,
-            'message_id': sentinel.message_id_from_send_message,
+            'chat_id': sentinel.chat_id_from_update,
+            'message_id': sentinel.message_id_from_reply_text,
         } == self.chat_data
 
     def test_get_handler(self):

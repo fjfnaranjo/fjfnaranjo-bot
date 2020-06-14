@@ -20,7 +20,6 @@ from fjfnaranjobot.components.friends.info import (
     friends_handler,
     logger,
 )
-from tests.base import CallWithMarkup
 
 from ...base import (
     LOG_BOT_UNAUTHORIZED_HEAD,
@@ -28,6 +27,7 @@ from ...base import (
     LOG_NO_USER_HEAD,
     LOG_USER_UNAUTHORIZED_HEAD,
     BotHandlerTestCase,
+    CallWithMarkup,
 )
 
 MODULE_PATH = 'fjfnaranjobot.components.friends.info'
@@ -103,9 +103,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
         self.chat_data = {}
         with self.assert_log('Entering friends conversation.', logger):
             assert GET_ADD_OR_DEL == friends_handler(*self.update_and_context)
-        self.assert_message_call(
+        self.assert_reply_call(
             CallWithMarkup(
-                sentinel.chat_id_from_update,
                 (
                     'You can list all your friends. '
                     'Also, you can add or remove Telegram contacts and IDs to the list. '
@@ -115,8 +114,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
             ),
         )
         assert {
-            'chat_id': sentinel.chat_id_from_send_message,
-            'message_id': sentinel.message_id_from_send_message,
+            'chat_id': sentinel.chat_id_from_update,
+            'message_id': sentinel.message_id_from_reply_text,
         } == self.chat_data
 
     def test_add_handler(self):

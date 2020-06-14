@@ -3,7 +3,6 @@ from unittest.mock import patch, sentinel
 from fjfnaranjobot.auth import logger as auth_logger
 from fjfnaranjobot.common import SORRY_TEXT, Command
 from fjfnaranjobot.components.commands.info import commands_handler, logger
-from tests.base import CallWithMarkup
 
 from ...base import (
     LOG_BOT_UNAUTHORIZED_HEAD,
@@ -11,6 +10,7 @@ from ...base import (
     LOG_NO_USER_HEAD,
     LOG_USER_UNAUTHORIZED_HEAD,
     BotHandlerTestCase,
+    CallWithMarkup,
 )
 
 MODULE_PATH = 'fjfnaranjobot.components.commands.info'
@@ -54,10 +54,10 @@ class CommandsHandlersTests(BotHandlerTestCase):
         self.user_is_owner()
         with self.assert_log_dispatch('Sending list of commands.', logger):
             commands_handler(*self.update_and_context)
-        self.assert_message_calls(
+        self.assert_reply_calls(
             [
-                CallWithMarkup(sentinel.chat_id_from_update, "a - a desc\nb - b desc"),
-                CallWithMarkup(sentinel.chat_id_from_update, "c - c desc\nd - d desc"),
+                CallWithMarkup("a - a desc\nb - b desc"),
+                CallWithMarkup("c - c desc\nd - d desc"),
             ]
         )
 
@@ -69,11 +69,8 @@ class CommandsHandlersTests(BotHandlerTestCase):
         self.user_is_owner()
         with self.assert_log_dispatch('Sending list of commands.', logger):
             commands_handler(*self.update_and_context)
-        self.assert_message_calls(
-            [
-                CallWithMarkup(sentinel.chat_id_from_update, "a - a desc\nb - b desc"),
-                CallWithMarkup(sentinel.chat_id_from_update, "no commands"),
-            ]
+        self.assert_reply_calls(
+            [CallWithMarkup("a - a desc\nb - b desc"), CallWithMarkup("no commands"),]
         )
 
     @patch(
@@ -84,9 +81,6 @@ class CommandsHandlersTests(BotHandlerTestCase):
         self.user_is_owner()
         with self.assert_log_dispatch('Sending list of commands.', logger):
             commands_handler(*self.update_and_context)
-        self.assert_message_calls(
-            [
-                CallWithMarkup(sentinel.chat_id_from_update, "no commands"),
-                CallWithMarkup(sentinel.chat_id_from_update, "c - c desc\nd - d desc"),
-            ]
+        self.assert_reply_calls(
+            [CallWithMarkup("no commands"), CallWithMarkup("c - c desc\nd - d desc"),]
         )
