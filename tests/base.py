@@ -170,22 +170,22 @@ class BotHandlerTestCase(BotTestCase):
         for item in enumerate(messages):
             idx = item[0]
             call = item[1].call
-            reply_markup_dict = item[1].reply_markup_dict
+            # reply_markup_dict = item[1].reply_markup_dict
             called = self._context_mock.bot.send_message.mock_calls[idx]
             call_args = called[1]
             call_kwargs = called[2].copy()
-            reply_markup_call = call_kwargs.get('reply_markup')
-            if 'reply_markup' in call_kwargs:
-                del call_kwargs['reply_markup']
+            # reply_markup_call = call_kwargs.get('reply_markup')
+            # if 'reply_markup' in call_kwargs:
+            #    del call_kwargs['reply_markup']
             self.assertEqual(call, call(*call_args, **call_kwargs))
-            if reply_markup_call is not None:
-                self.assertEqual(reply_markup_dict, reply_markup_call.to_dict())
+            # if reply_markup_call is not None:
+            #    self.assertEqual(reply_markup_dict, reply_markup_call.to_dict())
 
     def assert_message_calls(self, calls):
         self._assert_messages(calls)
 
-    def assert_message_call(self, call):
-        self._assert_messages([call])
+    # def assert_message_call(self, call):
+    #    self._assert_messages([call])
 
     def assert_message_chat_text(self, chat_id, text):
         self._assert_messages([CallWithMarkup(chat_id, text)])
