@@ -1,17 +1,27 @@
 # TODO: Review all tests
-from telegram.ext import CommandHandler, ConversationHandler, Filters, MessageHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (
+    CallbackQueryHandler,
+    CommandHandler,
+    ConversationHandler,
+    Filters,
+    MessageHandler,
+)
 
 from fjfnaranjobot.auth import only_owner
+from fjfnaranjobot.common import inline_handler, quote_value_for_log
 from fjfnaranjobot.components.terraria.models import TerrariaProfile
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
+KEYBOARD_ROWS = 5
+
 #
 # terraria_admin_handler states
 #
-# cmd --> CREATE_OR_SELECT --> CREATE_PROFILE_NAME --> end
-#                          --> SELECT_PROFILE --> SELECT_ACTION
+# cmd --> NEW_OR_CONFIG --> NEW_NAME --> end
+#                       --> CONFIG_SELECT --> SELECT_ACTION
 #
 # SELECT_ACTION --> MANAGE_SERVER
 #               --> EDIT_PROFILE
@@ -59,9 +69,9 @@ logger = getLogger(__name__)
 #
 
 (
-    CREATE_OR_SELECT,
-    CREATE_PROFILE_NAME,
-    SELECT_PROFILE,
+    NEW_OR_CONFIG,
+    NEW_NAME,
+    CONFIG_SELECT,
     SELECT_ACTION,
     EDIT_PROFILE_AWS_DEFAULT_REGION,
     EDIT_PROFILE_AWS_ACCESS_KEY_ID,
@@ -73,9 +83,10 @@ logger = getLogger(__name__)
 ) = range(11)
 
 
-def _clear_user_data(context):
+def _clear_context_data(context):
     known_keys = [
-        'message_ids',
+        'chat_id',
+        'message_id',
         'selected_profile',
         'aws_default_region',
         'aws_access_key_id',
@@ -90,81 +101,150 @@ def _clear_user_data(context):
             del context.user_data[key]
 
 
+_cancel_markup = InlineKeyboardMarkup(
+    [[InlineKeyboardButton("Cancel", callback_data='cancel')]]
+)
+
+
 @only_owner
 def terraria_admin_handler(update, context):
     logger.info("Entering terraria_admin conversation.")
 
+    keyboard = [
+        [
+            InlineKeyboardButton("New", callback_data='new'),
+            InlineKeyboardButton("Configure", callback_data='config'),
+        ],
+        [InlineKeyboardButton("Cancel", callback_data='cancel')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     reply = update.message.reply_text(
-        "Create a new Terraria profile using /terraria_admin_create ."
-        "Configure your existing Terraria profiles using /terraria_admin_select ."
-        "If you want to do something else, /terraria_admin_cancel .",
+        "You can create a new Terraria profile or configure an existing one. "
+        "You can also cancel the terraria_admin command at any time.",
+        reply_markup=reply_markup,
     )
-    context.user_data['message_ids'] = (reply.chat.id, reply.message_id)
-    return CREATE_OR_SELECT
+    context.chat_data['chat_id'] = reply.chat.id
+    context.chat_data['message_id'] = reply.message_id
+    return NEW_OR_CONFIG
 
 
-def terraria_admin_create_handler(_update, context):
+def new_handler(_update, context):
     logger.info("Requesting new profile name.")
 
     context.bot.edit_message_text(
-        "Tell me the name for the new profile. "
-        "If you want to do something else, /terraria_admin_cancel .",
-        *context.user_data['message_ids'],
+        "Tell me the name for the new profile.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=_cancel_markup,
     )
-    return CREATE_PROFILE_NAME
+    return NEW_NAME
 
 
-def terraria_admin_create_name_handler(update, context):
+def new_name_handler(update, context):
     name = update.message.text
+    shown_name = quote_value_for_log(name)
+    logger.info(f"Received name {shown_name}.")
+
     new_profile = TerrariaProfile()
     new_profile.name = name
     new_profile.commit()
 
-    context.bot.delete_message(*context.user_data['message_ids'])
-    _clear_user_data(context)
-    update.message.reply_text("Ok.")
+    context.bot.delete_message(
+        context.chat_data['chat_id'], context.chat_data['message_id']
+    )
+    context.bot.send_message(context.chat_data['chat_id'], "Ok.")
+    _clear_context_data(context)
     return ConversationHandler.END
 
 
-def terraria_admin_select_handler(_update, context):
-    logger.info("Showing profiles and requesting selection.")
-
-    profiles = [profile.name for profile in TerrariaProfile.all()]
+def config_select_handler(_update, context):
+    profiles = [profile for profile in TerrariaProfile.all()]
     if len(profiles) == 0:
-        context.bot.edit_message_text(
-            "You don't have any profile. "
-            "Create a new Terraria profile using /terraria_admin_create ."
-            "If you want to do something else, /terraria_admin_cancel .",
-            *context.user_data['message_ids'],
+        logger.info("Not showing any profile because there are no profiles.")
+
+        context.bot.delete_message(
+            context.chat_data['chat_id'], context.chat_data['message_id'],
         )
-        return CREATE_OR_SELECT
+        context.bot.send_message(
+            context.chat_data['chat_id'], "You don't have any profile yet.",
+        )
+        _clear_context_data(context)
+        return ConversationHandler.END
+
     else:
-        profile_list = '\n'.join(profiles)
+        offset = context.chat_data.get('offset', 0)
+        logger.info(f"Showing profiles and requesting selection. Offset: {offset}.")
+
+        show_button = None
+        keyboard = []
+        keyboard_profiles = []
+        if len(profiles) <= KEYBOARD_ROWS:
+            page_profiles = profiles
+        else:
+            pending_profiles = profiles[offset:]
+            if len(pending_profiles) < KEYBOARD_ROWS:
+                show_button = 'restart'
+                offset = 0
+                page_profiles = pending_profiles
+            else:
+                show_button = 'next'
+                offset += KEYBOARD_ROWS
+                page_profiles = pending_profiles[:KEYBOARD_ROWS]
+
+        for profile in enumerate(page_profiles):
+            keyboard.append(
+                [InlineKeyboardButton(profile[1].name, callback_data=f'{profile[0]}')]
+            )
+            keyboard_profiles.append((profile[1].id, profile[1].name))
+
+        if show_button == 'restart':
+            keyboard.append([InlineKeyboardButton("Start again", callback_data='next')])
+        elif show_button == 'next':
+            keyboard.append([InlineKeyboardButton("Next page", callback_data='next')])
+
+        keyboard.append([InlineKeyboardButton("Cancel", callback_data='cancel')])
+        profiles_markup = InlineKeyboardMarkup(keyboard)
+        context.chat_data['offset'] = offset
+        context.chat_data['keyboard_profiles'] = keyboard_profiles
+
         context.bot.edit_message_text(
-            f"Pick a profile using its name from the next list:\n\n{profile_list}\n\n"
-            "If you want to do something else, /terraria_admin_cancel .",
-            *context.user_data['message_ids'],
+            "Pick a profile from the next list or request the next page (if apply)",
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
+            reply_markup=profiles_markup,
         )
-        return SELECT_PROFILE
+        return CONFIG_SELECT
 
 
-def terraria_admin_select_profile_handler(update, context):
-    logger.info("Asking what to do with selected profile.")
+def config_select_name_handler(update, context):
+    query = update.callback_query.data
+    logger.info(
+        f"Received selected position {query}. "
+        "Asking what to do with selected profile."
+    )
 
-    name = update.message.text
-    profile = TerrariaProfile.select_one(name=name)
+    profile = TerrariaProfile.select_one(
+        id=context.chat_data['keyboard_profiles'][int(query)][0]
+    )
     context.user_data['selected_profile'] = profile.id
 
+    keyboard = [
+        [InlineKeyboardButton("Edit", callback_data='edit'),],
+        [InlineKeyboardButton("Cancel", callback_data='cancel')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     context.bot.edit_message_text(
-        f"What do you want to do about profile '{profile.name}'. "
-        "To edit this profile: /terraria_admin_edit ."
-        "If you want to do something else, /terraria_admin_cancel .",
-        *context.user_data['message_ids'],
+        f"What do you want to do about profile '{profile.name}'. ",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=reply_markup,
     )
     return SELECT_ACTION
 
 
-def terraria_admin_edit_profile_handler(_update, context):
+def config_edit_handler(_update, context):
     logger.info("Editing profile: Requesting AWS_DEFAULT_REGION.")
 
     context.bot.edit_message_text(
@@ -275,81 +355,99 @@ def terraria_admin_edit_profile_status_handler(update, context):
     profile.commit()
 
     context.bot.delete_message(*context.user_data['message_ids'])
-    _clear_user_data(context)
+    _clear_context_data(context)
     update.message.reply_text("Ok.")
     return ConversationHandler.END
 
 
-def terraria_admin_cancel_handler(update, context):
+def cancel_handler(update, context):
     logger.info("Abort terraria_admin conversation.")
 
-    if 'message_ids' in context.user_data:
-        context.bot.delete_message(*context.user_data['message_ids'])
-    _clear_user_data(context)
-    update.message.reply_text("Ok.")
+    if 'message_id' in context.chat_data:
+        context.bot.delete_message(
+            context.chat_data['chat_id'], context.chat_data['message_id']
+        )
+    context.bot.send_message(context.chat_data['chat_id'], "Ok.")
+    _clear_context_data(context)
     return ConversationHandler.END
 
+
+cancel_inlines = {
+    'cancel': cancel_handler,
+}
+action_inlines = {
+    'new': new_handler,
+    'config': config_select_handler,
+    'cancel': cancel_handler,
+}
+list_pos_next_inlines = {
+    '0': config_select_name_handler,
+    '1': config_select_name_handler,
+    '2': config_select_name_handler,
+    '3': config_select_name_handler,
+    '4': config_select_name_handler,
+    'next': config_select_handler,
+    'cancel': cancel_handler,
+}
+config_action_inlines = {
+    'edit': config_edit_handler,
+    'cancel': cancel_handler,
+}
 
 terraria_admin_conversation = ConversationHandler(
     entry_points=[CommandHandler('terraria_admin', terraria_admin_handler)],
     states={
-        CREATE_OR_SELECT: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
-            CommandHandler('terraria_admin_create', terraria_admin_create_handler),
-            CommandHandler('terraria_admin_select', terraria_admin_select_handler),
+        NEW_OR_CONFIG: [CallbackQueryHandler(inline_handler(action_inlines, logger)),],
+        NEW_NAME: [
+            CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
+            MessageHandler(Filters.text, new_name_handler),
         ],
-        CREATE_PROFILE_NAME: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
-            MessageHandler(Filters.text, terraria_admin_create_name_handler),
-        ],
-        SELECT_PROFILE: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
-            MessageHandler(Filters.text, terraria_admin_select_profile_handler),
+        CONFIG_SELECT: [
+            CallbackQueryHandler(inline_handler(list_pos_next_inlines, logger)),
         ],
         SELECT_ACTION: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
-            CommandHandler('terraria_admin_edit', terraria_admin_edit_profile_handler),
+            CallbackQueryHandler(inline_handler(config_action_inlines, logger)),
         ],
         EDIT_PROFILE_AWS_DEFAULT_REGION: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
+            CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
             MessageHandler(
                 Filters.text, terraria_admin_edit_profile_aws_default_region_handler
             ),
         ],
         EDIT_PROFILE_AWS_ACCESS_KEY_ID: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
+            CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
             MessageHandler(
                 Filters.text, terraria_admin_edit_profile_aws_access_key_id_handler
             ),
         ],
         EDIT_PROFILE_AWS_SECRET_ACCESS_KEY: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
+            CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
             MessageHandler(
                 Filters.text, terraria_admin_edit_profile_aws_secret_access_key_handler
             ),
         ],
         EDIT_PROFILE_MICROAPI_TOKEN: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
+            CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
             MessageHandler(
                 Filters.text, terraria_admin_edit_profile_microapi_token_handler
             ),
         ],
         EDIT_PROFILE_TSHOCK_REST_API_TOKEN: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
+            CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
             MessageHandler(
                 Filters.text, terraria_admin_edit_profile_tshock_rest_api_token_handler
             ),
         ],
         EDIT_PROFILE_DOMAIN_NAME: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
+            CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
             MessageHandler(
                 Filters.text, terraria_admin_edit_profile_domain_name_handler
             ),
         ],
         EDIT_PROFILE_STATUS: [
-            CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler),
+            CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
             MessageHandler(Filters.text, terraria_admin_edit_profile_status_handler),
         ],
     },
-    fallbacks=[CommandHandler('terraria_admin_cancel', terraria_admin_cancel_handler)],
+    fallbacks=[],
 )
