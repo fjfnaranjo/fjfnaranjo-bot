@@ -14,3 +14,14 @@ class TerrariaProfile(DbRelation):
         DbField('status', 'BOOLEAN DEFAULT(0)', False),
         DbField('chat_id'),
     ]
+
+
+class TerrariaActivityLogEntry(DbRelation):
+    fields = [
+        DbField('id', 'INTEGER PRIMARY KEY'),
+        DbField('nick'),
+        DbField('username'),
+        DbField('ip'),
+        DbField('date', 'date'),
+        DbField('portion'),
+    ]
