@@ -1,4 +1,4 @@
-from celery import task, chain
+from celery import chain, task
 
 from fjfnaranjobot.logging import getLogger
 
