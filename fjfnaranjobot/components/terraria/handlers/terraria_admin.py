@@ -23,40 +23,34 @@ KEYBOARD_ROWS = 5
 # cmd --> NEW_OR_CONFIG --> NEW_NAME --> end
 #                       --> CONFIG_SELECT --> SELECT_ACTION
 #
-# SELECT_ACTION --> MANAGE_SERVER
-#               --> EDIT_PROFILE
-#               --> RENAME_PROFILE_NAME
-#               --> DELETE_PROFILE_NAME
-#               --> ADD_USER_CONTACT
-#               --> DEL_USER_CONTACT
-#               --> DEREGISTER_CHAT
+# SELECT_ACTION --> CONFIG_EDIT
+#               --> CONFIG_RENAME --> end
+#               --> CONFIG_DELETE --> end
+#               --> end (toggle)
+#               --> CONFIG_SERVER
+#               --> ADD_USER_CONTACT --> end
+#               --> DEL_USER_CONTACT --> end
+#               --> DEREGISTER_CHAT --> end
 #
-# MANAGE_SERVER --> START --> START_CONFIRM --> end
-#               --> STOP --> STOP_CONFIRM --> end
-#               --> HOLD --> HOLD_CONFIRM --> end
-#               --> STATUS --> end
-#               --> USAGE_REPORT --> end
-#
-# EDIT_PROFILE --> EDIT_PROFILE
-#              -->   EDIT_PROFILE_AWS_DEFAULT_REGION
+# CONFIG_EDIT   -->   CONFIG_EDIT_AWS_DEFAULT_REGION
 #                                   V
-#                    EDIT_PROFILE_AWS_ACCESS_KEY_ID
+#                    CONFIG_EDIT_AWS_ACCESS_KEY_ID
 #                                   V
-#                   EDIT_PROFILE_AWS_SECRET_ACCESS_KEY
+#                   CONFIG_EDIT_AWS_SECRET_ACCESS_KEY
 #                                   V
-#                      EDIT_PROFILE_MICROAPI_TOKEN
+#                      CONFIG_EDIT_MICROAPI_TOKEN
 #                                   V
-#                  EDIT_PROFILE_TSHOCK_REST_API_TOKEN
+#                  CONFIG_EDIT_TSHOCK_REST_API_TOKEN
 #                                   V
-#                       EDIT_PROFILE_DOMAIN_NAME
-#                                   V
-#                         EDIT_PROFILE_STATUS
+#                       CONFIG_EDIT_DOMAIN_NAME
 #                                   V
 #                                  end
 #
-# RENAME_PROFILE_NAME --> end
-#
-# DELETE_PROFILE_NAME --> end
+# CONFIG_SERVER --> START_CONFIRM --> end
+#               --> STOP_CONFIRM --> end
+#               --> HOLD_CONFIRM --> end
+#               --> end (status)
+#               --> end (usage)
 #
 # ADD_USER_CONTACT --> end
 #
@@ -73,14 +67,15 @@ KEYBOARD_ROWS = 5
     NEW_NAME,
     CONFIG_SELECT,
     SELECT_ACTION,
-    EDIT_PROFILE_AWS_DEFAULT_REGION,
-    EDIT_PROFILE_AWS_ACCESS_KEY_ID,
-    EDIT_PROFILE_AWS_SECRET_ACCESS_KEY,
-    EDIT_PROFILE_MICROAPI_TOKEN,
-    EDIT_PROFILE_TSHOCK_REST_API_TOKEN,
-    EDIT_PROFILE_DOMAIN_NAME,
-    EDIT_PROFILE_STATUS,
-) = range(11)
+    CONFIG_EDIT_AWS_DEFAULT_REGION,
+    CONFIG_EDIT_AWS_ACCESS_KEY_ID,
+    CONFIG_EDIT_AWS_SECRET_ACCESS_KEY,
+    CONFIG_EDIT_MICROAPI_TOKEN,
+    CONFIG_EDIT_TSHOCK_REST_API_TOKEN,
+    CONFIG_EDIT_DOMAIN_NAME,
+    CONFIG_RENAME,
+    CONFIG_DELETE,
+) = range(12)
 
 
 def _clear_context_data(context):
@@ -94,7 +89,7 @@ def _clear_context_data(context):
         'microapi_token',
         'tshock_token',
         'dns_name',
-        'status',
+        'keyboard_users',
     ]
     for key in known_keys:
         if key in context.user_data:
@@ -108,7 +103,7 @@ _cancel_markup = InlineKeyboardMarkup(
 
 @only_owner
 def terraria_admin_handler(update, context):
-    logger.info("Entering terraria_admin conversation.")
+    logger.info("Entering 'terraria_admin' conversation.")
 
     keyboard = [
         [
@@ -142,6 +137,7 @@ def new_handler(_update, context):
 
 
 def new_name_handler(update, context):
+    # TODO: Validation
     name = update.message.text
     shown_name = quote_value_for_log(name)
     logger.info(f"Received name {shown_name}.")
@@ -167,7 +163,7 @@ def config_select_handler(_update, context):
             context.chat_data['chat_id'], context.chat_data['message_id'],
         )
         context.bot.send_message(
-            context.chat_data['chat_id'], "You don't have any profile yet.",
+            context.chat_data['chat_id'], "You don't have any profiles yet.",
         )
         _clear_context_data(context)
         return ConversationHandler.END
@@ -219,24 +215,28 @@ def config_select_handler(_update, context):
 
 def config_select_name_handler(update, context):
     query = update.callback_query.data
-    logger.info(
-        f"Received selected position {query}. "
-        "Asking what to do with selected profile."
-    )
-
     profile = TerrariaProfile.select_one(
         id=context.chat_data['keyboard_profiles'][int(query)][0]
     )
+    logger.info(
+        f"Received selected profile '{profile.name}'. "
+        "Asking what to do with selected profile."
+    )
+
+    del context.chat_data['keyboard_profiles']
     context.user_data['selected_profile'] = profile.id
 
+    new_status = "Disable" if profile.status else "Enable"
     keyboard = [
         [InlineKeyboardButton("Edit", callback_data='edit'),],
+        [InlineKeyboardButton("Rename", callback_data='rename'),],
+        [InlineKeyboardButton("Delete", callback_data='delete'),],
+        [InlineKeyboardButton(new_status, callback_data='toggle'),],
         [InlineKeyboardButton("Cancel", callback_data='cancel')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     context.bot.edit_message_text(
-        f"What do you want to do about profile '{profile.name}'. ",
+        f"What do you want to do about profile '{profile.name}'.",
         context.chat_data['chat_id'],
         context.chat_data['message_id'],
         reply_markup=reply_markup,
@@ -245,123 +245,211 @@ def config_select_name_handler(update, context):
 
 
 def config_edit_handler(_update, context):
-    logger.info("Editing profile: Requesting AWS_DEFAULT_REGION.")
+    logger.info("Editing profile. Requesting AWS_DEFAULT_REGION.")
 
     context.bot.edit_message_text(
-        "Tell me the value for AWS_DEFAULT_REGION. "
-        "If you want to do something else, /terraria_admin_cancel .",
-        *context.user_data['message_ids'],
+        "Tell me the value for AWS_DEFAULT_REGION.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=_cancel_markup,
     )
-    return EDIT_PROFILE_AWS_DEFAULT_REGION
+    return CONFIG_EDIT_AWS_DEFAULT_REGION
 
 
-def terraria_admin_edit_profile_aws_default_region_handler(update, context):
-    logger.info("Editing profile: Requesting AWS_ACCESS_KEY_ID.")
+def config_edit_aws_default_region_handler(update, context):
+    # TODO: Validation
+    logger.info("Received value. Requesting AWS_ACCESS_KEY_ID.")
 
     value = update.message.text
     context.user_data['aws_default_region'] = value
 
     context.bot.edit_message_text(
-        "Tell me the value for AWS_ACCESS_KEY_ID. "
-        "If you want to do something else, /terraria_admin_cancel .",
-        *context.user_data['message_ids'],
+        "Tell me the value for AWS_ACCESS_KEY_ID.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=_cancel_markup,
     )
-    return EDIT_PROFILE_AWS_ACCESS_KEY_ID
+    return CONFIG_EDIT_AWS_ACCESS_KEY_ID
 
 
-def terraria_admin_edit_profile_aws_access_key_id_handler(update, context):
-    logger.info("Editing profile: Requesting AWS_SECRET_ACCESS_KEY.")
+def config_edit_aws_access_key_id_handler(update, context):
+    # TODO: Validation
+    logger.info("Received value. Requesting AWS_SECRET_ACCESS_KEY.")
 
     value = update.message.text
     context.user_data['aws_access_key_id'] = value
 
     context.bot.edit_message_text(
-        "Tell me the value for AWS_SECRET_ACCESS_KEY. "
-        "If you want to do something else, /terraria_admin_cancel .",
-        *context.user_data['message_ids'],
+        "Tell me the value for AWS_SECRET_ACCESS_KEY.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=_cancel_markup,
     )
-    return EDIT_PROFILE_AWS_SECRET_ACCESS_KEY
+    return CONFIG_EDIT_AWS_SECRET_ACCESS_KEY
 
 
-def terraria_admin_edit_profile_aws_secret_access_key_handler(update, context):
-    logger.info("Editing profile: Requesting microapi token.")
+def config_edit_aws_secret_access_key_handler(update, context):
+    # TODO: Validation
+    logger.info("Received value. Requesting microapi token.")
 
     value = update.message.text
     context.user_data['aws_secret_access_key'] = value
 
     context.bot.edit_message_text(
-        "Tell me the value for microapi token. "
-        "If you want to do something else, /terraria_admin_cancel .",
-        *context.user_data['message_ids'],
+        "Tell me the value for microapi token.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=_cancel_markup,
     )
-    return EDIT_PROFILE_MICROAPI_TOKEN
+    return CONFIG_EDIT_MICROAPI_TOKEN
 
 
-def terraria_admin_edit_profile_microapi_token_handler(update, context):
-    logger.info("Editing profile: Requesting tShock REST API token.")
+def config_edit_microapi_token_handler(update, context):
+    # TODO: Validation
+    logger.info("Received value. Requesting tShock REST API token.")
 
     value = update.message.text
     context.user_data['microapi_token'] = value
 
     context.bot.edit_message_text(
-        "Tell me the value for tShock REST API token. "
-        "If you want to do something else, /terraria_admin_cancel .",
-        *context.user_data['message_ids'],
+        "Tell me the value for tShock REST API token.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=_cancel_markup,
     )
-    return EDIT_PROFILE_TSHOCK_REST_API_TOKEN
+    return CONFIG_EDIT_TSHOCK_REST_API_TOKEN
 
 
-def terraria_admin_edit_profile_tshock_rest_api_token_handler(update, context):
-    logger.info("Editing profile: Requesting domain name.")
+def config_edit_tshock_rest_api_token_handler(update, context):
+    # TODO: Validation
+    logger.info("Received value. Requesting domain name.")
 
     value = update.message.text
     context.user_data['tshock_token'] = value
 
     context.bot.edit_message_text(
-        "Tell me the value for domain name. "
-        "If you want to do something else, /terraria_admin_cancel .",
-        *context.user_data['message_ids'],
+        "Tell me the value for domain name.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=_cancel_markup,
     )
-    return EDIT_PROFILE_DOMAIN_NAME
+    return CONFIG_EDIT_DOMAIN_NAME
 
 
-def terraria_admin_edit_profile_domain_name_handler(update, context):
-    logger.info("Editing profile: Requesting status.")
+def config_edit_domain_name_handler(update, context):
+    # TODO: Validation
+    logger.info("Received value. Saving changes.")
 
     value = update.message.text
-    context.user_data['dns_name'] = value
-
-    context.bot.edit_message_text(
-        "Tell me the value for status (0 or 1). "
-        "If you want to do something else, /terraria_admin_cancel .",
-        *context.user_data['message_ids'],
-    )
-    return EDIT_PROFILE_STATUS
-
-
-def terraria_admin_edit_profile_status_handler(update, context):
-    logger.info("Editing profile: Saving changes.")
-
-    value = update.message.text
-    context.user_data['status'] = value
     profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
     profile.aws_default_region = context.user_data['aws_default_region']
     profile.aws_access_key_id = context.user_data['aws_access_key_id']
     profile.aws_secret_access_key = context.user_data['aws_secret_access_key']
     profile.microapi_token = context.user_data['microapi_token']
     profile.tshock_token = context.user_data['tshock_token']
-    profile.dns_name = context.user_data['dns_name']
-    profile.status = bool(context.user_data['status'])
+    profile.dns_name = value
     profile.commit()
 
-    context.bot.delete_message(*context.user_data['message_ids'])
+    context.bot.delete_message(
+        context.chat_data['chat_id'], context.chat_data['message_id']
+    )
     _clear_context_data(context)
-    update.message.reply_text("Ok.")
+    context.bot.send_message(context.chat_data['chat_id'], "Ok.")
     return ConversationHandler.END
 
 
-def cancel_handler(update, context):
-    logger.info("Abort terraria_admin conversation.")
+def config_edit_rename_handler(_update, context):
+    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    logger.info(f"Requesting new name for profile '{profile.name}'.")
+
+    context.bot.edit_message_text(
+        "Tell me the new name.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=_cancel_markup,
+    )
+    return CONFIG_RENAME
+
+
+def config_edit_rename_name_handler(update, context):
+    # TODO: Validation
+    new_name = update.message.text
+    logger.info(f"Received new name '{new_name}'. Saving changes.")
+
+    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    old_name = profile.name
+    profile.name = new_name
+    profile.commit()
+
+    context.bot.delete_message(
+        context.chat_data['chat_id'], context.chat_data['message_id']
+    )
+    _clear_context_data(context)
+    context.bot.send_message(
+        context.chat_data['chat_id'], f"Renamed profile '{old_name}' to '{new_name}'."
+    )
+    return ConversationHandler.END
+
+
+def config_edit_delete_handler(_update, context):
+    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    logger.info(
+        f"Received deletion request for profile {profile.name}. Asking to confirm."
+    )
+
+    confirm_markup = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("Confirm", callback_data='confirm')],
+            [InlineKeyboardButton("Cancel", callback_data='cancel')],
+        ]
+    )
+    context.bot.edit_message_text(
+        f"Are you sure that you want to delete the profile '{profile.name}'.",
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
+        reply_markup=confirm_markup,
+    )
+    return CONFIG_DELETE
+
+
+def config_edit_delete_confirm_handler(_update, context):
+    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    logger.info(f"Deleted profile {profile.name}.")
+
+    profile.delete()
+
+    context.bot.delete_message(
+        context.chat_data['chat_id'], context.chat_data['message_id']
+    )
+    _clear_context_data(context)
+    context.bot.send_message(
+        context.chat_data['chat_id'], f"The profile '{profile.name}' was deleted."
+    )
+    return ConversationHandler.END
+
+
+def config_edit_toggle_handler(_update, context):
+    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    logger.info(
+        f"Requested status toggle for profile '{profile.name}'. Saving changes."
+    )
+
+    profile.status = not profile.status
+    new_status = 'enabled' if profile.status else 'disabled'
+    profile.commit()
+
+    context.bot.delete_message(
+        context.chat_data['chat_id'], context.chat_data['message_id']
+    )
+    _clear_context_data(context)
+    context.bot.send_message(
+        context.chat_data['chat_id'], f"Profile '{profile.name}' {new_status}."
+    )
+    return ConversationHandler.END
+
+
+def cancel_handler(_update, context):
+    logger.info("Aborting 'terraria_admin' conversation.")
 
     if 'message_id' in context.chat_data:
         context.bot.delete_message(
@@ -391,6 +479,13 @@ list_pos_next_inlines = {
 }
 config_action_inlines = {
     'edit': config_edit_handler,
+    'rename': config_edit_rename_handler,
+    'delete': config_edit_delete_handler,
+    'toggle': config_edit_toggle_handler,
+    'cancel': cancel_handler,
+}
+config_del_confirm_inlines = {
+    'confirm': config_edit_delete_confirm_handler,
     'cancel': cancel_handler,
 }
 
@@ -408,45 +503,36 @@ terraria_admin_conversation = ConversationHandler(
         SELECT_ACTION: [
             CallbackQueryHandler(inline_handler(config_action_inlines, logger)),
         ],
-        EDIT_PROFILE_AWS_DEFAULT_REGION: [
+        CONFIG_EDIT_AWS_DEFAULT_REGION: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(
-                Filters.text, terraria_admin_edit_profile_aws_default_region_handler
-            ),
+            MessageHandler(Filters.text, config_edit_aws_default_region_handler),
         ],
-        EDIT_PROFILE_AWS_ACCESS_KEY_ID: [
+        CONFIG_EDIT_AWS_ACCESS_KEY_ID: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(
-                Filters.text, terraria_admin_edit_profile_aws_access_key_id_handler
-            ),
+            MessageHandler(Filters.text, config_edit_aws_access_key_id_handler),
         ],
-        EDIT_PROFILE_AWS_SECRET_ACCESS_KEY: [
+        CONFIG_EDIT_AWS_SECRET_ACCESS_KEY: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(
-                Filters.text, terraria_admin_edit_profile_aws_secret_access_key_handler
-            ),
+            MessageHandler(Filters.text, config_edit_aws_secret_access_key_handler),
         ],
-        EDIT_PROFILE_MICROAPI_TOKEN: [
+        CONFIG_EDIT_MICROAPI_TOKEN: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(
-                Filters.text, terraria_admin_edit_profile_microapi_token_handler
-            ),
+            MessageHandler(Filters.text, config_edit_microapi_token_handler),
         ],
-        EDIT_PROFILE_TSHOCK_REST_API_TOKEN: [
+        CONFIG_EDIT_TSHOCK_REST_API_TOKEN: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(
-                Filters.text, terraria_admin_edit_profile_tshock_rest_api_token_handler
-            ),
+            MessageHandler(Filters.text, config_edit_tshock_rest_api_token_handler),
         ],
-        EDIT_PROFILE_DOMAIN_NAME: [
+        CONFIG_EDIT_DOMAIN_NAME: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(
-                Filters.text, terraria_admin_edit_profile_domain_name_handler
-            ),
+            MessageHandler(Filters.text, config_edit_domain_name_handler),
         ],
-        EDIT_PROFILE_STATUS: [
+        CONFIG_RENAME: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(Filters.text, terraria_admin_edit_profile_status_handler),
+            MessageHandler(Filters.text, config_edit_rename_name_handler),
+        ],
+        CONFIG_DELETE: [
+            CallbackQueryHandler(inline_handler(config_del_confirm_inlines, logger)),
         ],
     },
     fallbacks=[],

@@ -55,10 +55,12 @@ def cursor():
     conn.close()
 
 
+# TODO: Test default
 class DbField:
-    def __init__(self, name, definition=None):
+    def __init__(self, name, definition=None, default=None):
         self.name = name
         self.definition = definition
+        self.default = default
 
 
 class DbRelation:
@@ -108,7 +110,8 @@ class DbRelation:
         new_relation = super().__new__(cls)
         new_relation.relation_name = DbRelation._insert_under_before_upper(cls.__name__)
         for field in cls.fields:
-            setattr(new_relation, field.name, None)
+            # TODO: Check default value
+            setattr(new_relation, field.name, field.default)
         if pk is not None:
             DbRelation._from_db(
                 new_relation, pk, new_relation.relation_name, cls.fields
@@ -157,6 +160,14 @@ class DbRelation:
                     self._commit_replace(cur)
             else:
                 self.id = self._commit_new(cur)
+
+    # TODO: Test
+    def delete(self):
+        with self._cursor(self.relation_name, self.fields) as cur:
+            if self.id is not None:
+                cur.execute(f'DELETE FROM {self.relation_name} WHERE id=?', (self.id,))
+            else:
+                raise ValueError("The db object doesn't have id.")
 
     @classmethod
     def all(cls):
