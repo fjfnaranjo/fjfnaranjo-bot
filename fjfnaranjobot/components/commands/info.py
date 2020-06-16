@@ -8,7 +8,7 @@ logger = getLogger(__name__)
 
 
 @only_owner
-def commands_handler(update, context):
+def commands_handler(update, _context):
     logger.info("Sending list of commands.")
 
     prod_commands = [

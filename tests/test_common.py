@@ -108,7 +108,7 @@ class InlineHandlerTests(TestCase):
 
         result_function = inline_handler({'data': handler}, mocked_logger)
         result = result_function(mocker_update, None)
-        mocked_logger.info.assert_has_calls(
+        mocked_logger.debug.assert_has_calls(
             [
                 call('Received inline selection.'),
                 call('Inline selection was \'data\'.'),
@@ -126,7 +126,7 @@ class InlineHandlerTests(TestCase):
         )
         with self.assertRaises(ValueError) as e:
             result_function(mocker_update, None)
-        mocked_logger.info.assert_has_calls(
+        mocked_logger.debug.assert_has_calls(
             [
                 call('Received inline selection.'),
                 call('Inline selection was \'other\'.'),

@@ -82,7 +82,7 @@ class ConfigHandlersTests(BotHandlerTestCase):
 
     def test_config_handler(self):
         self.chat_data = {}
-        with self.assert_log('Entering config conversation.', logger):
+        with self.assert_log('Entering \'config\' conversation.', logger):
             assert GET_SET_OR_DEL == config_handler(*self.update_and_context)
         self.assert_reply_call(
             CallWithMarkup(
@@ -275,7 +275,7 @@ class ConfigHandlersTests(BotHandlerTestCase):
             {'chat_id': 1, 'message_id': 2, 'key': 'key', 'some': 'content'}
         )
         with self.assert_log(
-            'Abort config conversation.', logger,
+            'Aborting \'config\' conversation.', logger,
         ):
             assert ConversationHandler.END == cancel_handler(*self.update_and_context)
         self.assert_delete(1, 2)

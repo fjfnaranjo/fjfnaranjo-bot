@@ -101,7 +101,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
 
     def test_friends_handler(self):
         self.chat_data = {}
-        with self.assert_log('Entering friends conversation.', logger):
+        with self.assert_log('Entering \'friends\' conversation.', logger):
             assert GET_ADD_OR_DEL == friends_handler(*self.update_and_context)
         self.assert_reply_call(
             CallWithMarkup(
@@ -346,7 +346,7 @@ class FriendsHandlersTests(BotHandlerTestCase):
             }
         )
         with self.assert_log(
-            'Abort friends conversation.', logger,
+            'Aborting \'friends\' conversation.', logger,
         ):
             assert ConversationHandler.END == cancel_handler(*self.update_and_context)
         self.assert_delete(1, 2)
