@@ -11,5 +11,6 @@ class TerrariaProfile(DbRelation):
         DbField('microapi_token'),
         DbField('tshock_token'),
         DbField('dns_name'),
-        DbField('status', 'BOOLEAN DEFAULT(0)'),
+        DbField('status', 'BOOLEAN DEFAULT(0)', False),
+        DbField('chat_id'),
     ]
