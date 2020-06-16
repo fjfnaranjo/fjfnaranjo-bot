@@ -72,7 +72,6 @@ def friends_handler(update, context):
     return GET_ADD_OR_DEL
 
 
-# TODO: Tests!
 def list_handler(_update, context):
     offset = context.chat_data.get('offset', 0)
     logger.info(f"List of friends requested. Offset: {offset}.")
