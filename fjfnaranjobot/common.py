@@ -47,9 +47,9 @@ class ScheduleEntry:
 
 def inline_handler(inlines, logger):
     def inline_handler_function(update, context):
-        logger.info("Received inline selection.")
+        logger.debug("Received inline selection.")
         query = update.callback_query.data
-        logger.info(f"Inline selection was '{query}'.")
+        logger.debug(f"Inline selection was '{query}'.")
         if query in inlines:
             return inlines[query](update, context)
         else:

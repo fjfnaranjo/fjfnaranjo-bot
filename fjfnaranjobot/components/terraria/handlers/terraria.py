@@ -26,6 +26,6 @@ logger = getLogger(__name__)
 
 @only_real
 def terraria_handler(_update, _context):
-    logger.info("The terraria command is not implemented.")
+    logger.warning("The 'terraria' command is not implemented.")
 
     raise DispatcherHandlerStop()

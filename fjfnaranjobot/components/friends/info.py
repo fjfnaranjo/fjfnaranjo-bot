@@ -51,7 +51,7 @@ _cancel_markup = InlineKeyboardMarkup(
 
 @only_owner
 def friends_handler(update, context):
-    logger.info("Entering friends conversation.")
+    logger.info("Entering 'friends' conversation.")
 
     keyboard = [
         [
@@ -145,7 +145,7 @@ def list_del_confirm_handler(update, context):
         ]
     )
     context.bot.edit_message_text(
-        f"Are you sure that you want to remove '{user_to_delete.username}' as a friend. ",
+        f"Are you sure that you want to remove '{user_to_delete.username}' as a friend.",
         context.chat_data['chat_id'],
         context.chat_data['message_id'],
         reply_markup=confirm_markup,
@@ -269,7 +269,7 @@ def del_handler(_update, context):
     logger.info("Requesting contact to remove as a friend.")
 
     context.bot.edit_message_text(
-        "Send me the contact of the friend you want to remove. " "Or its id.",
+        "Send me the contact of the friend you want to remove. Or its id.",
         context.chat_data['chat_id'],
         context.chat_data['message_id'],
         reply_markup=_cancel_markup,
@@ -401,7 +401,7 @@ def del_friend_id_handler(update, context):
 
 
 def cancel_handler(_update, context):
-    logger.info("Abort friends conversation.")
+    logger.info("Aborting 'friends' conversation.")
 
     if 'message_id' in context.chat_data:
         context.bot.delete_message(

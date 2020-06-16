@@ -42,7 +42,7 @@ _cancel_markup = InlineKeyboardMarkup(
 
 @only_owner
 def config_handler(update, context):
-    logger.info("Entering config conversation.")
+    logger.info("Entering 'config' conversation.")
 
     keyboard = [
         [
@@ -233,7 +233,7 @@ def del_var_handler(update, context):
 
 
 def cancel_handler(_update, context):
-    logger.info("Abort config conversation.")
+    logger.info("Aborting 'config' conversation.")
 
     if 'message_id' in context.chat_data:
         context.bot.delete_message(
