@@ -1,4 +1,5 @@
 # TODO: Review all tests
+# TODO: Generalize conversation end
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     CallbackQueryHandler,
@@ -154,6 +155,7 @@ def new_name_handler(update, context):
     return ConversationHandler.END
 
 
+# TODO: Generalize paginator
 def config_select_handler(_update, context):
     profiles = [profile for profile in TerrariaProfile.all()]
     if len(profiles) == 0:

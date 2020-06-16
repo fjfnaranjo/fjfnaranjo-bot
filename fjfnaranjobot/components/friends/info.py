@@ -1,4 +1,5 @@
 # TODO: Review all tests
+# TODO: Generalize conversation end
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     CallbackQueryHandler,
@@ -72,6 +73,7 @@ def friends_handler(update, context):
     return GET_ADD_OR_DEL
 
 
+# TODO: Generalize paginator
 def list_handler(_update, context):
     offset = context.chat_data.get('offset', 0)
     logger.info(f"List of friends requested. Offset: {offset}.")

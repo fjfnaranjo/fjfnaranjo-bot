@@ -1,4 +1,5 @@
 # TODO: Review all tests
+# TODO: Generalize conversation end
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     CallbackQueryHandler,
