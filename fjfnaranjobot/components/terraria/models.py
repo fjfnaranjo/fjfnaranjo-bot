@@ -8,6 +8,7 @@ class TerrariaProfile(DbRelation):
         DbField('aws_default_region'),
         DbField('aws_access_key_id'),
         DbField('aws_secret_access_key'),
+        DbField('instance_id'),
         DbField('microapi_token'),
         DbField('tshock_token'),
         DbField('dns_name'),
