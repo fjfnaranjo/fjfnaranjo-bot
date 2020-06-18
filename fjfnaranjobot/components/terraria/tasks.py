@@ -3,13 +3,18 @@ from celery import chain, task
 from requests import get as requests_get
 
 from fjfnaranjobot.components.terraria.models import TerrariaProfile
+from fjfnaranjobot.components.terraria.utils import register_activity
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
 
-_MICROAPI_URL = 'http://{}:7979/{}/'
-_TSHOCK_URL = 'http://{}:7878/{}?token={}'
+def _build_microapi_url(host, token, endpoint):
+    return 'http://{}:7979/{}/'.format(host, token) + endpoint
+
+
+def _build_tshock_url(host, endpoint, token, params):
+    return 'http://{}:7878/{}?token={}'.format(host, endpoint, token) + '&'.join(params)
 
 
 @task(bind=True)
@@ -38,7 +43,7 @@ def _giving_microapi_state(self, last_args):
     logger.debug(f"Entering inner task {self.name} .")
     instance_ip, message_id, profile_id = last_args
     profile = TerrariaProfile(profile_id)
-    status_url = _MICROAPI_URL.format(instance_ip, profile.microapi_token) + 'status'
+    status_url = _build_microapi_url(instance_ip, profile.microapi_token, 'status')
     microapi_state = requests_get(status_url).text
     return microapi_state, instance_ip, message_id, profile_id
 
@@ -55,10 +60,9 @@ def _giving_tshock_players(self, last_args):
     logger.debug(f"Entering inner task {self.name} .")
     instance_ip, message_id, profile_id = last_args
     profile = TerrariaProfile(profile_id)
-    active_list_url = _TSHOCK_URL.format(
-        instance_ip, 'v2/server/status', profile.tshock_token
+    active_list_url = _build_tshock_url(
+        instance_ip, 'v2/server/status', profile.tshock_token, ['players=true']
     )
-    active_list_url = active_list_url + '&players=true'
     tshock_status = requests_get(active_list_url).json()
     players = tshock_status['players']
     return players, message_id, profile_id
@@ -75,7 +79,7 @@ def _report_on_faulty_tshock_state(self, last_args):
 def _log_user_activity(self, last_args):
     logger.debug(f"Entering inner task {self.name} .")
     players, _message_id, _profile_id = last_args
-    logger.error(str(players))
+    register_activity(players)
 
 
 def log_user_activity_chain(profile_id, message_id):

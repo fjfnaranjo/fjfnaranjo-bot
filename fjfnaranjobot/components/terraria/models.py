@@ -17,12 +17,21 @@ class TerrariaProfile(DbRelation):
     ]
 
 
-class TerrariaActivityLogEntry(DbRelation):
+class TerrariaActivityLogPortions(DbRelation):
     fields = [
         DbField('id', 'INTEGER PRIMARY KEY'),
-        DbField('nick'),
+        DbField('nickname'),
         DbField('username'),
-        DbField('ip'),
         DbField('date', 'date'),
         DbField('portion'),
+    ]
+
+
+class TerrariaActivityLogDaily(DbRelation):
+    fields = [
+        DbField('id', 'INTEGER PRIMARY KEY'),
+        DbField('nickname'),
+        DbField('username'),
+        DbField('date', 'date'),
+        DbField('portions'),
     ]
