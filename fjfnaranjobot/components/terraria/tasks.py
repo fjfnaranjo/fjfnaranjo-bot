@@ -4,6 +4,7 @@ from boto3 import resource
 from celery import chain, task
 from requests import get as requests_get
 
+from fjfnaranjobot.bot import ensure_bot
 from fjfnaranjobot.components.terraria.models import TerrariaProfile
 from fjfnaranjobot.components.terraria.utils import register_activity
 from fjfnaranjobot.logging import getLogger
@@ -172,7 +173,8 @@ def _stop_instance(self, payload):
 @task(bind=True)
 def _stop_server_report_stop_instance(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
-    return payload
+    bot = ensure_bot()
+    bot.bot.send_message(payload['message_id'], 'stopped')
 
 
 def stop_server_chain(profile_id, message_id):
@@ -249,12 +251,13 @@ def _microapi_start(self, payload):
 @task(bind=True)
 def _start_server_report_microapi_start(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
-    return payload
+    bot = ensure_bot()
+    bot.bot.send_message(payload['message_id'], 'started')
 
 
 def start_server_chain(profile_id, message_id):
     logger.info(
-        "Registering chain 'stop_server' with "
+        "Registering chain 'start_server' with "
         f"profile id {profile_id} and message_id {message_id}."
     )
     payload = {'profile_id': profile_id, 'message_id': message_id}
@@ -267,4 +270,45 @@ def start_server_chain(profile_id, message_id):
         _start_server_report_start_instance.s(),
         _microapi_start.s(),
         _start_server_report_microapi_start.s(),
+    )()
+
+
+@task(bind=True)
+def _server_status_report_giving_ec2_instance_state_and_ip(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _server_status_report_giving_microapi_state(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _server_status_report_giving_tshock_status_and_players(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _report_server_status(self, payload):
+    bot = ensure_bot()
+    bot.bot.send_message(payload['message_id'], payload['status_response'])
+
+
+def server_status_chain(profile_id, message_id):
+    logger.info(
+        "Registering chain 'server_status' with "
+        f"profile id {profile_id} and message_id {message_id}."
+    )
+    payload = {'profile_id': profile_id, 'message_id': message_id}
+    return chain(
+        _giving_ec2_instance_state_and_ip.s(payload),
+        _server_status_report_giving_ec2_instance_state_and_ip.s(),
+        _giving_microapi_state.s(),
+        _server_status_report_giving_microapi_state.s(),
+        _giving_tshock_status_and_players.s(),
+        _server_status_report_giving_tshock_status_and_players.s(),
+        _report_server_status.s(),
     )()

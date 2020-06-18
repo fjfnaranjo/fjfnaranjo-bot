@@ -26,6 +26,8 @@ BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
 
 _BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.info'
 
+_state = {'bot': None}
+
 
 class BotJSONError(Exception):
     pass
@@ -179,4 +181,9 @@ class Bot:
         return 'ok'
 
 
-bot = Bot()
+# TODO: Test
+def ensure_bot():
+    if _state['bot'] is not None:
+        return _state['bot']
+    _state['bot'] = Bot()
+    return _state['bot']

@@ -1,12 +1,15 @@
 from collections import namedtuple
 
-from fjfnaranjobot.bot import BotJSONError, BotTokenError, bot
+from fjfnaranjobot.bot import BotJSONError, BotTokenError, ensure_bot
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
 
 Response = namedtuple('Response', ['status', 'headers', 'data'])
+
+
+bot = ensure_bot()
 
 
 def application(environ, start_response):

@@ -12,6 +12,11 @@ from telegram.ext import (
 from fjfnaranjobot.auth import only_owner
 from fjfnaranjobot.common import inline_handler, quote_value_for_log
 from fjfnaranjobot.components.terraria.models import TerrariaProfile
+from fjfnaranjobot.components.terraria.tasks import (
+    server_status_chain,
+    start_server_chain,
+    stop_server_chain,
+)
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -28,6 +33,9 @@ KEYBOARD_ROWS = 5
 #               --> CONFIG_RENAME --> end
 #               --> CONFIG_DELETE --> end
 #               --> end (toggle)
+#               --> end (status)
+#               --> end (start)
+#               --> end (stop)
 #               --> CONFIG_SERVER
 #               --> ADD_USER_CONTACT --> end
 #               --> DEL_USER_CONTACT --> end
@@ -232,6 +240,9 @@ def config_select_name_handler(update, context):
         [InlineKeyboardButton("Rename", callback_data='rename'),],
         [InlineKeyboardButton("Delete", callback_data='delete'),],
         [InlineKeyboardButton(new_status, callback_data='toggle'),],
+        [InlineKeyboardButton("Status", callback_data='status'),],
+        [InlineKeyboardButton("Start", callback_data='start'),],
+        [InlineKeyboardButton("Stop", callback_data='stop'),],
         [InlineKeyboardButton("Cancel", callback_data='cancel')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -448,6 +459,54 @@ def config_edit_toggle_handler(_update, context):
     return ConversationHandler.END
 
 
+def config_edit_status_handler(_update, context):
+    profile = TerrariaProfile(context.user_data['selected_profile'])
+    logger.info(
+        f"Requested server status for profile '{profile.name}'. Calling async task."
+    )
+
+    server_status_chain(profile.id, context.chat_data['chat_id'])
+
+    context.bot.delete_message(
+        context.chat_data['chat_id'], context.chat_data['message_id']
+    )
+    _clear_context_data(context)
+    context.bot.send_message(context.chat_data['chat_id'], "Let me get back to you.")
+    return ConversationHandler.END
+
+
+def config_edit_start_handler(_update, context):
+    profile = TerrariaProfile(context.user_data['selected_profile'])
+    logger.info(
+        f"Requested server start for profile '{profile.name}'. Calling async task."
+    )
+
+    start_server_chain(profile.id, context.chat_data['chat_id'])
+
+    context.bot.delete_message(
+        context.chat_data['chat_id'], context.chat_data['message_id']
+    )
+    _clear_context_data(context)
+    context.bot.send_message(context.chat_data['chat_id'], "Let me get back to you.")
+    return ConversationHandler.END
+
+
+def config_edit_stop_handler(_update, context):
+    profile = TerrariaProfile(context.user_data['selected_profile'])
+    logger.info(
+        f"Requested server stop for profile '{profile.name}'. Calling async task."
+    )
+
+    stop_server_chain(profile.id, context.chat_data['chat_id'])
+
+    context.bot.delete_message(
+        context.chat_data['chat_id'], context.chat_data['message_id']
+    )
+    _clear_context_data(context)
+    context.bot.send_message(context.chat_data['chat_id'], "Let me get back to you.")
+    return ConversationHandler.END
+
+
 def cancel_handler(_update, context):
     logger.info("Aborting 'terraria_admin' conversation.")
 
@@ -482,6 +541,9 @@ config_action_inlines = {
     'rename': config_edit_rename_handler,
     'delete': config_edit_delete_handler,
     'toggle': config_edit_toggle_handler,
+    'status': config_edit_status_handler,
+    'start': config_edit_start_handler,
+    'stop': config_edit_stop_handler,
     'cancel': cancel_handler,
 }
 config_del_confirm_inlines = {
