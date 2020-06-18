@@ -5,6 +5,7 @@ from requests import get as requests_get
 from fjfnaranjobot.components.terraria.models import TerrariaProfile
 from fjfnaranjobot.components.terraria.utils import register_activity
 from fjfnaranjobot.logging import getLogger
+from time import sleep
 
 logger = getLogger(__name__)
 
@@ -14,13 +15,16 @@ def _build_microapi_url(host, token, endpoint):
 
 
 def _build_tshock_url(host, endpoint, token, params):
-    return 'http://{}:7878/{}?token={}'.format(host, endpoint, token) + '&'.join(params)
+    url = 'http://{}:7878/{}?token={}'.format(host, endpoint, token)
+    if len(params) > 0:
+        url = url + '&' + ('&'.join(params))
+    return url
 
 
 @task(bind=True)
-def _giving_ec2_instance_state_and_ip(self, profile_id, message_id):
+def _giving_ec2_instance_state_and_ip(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
-    profile = TerrariaProfile(profile_id)
+    profile = TerrariaProfile(payload['profile_id'])
     ec2 = resource(
         'ec2',
         region_name=profile.aws_default_region,
@@ -28,58 +32,60 @@ def _giving_ec2_instance_state_and_ip(self, profile_id, message_id):
         aws_secret_access_key=profile.aws_secret_access_key,
     )
     instance = ec2.Instance(profile.instance_id)
-    return instance.public_ip_address, instance.state['Name'], message_id, profile_id
+    payload['instance_ip'] = instance.public_ip_address
+    payload['instance_state'] = instance.state['Name']
+    return payload
 
 
 @task(bind=True)
-def _report_on_faulty_ec2_instance_state(self, last_args):
+def _log_user_activity_report_giving_ec2_instance_state_and_ip(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
-    instance_ip, _instance_state, message_id, profile_id = last_args
-    return instance_ip, message_id, profile_id
+    return payload
 
 
 @task(bind=True)
-def _giving_microapi_state(self, last_args):
+def _giving_microapi_state(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
-    instance_ip, message_id, profile_id = last_args
-    profile = TerrariaProfile(profile_id)
-    status_url = _build_microapi_url(instance_ip, profile.microapi_token, 'status')
-    microapi_state = requests_get(status_url).text
-    return microapi_state, instance_ip, message_id, profile_id
+    profile = TerrariaProfile(payload['profile_id'])
+    status_url = _build_microapi_url(
+        payload['instance_ip'], profile.microapi_token, 'status'
+    )
+    payload['status_response'] = requests_get(status_url).text
+    return payload
 
 
 @task(bind=True)
-def _report_on_faulty_microapi_state(self, last_args):
+def _log_user_activity_report_giving_microapi_state(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
-    _microapi_state, instance_ip, message_id, profile_id = last_args
-    return instance_ip, message_id, profile_id
+    return payload
 
 
 @task(bind=True)
-def _giving_tshock_players(self, last_args):
+def _giving_tshock_status_and_players(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
-    instance_ip, message_id, profile_id = last_args
-    profile = TerrariaProfile(profile_id)
+    profile = TerrariaProfile(payload['profile_id'])
     active_list_url = _build_tshock_url(
-        instance_ip, 'v2/server/status', profile.tshock_token, ['players=true']
+        payload['instance_ip'],
+        'v2/server/status',
+        profile.tshock_token,
+        ['players=true'],
     )
     tshock_status = requests_get(active_list_url).json()
-    players = tshock_status['players']
-    return players, message_id, profile_id
+    payload['tshock_status'] = tshock_status['status']
+    payload['tshock_players'] = tshock_status['players']
+    return payload
 
 
 @task(bind=True)
-def _report_on_faulty_tshock_state(self, last_args):
+def _log_user_activity_report_giving_tshock_status_and_players(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
-    players, message_id, profile_id = last_args
-    return players, message_id, profile_id
+    return payload
 
 
 @task(bind=True)
-def _log_user_activity(self, last_args):
+def _log_user_activity(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
-    players, _message_id, _profile_id = last_args
-    register_activity(players)
+    register_activity(payload['tshock_players'])
 
 
 def log_user_activity_chain(profile_id, message_id):
@@ -87,12 +93,177 @@ def log_user_activity_chain(profile_id, message_id):
         "Registering chain 'log_user_activity' with "
         f"profile id {profile_id} and message_id {message_id}."
     )
+    payload = {'profile_id': profile_id, 'message_id': message_id}
     return chain(
-        _giving_ec2_instance_state_and_ip.s(profile_id, message_id),
-        _report_on_faulty_ec2_instance_state.s(),
+        _giving_ec2_instance_state_and_ip.s(payload),
+        _log_user_activity_report_giving_ec2_instance_state_and_ip.s(),
         _giving_microapi_state.s(),
-        _report_on_faulty_microapi_state.s(),
-        _giving_tshock_players.s(),
-        _report_on_faulty_tshock_state.s(),
+        _log_user_activity_report_giving_microapi_state.s(),
+        _giving_tshock_status_and_players.s(),
+        _log_user_activity_report_giving_tshock_status_and_players.s(),
         _log_user_activity.s(),
+    )()
+
+
+@task(bind=True)
+def _stop_server_report_giving_ec2_instance_state_and_ip(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _stop_server_report_giving_tshock_status_and_players(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _tshock_stop(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    profile = TerrariaProfile(payload['profile_id'])
+    off_url = _build_tshock_url(
+        payload['instance_ip'], 'v2/server/off', profile.tshock_token, ['confirm=true']
+    )
+    sleep(10)
+    payload['off_status'] = requests_get(off_url).json()['status'] == '200'
+    return payload
+
+
+@task(bind=True)
+def _stop_server_report_tshock_stop(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _microapi_backup(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    profile = TerrariaProfile(payload['profile_id'])
+    status_url = _build_microapi_url(
+        payload['instance_ip'], profile.microapi_token, 'backup'
+    )
+    sleep(20)
+    payload['backup_response'] = requests_get(status_url).text
+    return payload
+
+
+@task(bind=True)
+def _stop_server_report_microapi_backup(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _stop_instance(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    profile = TerrariaProfile(payload['profile_id'])
+    ec2 = resource(
+        'ec2',
+        region_name=profile.aws_default_region,
+        aws_access_key_id=profile.aws_access_key_id,
+        aws_secret_access_key=profile.aws_secret_access_key,
+    )
+    instance = ec2.Instance(profile.instance_id)
+    instance.stop()
+    return payload
+
+
+@task(bind=True)
+def _stop_server_report_stop_instance(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+def stop_server_chain(profile_id, message_id):
+    logger.info(
+        "Registering chain 'stop_server' with "
+        f"profile id {profile_id} and message_id {message_id}."
+    )
+    payload = {'profile_id': profile_id, 'message_id': message_id}
+    return chain(
+        _giving_ec2_instance_state_and_ip.s(payload),
+        _stop_server_report_giving_ec2_instance_state_and_ip.s(),
+        _giving_tshock_status_and_players.s(),
+        _stop_server_report_giving_tshock_status_and_players.s(),
+        _tshock_stop.s(),
+        _stop_server_report_tshock_stop.s(),
+        _microapi_backup.s(),
+        _stop_server_report_microapi_backup.s(),
+        _stop_instance.s(),
+        _stop_server_report_stop_instance.s(),
+    )()
+
+
+@task(bind=True)
+def _start_server_report_giving_ec2_instance_state_and_ip(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _start_server_report_stop_instance(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _start_instance(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    profile = TerrariaProfile(payload['profile_id'])
+    ec2 = resource(
+        'ec2',
+        region_name=profile.aws_default_region,
+        aws_access_key_id=profile.aws_access_key_id,
+        aws_secret_access_key=profile.aws_secret_access_key,
+    )
+    instance = ec2.Instance(profile.instance_id)
+    instance.start()
+    sleep(60)
+    return payload
+
+
+@task(bind=True)
+def _start_server_report_start_instance(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _start_server_report_giving_ec2_instance_state_and_ip_after(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+@task(bind=True)
+def _microapi_start(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    profile = TerrariaProfile(payload['profile_id'])
+    status_url = _build_microapi_url(
+        payload['instance_ip'], profile.microapi_token, 'start'
+    )
+    payload['start_response'] = requests_get(status_url).text
+    return payload
+
+
+@task(bind=True)
+def _start_server_report_microapi_start(self, payload):
+    logger.debug(f"Entering inner task {self.name} .")
+    return payload
+
+
+def start_server_chain(profile_id, message_id):
+    logger.info(
+        "Registering chain 'stop_server' with "
+        f"profile id {profile_id} and message_id {message_id}."
+    )
+    payload = {'profile_id': profile_id, 'message_id': message_id}
+    return chain(
+        _giving_ec2_instance_state_and_ip.s(payload),
+        _start_server_report_giving_ec2_instance_state_and_ip.s(),
+        _start_instance.s(),
+        _giving_ec2_instance_state_and_ip.s(),
+        _start_server_report_giving_ec2_instance_state_and_ip_after.s(),
+        _start_server_report_start_instance.s(),
+        _microapi_start.s(),
+        _start_server_report_microapi_start.s(),
     )()

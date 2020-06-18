@@ -1,5 +1,3 @@
-from fjfnaranjobot.logging import getLogger
-
 _SECONDS_PER_PORTION = 60 * 5
 
 
@@ -11,4 +9,4 @@ def aproximate_datetime(datetime):
 
 
 def register_activity(players):
-    getLogger(__name__).error(players)
+    pass
