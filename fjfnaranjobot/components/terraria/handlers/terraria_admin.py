@@ -217,9 +217,7 @@ def config_select_handler(_update, context):
 
 def config_select_name_handler(update, context):
     query = update.callback_query.data
-    profile = TerrariaProfile.select_one(
-        id=context.chat_data['keyboard_profiles'][int(query)][0]
-    )
+    profile = TerrariaProfile(context.chat_data['keyboard_profiles'][int(query)][0])
     logger.info(
         f"Received selected profile '{profile.name}'. "
         "Asking what to do with selected profile."
@@ -343,7 +341,7 @@ def config_edit_domain_name_handler(update, context):
     logger.info("Received value. Saving changes.")
 
     value = update.message.text
-    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    profile = TerrariaProfile(context.user_data['selected_profile'])
     profile.aws_default_region = context.user_data['aws_default_region']
     profile.aws_access_key_id = context.user_data['aws_access_key_id']
     profile.aws_secret_access_key = context.user_data['aws_secret_access_key']
@@ -361,7 +359,7 @@ def config_edit_domain_name_handler(update, context):
 
 
 def config_edit_rename_handler(_update, context):
-    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    profile = TerrariaProfile(context.user_data['selected_profile'])
     logger.info(f"Requesting new name for profile '{profile.name}'.")
 
     context.bot.edit_message_text(
@@ -378,7 +376,7 @@ def config_edit_rename_name_handler(update, context):
     new_name = update.message.text
     logger.info(f"Received new name '{new_name}'. Saving changes.")
 
-    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    profile = TerrariaProfile(context.user_data['selected_profile'])
     old_name = profile.name
     profile.name = new_name
     profile.commit()
@@ -394,7 +392,7 @@ def config_edit_rename_name_handler(update, context):
 
 
 def config_edit_delete_handler(_update, context):
-    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    profile = TerrariaProfile(context.user_data['selected_profile'])
     logger.info(
         f"Received deletion request for profile {profile.name}. Asking to confirm."
     )
@@ -415,7 +413,7 @@ def config_edit_delete_handler(_update, context):
 
 
 def config_edit_delete_confirm_handler(_update, context):
-    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    profile = TerrariaProfile(context.user_data['selected_profile'])
     logger.info(f"Deleted profile {profile.name}.")
 
     profile.delete()
@@ -431,7 +429,7 @@ def config_edit_delete_confirm_handler(_update, context):
 
 
 def config_edit_toggle_handler(_update, context):
-    profile = TerrariaProfile.select_one(id=context.user_data['selected_profile'])
+    profile = TerrariaProfile(context.user_data['selected_profile'])
     logger.info(
         f"Requested status toggle for profile '{profile.name}'. Saving changes."
     )

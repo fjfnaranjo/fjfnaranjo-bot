@@ -185,7 +185,7 @@ class DbRelation:
             yield value
 
     @classmethod
-    def select_many(cls, **kwargs):
+    def select(cls, **kwargs):
         all_values = []
         dummy = cls()
         with DbRelation._cursor(dummy.relation_name, cls.fields) as cur:
@@ -206,7 +206,3 @@ class DbRelation:
                     setattr(relation, field[0].name, field[1])
                 all_values.append(relation)
             return all_values
-
-    @classmethod
-    def select_one(cls, **kwargs):
-        return cls.select_many(**kwargs)[0]
