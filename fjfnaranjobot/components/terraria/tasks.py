@@ -1,3 +1,5 @@
+from time import sleep
+
 from boto3 import resource
 from celery import chain, task
 from requests import get as requests_get
@@ -5,7 +7,6 @@ from requests import get as requests_get
 from fjfnaranjobot.components.terraria.models import TerrariaProfile
 from fjfnaranjobot.components.terraria.utils import register_activity
 from fjfnaranjobot.logging import getLogger
-from time import sleep
 
 logger = getLogger(__name__)
 
