@@ -1,5 +1,5 @@
 pytest~=6.0
 pytest-env~=0.6
 pytest-subtests~=0.3
-black==19.10b0
+black==20.8b1
 isort~=5.4
