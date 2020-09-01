@@ -27,7 +27,9 @@ class SorryHandlersTests(BotHandlerTestCase):
     def test_sorry_handler_processor(self):
         with self.assert_log_dispatch('Sending \'sorry\' back to the user.', logger):
             sorry_handler(*self.update_and_context)
-        self.assert_reply_text('I don\'t know what to do about that. Sorry :(',)
+        self.assert_reply_text(
+            'I don\'t know what to do about that. Sorry :(',
+        )
 
     def test_sorry_group_handler_processor_bot(self):
         bot_mention = f'@{BOT_USERNAME}'

@@ -101,7 +101,8 @@ class ConfigHandlersTests(BotHandlerTestCase):
 
     def test_get_handler(self):
         with self.assert_log(
-            'Requesting key name to get its value.', logger,
+            'Requesting key name to get its value.',
+            logger,
         ):
             assert GET_VAR == get_handler(*self.update_and_context)
         self.assert_edit_call(
@@ -142,7 +143,8 @@ class ConfigHandlersTests(BotHandlerTestCase):
 
     def test_set_handler(self):
         with self.assert_log(
-            'Requesting key name to set its value.', logger,
+            'Requesting key name to set its value.',
+            logger,
         ):
             assert SET_VAR == set_handler(*self.update_and_context)
         self.assert_edit_call(
@@ -161,7 +163,8 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.addCleanup(patcher.stop)
         self.set_string_command('key')
         with self.assert_log(
-            'Requesting value to set the key.', logger,
+            'Requesting value to set the key.',
+            logger,
         ):
             assert SET_VALUE == set_var_handler(*self.update_and_context)
         self.assert_edit_call(
@@ -181,7 +184,8 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.addCleanup(patcher.stop)
         self.set_string_command('key')
         with self.assert_log(
-            'Requesting value to set the key.', logger,
+            'Requesting value to set the key.',
+            logger,
         ):
             assert SET_VALUE == set_var_handler(*self.update_and_context)
         self.assert_edit_call(
@@ -211,7 +215,8 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.chat_data['key'] = 'key'
         self.set_string_command('val')
         with self.assert_log(
-            'Stored \'val\' in key \'key\'.', logger,
+            'Stored \'val\' in key \'key\'.',
+            logger,
         ):
             assert ConversationHandler.END == set_value_handler(
                 *self.update_and_context
@@ -223,7 +228,8 @@ class ConfigHandlersTests(BotHandlerTestCase):
 
     def test_del_handler(self):
         with self.assert_log(
-            'Requesting key name to clear its value.', logger,
+            'Requesting key name to clear its value.',
+            logger,
         ):
             assert DEL_VAR == del_handler(*self.update_and_context)
         self.assert_edit_call(
@@ -254,7 +260,8 @@ class ConfigHandlersTests(BotHandlerTestCase):
         self.addCleanup(patcher.stop)
         self.set_string_command('key')
         with self.assert_log(
-            'Deleting config with key \'key\'.', logger,
+            'Deleting config with key \'key\'.',
+            logger,
         ):
             assert ConversationHandler.END == del_var_handler(*self.update_and_context)
         self.assert_delete(1, 2)
@@ -275,7 +282,8 @@ class ConfigHandlersTests(BotHandlerTestCase):
             {'chat_id': 1, 'message_id': 2, 'key': 'key', 'some': 'content'}
         )
         with self.assert_log(
-            'Aborting \'config\' conversation.', logger,
+            'Aborting \'config\' conversation.',
+            logger,
         ):
             assert ConversationHandler.END == cancel_handler(*self.update_and_context)
         self.assert_delete(1, 2)

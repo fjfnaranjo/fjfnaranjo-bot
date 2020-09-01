@@ -109,7 +109,8 @@ class _FriendsProxy(MutableSet):
     def __contains__(self, user):
         with self._friends_cursor() as cur:
             cur.execute(
-                'SELECT id FROM friends WHERE id=?', (user.id,),
+                'SELECT id FROM friends WHERE id=?',
+                (user.id,),
             )
             exists = cur.fetchone()
             return True if exists is not None else None
@@ -135,7 +136,8 @@ class _FriendsProxy(MutableSet):
         )
         with self._friends_cursor() as cur:
             cur.execute(
-                'SELECT id FROM friends WHERE id=?', (user.id,),
+                'SELECT id FROM friends WHERE id=?',
+                (user.id,),
             )
             exists = True if len(cur.fetchall()) > 0 else False
             if exists:
@@ -147,7 +149,8 @@ class _FriendsProxy(MutableSet):
             else:
                 with self._friends_cursor() as cur:
                     cur.execute(
-                        'INSERT INTO friends VALUES (?, ?)', (user.id, user.username),
+                        'INSERT INTO friends VALUES (?, ?)',
+                        (user.id, user.username),
                     )
 
     def discard(self, user):
@@ -156,7 +159,8 @@ class _FriendsProxy(MutableSet):
         )
         with self._friends_cursor() as cur:
             cur.execute(
-                'DELETE FROM friends WHERE id=?', (user.id,),
+                'DELETE FROM friends WHERE id=?',
+                (user.id,),
             )
 
     def sorted(self):

@@ -120,7 +120,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
 
     def test_add_handler(self):
         with self.assert_log(
-            'Requesting contact to add as a friend.', logger,
+            'Requesting contact to add as a friend.',
+            logger,
         ):
             assert ADD_FRIEND == add_handler(*self.update_and_context)
         self.assert_edit_call(
@@ -226,7 +227,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
 
     def test_del_handler(self):
         with self.assert_log(
-            'Requesting contact to remove as a friend.', logger,
+            'Requesting contact to remove as a friend.',
+            logger,
         ):
             assert DEL_FRIEND == del_handler(*self.update_and_context)
         self.assert_edit_call(
@@ -241,7 +243,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
     def test_del_friend_handler(self):
         self.set_contact(1, '1fn', '1ln')
         with self.assert_log(
-            'Removing 1un as a friend.', logger,
+            'Removing 1un as a friend.',
+            logger,
         ):
             assert ConversationHandler.END == del_friend_handler(
                 *self.update_and_context
@@ -263,7 +266,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
     def test_del_friend_handler_no_first_name(self):
         self.set_contact(1, None, '1ln')
         with self.assert_log(
-            'Removing 1un as a friend.', logger,
+            'Removing 1un as a friend.',
+            logger,
         ):
             assert ConversationHandler.END == del_friend_handler(
                 *self.update_and_context
@@ -276,7 +280,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
     def test_del_friend_handler_no_last_name(self):
         self.set_contact(1, '1fn', None)
         with self.assert_log(
-            'Removing 1un as a friend.', logger,
+            'Removing 1un as a friend.',
+            logger,
         ):
             assert ConversationHandler.END == del_friend_handler(
                 *self.update_and_context
@@ -289,7 +294,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
     def test_del_friend_handler_dont_exists(self):
         self.set_contact(9, '9fn', '9ln')
         with self.assert_log(
-            'Not removing 9fn 9ln because its not a friend.', logger,
+            'Not removing 9fn 9ln because its not a friend.',
+            logger,
         ):
             assert ConversationHandler.END == del_friend_handler(
                 *self.update_and_context
@@ -301,7 +307,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
     def test_del_friend_id_handler_number_ok(self):
         self.set_string_command('1')
         with self.assert_log(
-            'Removing 1un as a friend.', logger,
+            'Removing 1un as a friend.',
+            logger,
         ):
             assert ConversationHandler.END == del_friend_id_handler(
                 *self.update_and_context
@@ -346,7 +353,8 @@ class FriendsHandlersTests(BotHandlerTestCase):
             }
         )
         with self.assert_log(
-            'Aborting \'friends\' conversation.', logger,
+            'Aborting \'friends\' conversation.',
+            logger,
         ):
             assert ConversationHandler.END == cancel_handler(*self.update_and_context)
         self.assert_delete(1, 2)

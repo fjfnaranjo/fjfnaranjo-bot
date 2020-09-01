@@ -47,7 +47,8 @@ class LoggingTests(BotTestCase):
         assert 'Invalid dir name in BOT_LOGFILE var.' == e.exception.args[0]
 
     @patch(
-        f'{MODULE_PATH}._get_log_path', return_value=join(LOGFILE_TEST_DIR, 'file'),
+        f'{MODULE_PATH}._get_log_path',
+        return_value=join(LOGFILE_TEST_DIR, 'file'),
     )
     def test_reset_invalid_db_file_name(self, _get_log_path):
         chmod(LOGFILE_TEST_DIR, 0)

@@ -92,12 +92,14 @@ def get_var_handler(update, context):
         if isinstance(e, ValueError):
             logger.info("Key was invalid.")
             context.bot.send_message(
-                context.chat_data['chat_id'], f"The key '{key}' is not a valid key.",
+                context.chat_data['chat_id'],
+                f"The key '{key}' is not a valid key.",
             )
         else:
             logger.info("Key doesn't exists.")
             context.bot.send_message(
-                context.chat_data['chat_id'], f"The key '{key}' doesn't exists.",
+                context.chat_data['chat_id'],
+                f"The key '{key}' doesn't exists.",
             )
         _clear_context_data(context)
         return ConversationHandler.END
@@ -141,7 +143,8 @@ def set_var_handler(update, context):
         logger.info("Can't set invalid config key 'invalid-key'.")
 
         context.bot.delete_message(
-            context.chat_data['chat_id'], context.chat_data['message_id'],
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
         )
         context.bot.send_message(
             context.chat_data['chat_id'], f"The key '{key}' is not a valid key."
@@ -177,7 +180,8 @@ def set_value_handler(update, context):
     logger.info(f"Stored {shown_value} in key '{key}'.")
 
     context.bot.delete_message(
-        context.chat_data['chat_id'], context.chat_data['message_id'],
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
     )
     context.bot.send_message(context.chat_data['chat_id'], "I'll remember that.")
     _clear_context_data(context)
@@ -211,12 +215,14 @@ def del_var_handler(update, context):
         if isinstance(e, ValueError):
             logger.info("Key was invalid.")
             context.bot.send_message(
-                context.chat_data['chat_id'], f"The key '{key}' is not a valid key.",
+                context.chat_data['chat_id'],
+                f"The key '{key}' is not a valid key.",
             )
         else:
             logger.info("Key doesn't exists.")
             context.bot.send_message(
-                context.chat_data['chat_id'], f"The key '{key}' doesn't exists.",
+                context.chat_data['chat_id'],
+                f"The key '{key}' doesn't exists.",
             )
         _clear_context_data(context)
         return ConversationHandler.END
@@ -284,4 +290,10 @@ handlers = (
     ),
 )
 
-commands = (Command("Edit bot configuration.", None, 'config',),)
+commands = (
+    Command(
+        "Edit bot configuration.",
+        None,
+        'config',
+    ),
+)

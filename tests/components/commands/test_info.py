@@ -63,24 +63,36 @@ class CommandsHandlersTests(BotHandlerTestCase):
 
     @patch(
         f'{MODULE_PATH}.command_list',
-        [Command('a desc', 'a', None), Command('b desc', 'b', None),],
+        [
+            Command('a desc', 'a', None),
+            Command('b desc', 'b', None),
+        ],
     )
     def test_commands_handler_only_prod(self):
         self.user_is_owner()
         with self.assert_log_dispatch('Sending list of commands.', logger):
             commands_handler(*self.update_and_context)
         self.assert_reply_calls(
-            [CallWithMarkup("a - a desc\nb - b desc"), CallWithMarkup("no commands"),]
+            [
+                CallWithMarkup("a - a desc\nb - b desc"),
+                CallWithMarkup("no commands"),
+            ]
         )
 
     @patch(
         f'{MODULE_PATH}.command_list',
-        [Command('c desc', None, 'c'), Command('d desc', None, 'd'),],
+        [
+            Command('c desc', None, 'c'),
+            Command('d desc', None, 'd'),
+        ],
     )
     def test_commands_handler_only_dev(self):
         self.user_is_owner()
         with self.assert_log_dispatch('Sending list of commands.', logger):
             commands_handler(*self.update_and_context)
         self.assert_reply_calls(
-            [CallWithMarkup("no commands"), CallWithMarkup("c - c desc\nd - d desc"),]
+            [
+                CallWithMarkup("no commands"),
+                CallWithMarkup("c - c desc\nd - d desc"),
+            ]
         )

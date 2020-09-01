@@ -80,7 +80,8 @@ def list_handler(_update, context):
 
     if len(friends) == 0:
         context.bot.delete_message(
-            context.chat_data['chat_id'], context.chat_data['message_id'],
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
         )
         context.bot.send_message(context.chat_data['chat_id'], "You have no friends.")
         _clear_context_data(context)
@@ -163,7 +164,8 @@ def list_del_confirmed_handler(_update, context):
     friends.discard(delete_user)
 
     context.bot.delete_message(
-        context.chat_data['chat_id'], context.chat_data['message_id'],
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
     )
     context.bot.send_message(context.chat_data['chat_id'], "Ok.")
     _clear_context_data(context)
@@ -187,10 +189,12 @@ def add_friend_handler(update, context):
     if contact.user_id is None:
         logger.info("Received a contact without a Telegram ID.")
         context.bot.delete_message(
-            context.chat_data['chat_id'], context.chat_data['message_id'],
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
         )
         context.bot.send_message(
-            context.chat_data['chat_id'], "That doesn\'t look like a Telegram user.",
+            context.chat_data['chat_id'],
+            "That doesn\'t look like a Telegram user.",
         )
         _clear_context_data(context)
         return ConversationHandler.END
@@ -205,7 +209,8 @@ def add_friend_handler(update, context):
     logger.info(f"Received a contact. Adding {user.username} as a friend.")
     friends.add(user)
     context.bot.delete_message(
-        context.chat_data['chat_id'], context.chat_data['message_id'],
+        context.chat_data['chat_id'],
+        context.chat_data['message_id'],
     )
     context.bot.send_message(
         context.chat_data['chat_id'], f"Added {user.username} as a friend."
@@ -223,10 +228,12 @@ def add_friend_id_handler(update, context):
         logger.info(f"Received and invalid id {shown_id} trying to add a friend.")
 
         context.bot.delete_message(
-            context.chat_data['chat_id'], context.chat_data['message_id'],
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
         )
         context.bot.send_message(
-            context.chat_data['chat_id'], "That's not a contact nor a single valid id.",
+            context.chat_data['chat_id'],
+            "That's not a contact nor a single valid id.",
         )
         _clear_context_data(context)
         return ConversationHandler.END
@@ -242,10 +249,12 @@ def add_friend_id_handler(update, context):
                 f"Received and invalid number in id '{user_id}' trying to add a friend."
             )
             context.bot.delete_message(
-                context.chat_data['chat_id'], context.chat_data['message_id'],
+                context.chat_data['chat_id'],
+                context.chat_data['message_id'],
             )
             context.bot.send_message(
-                context.chat_data['chat_id'], "That's not a contact nor a valid id.",
+                context.chat_data['chat_id'],
+                "That's not a contact nor a valid id.",
             )
             _clear_context_data(context)
             return ConversationHandler.END
@@ -258,7 +267,8 @@ def add_friend_id_handler(update, context):
             friends.add(user)
 
             context.bot.delete_message(
-                context.chat_data['chat_id'], context.chat_data['message_id'],
+                context.chat_data['chat_id'],
+                context.chat_data['message_id'],
             )
             context.bot.send_message(
                 context.chat_data['chat_id'], f"Added {user.username} as a friend."
@@ -285,10 +295,12 @@ def del_friend_handler(update, context):
     if contact.user_id is None:
         logger.info("Received a contact without a Telegram ID.")
         context.bot.delete_message(
-            context.chat_data['chat_id'], context.chat_data['message_id'],
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
         )
         context.bot.send_message(
-            context.chat_data['chat_id'], "That doesn\'t look like a Telegram user.",
+            context.chat_data['chat_id'],
+            "That doesn\'t look like a Telegram user.",
         )
         _clear_context_data(context)
         return ConversationHandler.END
@@ -310,7 +322,8 @@ def del_friend_handler(update, context):
         friends.discard(user)
 
         context.bot.delete_message(
-            context.chat_data['chat_id'], context.chat_data['message_id'],
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
         )
         context.bot.send_message(
             context.chat_data['chat_id'], f"Removed {friend_username} as a friend."
@@ -323,7 +336,8 @@ def del_friend_handler(update, context):
         logger.info(f"Not removing {user.username} because its not a friend.")
 
         context.bot.delete_message(
-            context.chat_data['chat_id'], context.chat_data['message_id'],
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
         )
         context.bot.send_message(
             context.chat_data['chat_id'], f"{user.username} isn't a friend."
@@ -341,10 +355,12 @@ def del_friend_id_handler(update, context):
         logger.info(f"Received and invalid id {shown_id} trying to remove a friend.")
 
         context.bot.delete_message(
-            context.chat_data['chat_id'], context.chat_data['message_id'],
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
         )
         context.bot.send_message(
-            context.chat_data['chat_id'], "That's not a contact nor a single valid id.",
+            context.chat_data['chat_id'],
+            "That's not a contact nor a single valid id.",
         )
         _clear_context_data(context)
         return ConversationHandler.END
@@ -360,10 +376,12 @@ def del_friend_id_handler(update, context):
                 f"Received and invalid number in id '{user_id}' trying to remove a friend."
             )
             context.bot.delete_message(
-                context.chat_data['chat_id'], context.chat_data['message_id'],
+                context.chat_data['chat_id'],
+                context.chat_data['message_id'],
             )
             context.bot.send_message(
-                context.chat_data['chat_id'], "That's not a contact nor a valid id.",
+                context.chat_data['chat_id'],
+                "That's not a contact nor a valid id.",
             )
             _clear_context_data(context)
             return ConversationHandler.END
@@ -380,7 +398,8 @@ def del_friend_id_handler(update, context):
                 friends.discard(user)
 
                 context.bot.delete_message(
-                    context.chat_data['chat_id'], context.chat_data['message_id'],
+                    context.chat_data['chat_id'],
+                    context.chat_data['message_id'],
                 )
                 context.bot.send_message(
                     context.chat_data['chat_id'],
@@ -393,7 +412,8 @@ def del_friend_id_handler(update, context):
                 logger.info(f"Not removing {user.username} because its not a friend.")
 
                 context.bot.delete_message(
-                    context.chat_data['chat_id'], context.chat_data['message_id'],
+                    context.chat_data['chat_id'],
+                    context.chat_data['message_id'],
                 )
                 context.bot.send_message(
                     context.chat_data['chat_id'], f"{user.username} isn't a friend."
@@ -407,7 +427,8 @@ def cancel_handler(_update, context):
 
     if 'message_id' in context.chat_data:
         context.bot.delete_message(
-            context.chat_data['chat_id'], context.chat_data['message_id'],
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
         )
     context.bot.send_message(context.chat_data['chat_id'], "Ok.")
     _clear_context_data(context)
@@ -466,4 +487,10 @@ handlers = (
     ),
 )
 
-commands = (Command("Manage friends.", None, 'friends',),)
+commands = (
+    Command(
+        "Manage friends.",
+        None,
+        'friends',
+    ),
+)

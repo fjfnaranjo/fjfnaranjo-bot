@@ -170,10 +170,12 @@ def config_select_handler(_update, context):
         logger.info("Not showing any profile because there are no profiles.")
 
         context.bot.delete_message(
-            context.chat_data['chat_id'], context.chat_data['message_id'],
+            context.chat_data['chat_id'],
+            context.chat_data['message_id'],
         )
         context.bot.send_message(
-            context.chat_data['chat_id'], "You don't have any profiles yet.",
+            context.chat_data['chat_id'],
+            "You don't have any profiles yet.",
         )
         _clear_context_data(context)
         return ConversationHandler.END
@@ -236,13 +238,27 @@ def config_select_name_handler(update, context):
 
     new_status = "Disable" if profile.status else "Enable"
     keyboard = [
-        [InlineKeyboardButton("Edit", callback_data='edit'),],
-        [InlineKeyboardButton("Rename", callback_data='rename'),],
-        [InlineKeyboardButton("Delete", callback_data='delete'),],
-        [InlineKeyboardButton(new_status, callback_data='toggle'),],
-        [InlineKeyboardButton("Status", callback_data='status'),],
-        [InlineKeyboardButton("Start", callback_data='start'),],
-        [InlineKeyboardButton("Stop", callback_data='stop'),],
+        [
+            InlineKeyboardButton("Edit", callback_data='edit'),
+        ],
+        [
+            InlineKeyboardButton("Rename", callback_data='rename'),
+        ],
+        [
+            InlineKeyboardButton("Delete", callback_data='delete'),
+        ],
+        [
+            InlineKeyboardButton(new_status, callback_data='toggle'),
+        ],
+        [
+            InlineKeyboardButton("Status", callback_data='status'),
+        ],
+        [
+            InlineKeyboardButton("Start", callback_data='start'),
+        ],
+        [
+            InlineKeyboardButton("Stop", callback_data='stop'),
+        ],
         [InlineKeyboardButton("Cancel", callback_data='cancel')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -554,7 +570,9 @@ config_del_confirm_inlines = {
 terraria_admin_conversation = ConversationHandler(
     entry_points=[CommandHandler('terraria_admin', terraria_admin_handler)],
     states={
-        NEW_OR_CONFIG: [CallbackQueryHandler(inline_handler(action_inlines, logger)),],
+        NEW_OR_CONFIG: [
+            CallbackQueryHandler(inline_handler(action_inlines, logger)),
+        ],
         NEW_NAME: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
             MessageHandler(Filters.text, new_name_handler),

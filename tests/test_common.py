@@ -122,7 +122,8 @@ class InlineHandlerTests(TestCase):
         mocker_update.callback_query.data = 'other'
 
         result_function = inline_handler(
-            {'data': lambda _update, _context: None}, mocked_logger,
+            {'data': lambda _update, _context: None},
+            mocked_logger,
         )
         with self.assertRaises(ValueError) as e:
             result_function(mocker_update, None)

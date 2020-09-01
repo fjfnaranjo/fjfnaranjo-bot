@@ -74,13 +74,33 @@ class Bot:
             callback_name = _get_handler_callback_name(handler)
             if isinstance(handler, CommandHandler):
                 for command in handler.command:
-                    names_callbacks.append((command, callback_name,))
+                    names_callbacks.append(
+                        (
+                            command,
+                            callback_name,
+                        )
+                    )
             elif isinstance(handler, StringCommandHandler):
-                names_callbacks.append((handler.command, callback_name,))
+                names_callbacks.append(
+                    (
+                        handler.command,
+                        callback_name,
+                    )
+                )
             elif isinstance(handler, MessageHandler):
-                names_callbacks.append(('<message>', callback_name,))
+                names_callbacks.append(
+                    (
+                        '<message>',
+                        callback_name,
+                    )
+                )
             else:
-                names_callbacks.append(('<unknown command>', callback_name,))
+                names_callbacks.append(
+                    (
+                        '<unknown command>',
+                        callback_name,
+                    )
+                )
 
         return names_callbacks
 
@@ -153,7 +173,8 @@ class Bot:
         # Register webhook request URL (using self signed cert)
         elif url_path == ('/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook_self'))):
             self.bot.set_webhook(
-                url=self.webhook_url, certificate=open(BOT_WEBHOOK_CERT, 'rb'),
+                url=self.webhook_url,
+                certificate=open(BOT_WEBHOOK_CERT, 'rb'),
             )
             logger.info("Reply with ok to register_webhook_self.")
             return 'ok (self)'

@@ -46,11 +46,13 @@ class _ConfigurationProxy(MutableMapping):
             exists = cur.fetchone()
             if exists is None:
                 cur.execute(
-                    'INSERT INTO config VALUES (?, ?) ', (key, value),
+                    'INSERT INTO config VALUES (?, ?) ',
+                    (key, value),
                 )
             else:
                 cur.execute(
-                    'UPDATE config SET key=?, value=? WHERE key=?', (key, value, key),
+                    'UPDATE config SET key=?, value=? WHERE key=?',
+                    (key, value, key),
                 )
 
     def __delitem__(self, key):
