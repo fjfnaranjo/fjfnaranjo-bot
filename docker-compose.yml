@@ -10,34 +10,22 @@ services:
     links:
       - bot
   bot:
-    build: .
-    image: fjfnaranjo-bot
     working_dir: /bot
     env_file: .env
-    command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --chdir /bot --py-autoreload 1
+    command: uwsgi --plugins python3 --http 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --chdir /bot --py-autoreload 1
     links:
-      - rabbitmq
       - redis
   celery-worker:
-    build: .
-    image: fjfnaranjo-bot
     working_dir: /bot
     env_file: .env
     command: celery -A fjfnaranjobot.tasks worker --loglevel=debug
     links:
-      - rabbitmq
       - redis
   celery-beat:
-    build: .
-    image: fjfnaranjo-bot
     working_dir: /bot
     env_file: .env
     command: celery -A fjfnaranjobot.tasks beat --loglevel=debug -s /bot/botdata/celerybeat-schedule --pidfile=/bot/botdata/celerybeat.pid
     links:
-      - rabbitmq
       - redis
-  rabbitmq:
-    image: rabbitmq:3.8-management-alpine
-    hostname: rabbitmq
   redis:
     image: redis:6.0-alpine

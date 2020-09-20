@@ -1,24 +1,23 @@
 version: "3"
 services:
   bot:
+    image: fjfnaranjo/fjfnaranjo-bot:latest
     volumes:
       - bot-data:/bot/botdata
-    command: uwsgi --plugins python3 --socket 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --master --processes 1 --threads 2 --chdir /bot
+    command: python3 -m fjfnaranjobot.server
   celery-worker:
+    image: fjfnaranjo/fjfnaranjo-bot:latest
     volumes:
       - bot-data:/bot/botdata
     command: celery -A fjfnaranjobot.tasks worker --loglevel=info
   celery-beat:
+    image: fjfnaranjo/fjfnaranjo-bot:latest
     volumes:
       - bot-data:/bot/botdata
     command: celery -A fjfnaranjobot.tasks beat --loglevel=info -s /bot/botdata/celerybeat-schedule --pidfile=/bot/botdata/celerybeat.pid
-  rabbitmq:
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
   redis:
     volumes:
       - redis-data:/data
 volumes:
   bot-data:
-  rabbitmq-data: 
   redis-data:

@@ -1,24 +1,26 @@
 version: "3"
 services:
   bot:
+    build: .
+    image: fjfnaranjo/fjfnaranjo-bot:dev
     volumes:
       - .:/bot
       - "${BOT_CERT_DIR}:/botcert:ro"
     user: "${CONTAINER_UID}:${CONTAINER_UID}"
   celery-worker:
+    build: .
+    image: fjfnaranjo/fjfnaranjo-bot:dev
     volumes:
       - .:/bot
     user: "${CONTAINER_UID}:${CONTAINER_UID}"
   celery-beat:
+    build: .
+    image: fjfnaranjo/fjfnaranjo-bot:dev
     volumes:
       - .:/bot
     user: "${CONTAINER_UID}:${CONTAINER_UID}"
-  rabbitmq:
-    volumes:
-      - rabbitmq-data-dev:/var/lib/rabbitmq
   redis:
     volumes:
       - redis-data-dev:/data
 volumes:
-  rabbitmq-data-dev: 
   redis-data-dev:

@@ -11,6 +11,9 @@ MODULE_PATH = 'fjfnaranjobot.bot'
 
 @patch(f'{MODULE_PATH}.TBot')
 @patch(f'{MODULE_PATH}.get_bot_components', return_value='')
+@patch(f'{MODULE_PATH}.BOT_WEBHOOK_URL', 'bwu')
+@patch(f'{MODULE_PATH}.BOT_WEBHOOK_TOKEN', 'bwt')
+@patch(f'{MODULE_PATH}.BOT_WEBHOOK_CERT', 'cert')
 class BotTests(TestCase):
     @patch(f'{MODULE_PATH}.Dispatcher')
     def test_bot_uses_tbot_and_dispatcher(self, dispatcher, _get_bot_components, tbot):
@@ -81,7 +84,7 @@ class BotTests(TestCase):
             assert 'ok (self)' == bot.process_request(
                 '/bwt/register_webhook_self', None
             )
-        open_.assert_called_once_with('/botcert/YOURPUBLIC.pem', 'rb')
+        open_.assert_called_once_with('cert', 'rb')
         created_bot.set_webhook.assert_called_once_with(
             url='bwu/bwt', certificate=opened_file
         )

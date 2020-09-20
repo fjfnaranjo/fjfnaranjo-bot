@@ -20,8 +20,9 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 BOT_TOKEN = environ.get('BOT_TOKEN')
-BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL')
-BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN')
+BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL', '')
+BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN', '')
+BOT_WEBHOOK_CERT = environ.get('BOT_WEBHOOK_CERT', '')
 
 
 _BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.info'
@@ -152,7 +153,7 @@ class Bot:
         # Register webhook request URL (using self signed cert)
         elif url_path == ('/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook_self'))):
             self.bot.set_webhook(
-                url=self.webhook_url, certificate=open('/botcert/YOURPUBLIC.pem', 'rb')
+                url=self.webhook_url, certificate=open(BOT_WEBHOOK_CERT, 'rb'),
             )
             logger.info("Reply with ok to register_webhook_self.")
             return 'ok (self)'
