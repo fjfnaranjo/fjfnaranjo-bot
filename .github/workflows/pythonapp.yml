@@ -13,9 +13,7 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.8.5
-    - name: Install system dependencies
-      run: sudo apt-get install libev-dev
-    - name: Install pip dependencies
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
@@ -23,9 +21,11 @@ jobs:
     - name: Check styles with Black
       run: black -S --check fjfnaranjobot tests
     - name: Check imports with isort
-      run: isort -c fjfnaranjobot tests
+      run: isort -c
     - name: Test with pytest
       run: pytest
       env:
         BOT_OWNER_ID: 11
         BOT_TOKEN: '123456:btbtbt'
+        BOT_WEBHOOK_URL: bwu
+        BOT_WEBHOOK_TOKEN: bwt
