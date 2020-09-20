@@ -14,7 +14,7 @@ jobs:
       with:
         python-version: 3.8.5
     - name: Install system dependencies
-      uses: ryankurte/action-apt@v0.1
+      uses: ryankurte/action-apt@v0.1.0
       with:
         packages: "libev-dev"
     - name: Install pip dependencies
