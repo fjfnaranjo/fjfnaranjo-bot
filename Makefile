@@ -3,7 +3,7 @@
 all:
 
 isort:
-	@isort -y
+	@isort fjfnaranjobot tests
 
 test:
 	@pytest

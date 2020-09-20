@@ -23,7 +23,7 @@ jobs:
     - name: Check styles with Black
       run: black -S --check fjfnaranjobot tests
     - name: Check imports with isort
-      run: isort -c
+      run: isort -c fjfnaranjobot tests
     - name: Test with pytest
       run: pytest
       env:
