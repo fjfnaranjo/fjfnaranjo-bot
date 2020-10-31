@@ -1,13 +1,14 @@
 from time import sleep
 
 from boto3 import resource
-from celery import chain, task
+from celery import chain
 from requests import get as requests_get
 
 from fjfnaranjobot.bot import ensure_bot
 from fjfnaranjobot.components.terraria.models import TerrariaProfile
 from fjfnaranjobot.components.terraria.utils import register_activity
 from fjfnaranjobot.logging import getLogger
+from fjfnaranjobot.tasks import app
 
 logger = getLogger(__name__)
 
@@ -23,7 +24,7 @@ def _build_tshock_url(host, endpoint, token, params):
     return url
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _giving_ec2_instance_state_and_ip(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     profile = TerrariaProfile(payload['profile_id'])
@@ -39,13 +40,13 @@ def _giving_ec2_instance_state_and_ip(self, payload):
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _log_user_activity_report_giving_ec2_instance_state_and_ip(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _giving_microapi_state(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     profile = TerrariaProfile(payload['profile_id'])
@@ -56,13 +57,13 @@ def _giving_microapi_state(self, payload):
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _log_user_activity_report_giving_microapi_state(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _giving_tshock_status_and_players(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     profile = TerrariaProfile(payload['profile_id'])
@@ -78,13 +79,13 @@ def _giving_tshock_status_and_players(self, payload):
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _log_user_activity_report_giving_tshock_status_and_players(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _log_user_activity(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     register_activity(payload['tshock_players'])
@@ -107,19 +108,19 @@ def log_user_activity_chain(profile_id, message_id):
     )()
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _stop_server_report_giving_ec2_instance_state_and_ip(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _stop_server_report_giving_tshock_status_and_players(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _tshock_stop(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     profile = TerrariaProfile(payload['profile_id'])
@@ -131,13 +132,13 @@ def _tshock_stop(self, payload):
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _stop_server_report_tshock_stop(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _microapi_backup(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     profile = TerrariaProfile(payload['profile_id'])
@@ -149,13 +150,13 @@ def _microapi_backup(self, payload):
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _stop_server_report_microapi_backup(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _stop_instance(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     profile = TerrariaProfile(payload['profile_id'])
@@ -170,7 +171,7 @@ def _stop_instance(self, payload):
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _stop_server_report_stop_instance(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     bot = ensure_bot()
@@ -197,19 +198,19 @@ def stop_server_chain(profile_id, message_id):
     )()
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _start_server_report_giving_ec2_instance_state_and_ip(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _start_server_report_stop_instance(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _start_instance(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     profile = TerrariaProfile(payload['profile_id'])
@@ -225,19 +226,19 @@ def _start_instance(self, payload):
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _start_server_report_start_instance(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _start_server_report_giving_ec2_instance_state_and_ip_after(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _microapi_start(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     profile = TerrariaProfile(payload['profile_id'])
@@ -248,7 +249,7 @@ def _microapi_start(self, payload):
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _start_server_report_microapi_start(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     bot = ensure_bot()
@@ -273,25 +274,25 @@ def start_server_chain(profile_id, message_id):
     )()
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _server_status_report_giving_ec2_instance_state_and_ip(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _server_status_report_giving_microapi_state(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _server_status_report_giving_tshock_status_and_players(self, payload):
     logger.debug(f"Entering inner task {self.name} .")
     return payload
 
 
-@task(bind=True)
+@app.task(bind=True)
 def _report_server_status(self, payload):
     bot = ensure_bot()
     bot.bot.send_message(payload['message_id'], payload['status_response'])
