@@ -1,20 +1,26 @@
 version: "3"
 services:
   bot:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     image: fjfnaranjo/fjfnaranjo-bot:dev
     volumes:
       - .:/bot
       - "${BOT_CERT_DIR}:/botcert:ro"
     user: "${CONTAINER_UID}:${CONTAINER_UID}"
   celery-worker:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     image: fjfnaranjo/fjfnaranjo-bot:dev
     volumes:
       - .:/bot
     user: "${CONTAINER_UID}:${CONTAINER_UID}"
   celery-beat:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     image: fjfnaranjo/fjfnaranjo-bot:dev
     volumes:
       - .:/bot
