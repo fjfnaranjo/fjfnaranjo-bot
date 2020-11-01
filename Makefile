@@ -1,29 +1,37 @@
-.PHONY: all isort test cov cov-full black docs up down restart
+.PHONY: all isort test cov cov-full black docs up down restart checks sh
+
+compose := docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml
+exec := $(compose) exec bot
 
 all:
 
 isort:
-	@isort fjfnaranjobot tests
+	@$(exec) isort fjfnaranjobot tests
 
 test:
-	@pytest
+	@$(exec) pytest
 
 cov:
-	@pytest --cov=fjfnaranjobot --cov-report html tests/
+	@$(exec) pytest --cov=fjfnaranjobot --cov-report html tests/
 
 cov-full:
-	@pytest --cov=fjfnaranjobot --cov=tests --cov-report html tests/
+	@$(exec) pytest --cov=fjfnaranjobot --cov=tests --cov-report html tests/
 
 black:
-	@black -S fjfnaranjobot tests
+	@$(exec) black -S fjfnaranjobot tests
 
 docs:
-	$(MAKE) -C $@ html
+	@$(exec) $(MAKE) -C $@ html
 
 up:
-	@docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml up -d
+	@$(compose) up -d
 
 down:
-	@docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml down
+	@$(compose) down
 
 restart: down up
+
+checks: isort black
+
+sh:
+	@$(exec) sh

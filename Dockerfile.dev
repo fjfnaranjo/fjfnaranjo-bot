@@ -1,7 +1,8 @@
-FROM python:3.8.3-alpine
+FROM python:3.8.6-alpine
 
 COPY requirements.txt /requirements.txt
 COPY requirements.dev.txt /requirements.dev.txt
+COPY requirements.ci.txt /requirements.ci.txt
 
 RUN apk add --no-cache \
 		gcc \
@@ -14,8 +15,10 @@ RUN apk add --no-cache \
 		openssl-dev \
 		libev \
 		libev-dev \
+		make \
 	&& pip3 install --no-cache-dir -r /requirements.txt \
 	&& pip3 install --no-cache-dir -r /requirements.dev.txt \
+	&& pip3 install --no-cache-dir -r /requirements.ci.txt \
 	&& apk del \
 		python3-dev \
 		musl-dev \
@@ -23,6 +26,7 @@ RUN apk add --no-cache \
 		openssl-dev \
 		libev-dev \
 	&& rm /requirements.txt \
-	&& rm /requirements.dev.txt
+	&& rm /requirements.dev.txt \
+	&& rm /requirements.ci.txt
 
 COPY . /bot
