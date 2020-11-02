@@ -26,3 +26,5 @@ jobs:
       run: isort -c fjfnaranjobot tests
     - name: Test with pytest
       run: pytest
+      env:
+        BOT_TOKEN: '123456:btbtbt'

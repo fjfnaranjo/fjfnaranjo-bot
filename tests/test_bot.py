@@ -11,7 +11,6 @@ MODULE_PATH = 'fjfnaranjobot.bot'
 
 @patch(f'{MODULE_PATH}.TBot')
 @patch(f'{MODULE_PATH}.get_bot_components', return_value='')
-@patch(f'{MODULE_PATH}.BOT_TOKEN', 'bt')
 @patch(f'{MODULE_PATH}.BOT_WEBHOOK_URL', 'bwu')
 @patch(f'{MODULE_PATH}.BOT_WEBHOOK_TOKEN', 'bwt')
 @patch(f'{MODULE_PATH}.BOT_WEBHOOK_CERT', 'cert')
@@ -22,7 +21,7 @@ class BotTests(TestCase):
         tbot.return_value = created_bot
         with self.assertLogs(logger, DEBUG) as logs:
             Bot()
-        tbot.assert_called_once_with('bt')
+        tbot.assert_called_once_with('123456:btbtbt')
         dispatcher.assert_called_once_with(
             created_bot, None, workers=0, use_context=True
         )
