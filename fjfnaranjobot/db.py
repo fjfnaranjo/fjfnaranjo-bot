@@ -14,6 +14,7 @@ _connection = None
 
 def _ensure_connection():
     db_path = environ.get('BOT_DB_NAME', _BOT_DB_DEFAULT_NAME)
+    logger.debug(f"Using {db_path} as database.")
     if not db_path.startswith(":"):
         db_dir, _ = split(db_path)
         if not isdir(db_dir):
@@ -22,7 +23,7 @@ def _ensure_connection():
             except:
                 raise ValueError("Invalid dir name in BOT_DB_NAME var.")
         if not isfile(db_path):
-            logger.debug("Initializing configuration database.")
+            logger.debug("Creating empty database.")
             try:
                 with open(db_path, 'wb'):
                     pass
