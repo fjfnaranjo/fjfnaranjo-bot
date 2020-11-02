@@ -105,6 +105,5 @@ ENV/
 /.pydevproject
 /nginx.conf
 /botdata
-/botdata_test
 /.settings
 /.dbeaver
