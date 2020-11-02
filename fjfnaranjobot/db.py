@@ -13,9 +13,6 @@ _connection = None
 
 
 def _ensure_connection():
-    global _connection
-    if _connection is not None:
-        return _connection
     db_path = environ.get('BOT_DB_NAME', _BOT_DB_DEFAULT_NAME)
     if not db_path.startswith(":"):
         db_dir, _ = split(db_path)
@@ -31,25 +28,25 @@ def _ensure_connection():
                     pass
             except OSError:
                 raise ValueError("Invalid file name in BOT_DB_NAME var.")
-    _connection = connect(db_path)
-    return _connection
+    return connect(db_path)
 
 
-def reset_connection(create=True):
+def reset_connection():
     global _connection
     if _connection is None:
         return
     _connection.close()
-    _connection = None
-    _ensure_connection()
+    _connection = _ensure_connection()
 
 
 @contextmanager
 def cursor():
-    conn = _ensure_connection()
-    cur = conn.cursor()
+    global _connection
+    if _connection is None:
+        _connection = _ensure_connection()
+    cur = _connection.cursor()
     yield cur
-    conn.commit()
+    _connection.commit()
 
 
 # TODO: Test default
