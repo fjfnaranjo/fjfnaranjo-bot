@@ -104,7 +104,6 @@ ENV/
 /.project
 /.pydevproject
 /nginx.conf
-/certs
 /botdata
 /botdata_test
 /.settings

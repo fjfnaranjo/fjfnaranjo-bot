@@ -1,8 +1,8 @@
 server {
     listen      443 ssl;
     server_name           YOURDOMAIN.EXAMPLE;
-    ssl_certificate       /botcert/YOURPUBLIC.pem;
-    ssl_certificate_key   /botcert/YOURPRIVATE.key;
+    ssl_certificate       /bot/botdata/YOURPUBLIC.pem;
+    ssl_certificate_key   /bot/botdata/YOURPRIVATE.key;
     location / {
         proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;

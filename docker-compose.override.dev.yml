@@ -1,5 +1,8 @@
 version: "3"
 services:
+  nginx:
+    volumes:
+      - .:/bot
   bot:
     build:
       context: .
@@ -7,7 +10,6 @@ services:
     image: fjfnaranjo/fjfnaranjo-bot:dev
     volumes:
       - .:/bot
-      - "${BOT_CERT_DIR}:/botcert:ro"
     user: "${CONTAINER_UID}:${CONTAINER_UID}"
   celery-worker:
     build:
