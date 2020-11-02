@@ -2,48 +2,40 @@ from logging import DEBUG
 from os import chmod, remove
 from os.path import isdir, isfile, join
 from shutil import rmtree
+from sqlite3 import OperationalError
 from stat import S_IRWXU
 from tempfile import mkdtemp, mkstemp
 from unittest.mock import MagicMock, patch
 
-from fjfnaranjobot.db import DbField, DbRelation, cursor, get_db_path, logger, reset
+from fjfnaranjobot.db import DbField, DbRelation, cursor, logger, reset_connection
 
 from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.db'
 
-BOT_DB_NAME_DEFAULT = 'botdata/bot.db'
-BOT_DB_NAME_TEST = 'test/bot.a.test.name.db'
+
+class DbMemoryTests(BotTestCase):
+    def run(self, *args, **kwargs):
+        with self.mocked_environ(f"{MODULE_PATH}.environ", {'BOT_DB_NAME': ":memory:"}):
+            return super().run(*args, **kwargs)
 
 
-class DbGetPathTests(BotTestCase):
-    def test_get_db_path_default(self):
-        with self.mocked_environ(
-            f'{MODULE_PATH}.environ',
-            None,
-            [
-                'BOT_DB_NAME',
-            ],
-        ):
-            assert get_db_path() == BOT_DB_NAME_DEFAULT
-
-    def test_get_db_path_env(self):
-        with self.mocked_environ(
-            f'{MODULE_PATH}.environ',
-            {'BOT_DB_NAME': BOT_DB_NAME_TEST},
-        ):
-            assert get_db_path() == BOT_DB_NAME_TEST
+class DbResetTests(DbMemoryTests):
+    def test_reset_clear_data(self):
+        reset_connection()
+        with cursor() as cur:
+            cur.execute('CREATE TABLE dummy (key PRIMARY KEY)')
+        reset_connection()
+        with cursor() as cur:
+            with self.assertRaises(OperationalError):
+                cur.execute('SELECT * FROM dummy;')
 
 
-class DbTests(BotTestCase):
+class DbPathTests(BotTestCase):
     def setUp(self):
         super().setUp()
         self._db_test_file = mkstemp()[1]
         self._db_test_dir = mkdtemp()
-        self._get_db_path_mock = MagicMock(return_value=self._db_test_file)
-        patcher = patch(f'{MODULE_PATH}.get_db_path', self._get_db_path_mock)
-        patcher.start()
-        self.addCleanup(patcher.stop)
 
     def tearDown(self):
         if isfile(self._db_test_file):
@@ -53,68 +45,56 @@ class DbTests(BotTestCase):
             rmtree(self._db_test_dir)
         BotTestCase.tearDown(self)
 
+    def test_path_valid_db_name(self):
+        valid_path = join(self._db_test_dir, 'valid')
+        with self.mocked_environ(f"{MODULE_PATH}.environ", {'BOT_DB_NAME': valid_path}):
+            reset_connection()
+            with cursor() as cur:
+                cursor().__enter__()
+        assert isfile(valid_path)
 
-class DbResetTests(DbTests):
-    def test_reset_only_reset(self):
-        self._get_db_path_mock.return_value = self._db_test_file
-        remove(self._db_test_file)
-        reset(False)
-        assert not isfile(self._db_test_file)
+    def test_path_valid_db_name_create_dir(self):
+        valid_path = join(self._db_test_dir, 'dir', 'valid')
+        with self.mocked_environ(f"{MODULE_PATH}.environ", {'BOT_DB_NAME': valid_path}):
+            reset_connection()
+            with cursor() as cur:
+                cursor().__enter__()
+        assert isfile(valid_path)
 
-    def test_reset_creates_new(self):
-        self._get_db_path_mock.return_value = self._db_test_file
-        remove(self._db_test_file)
-        with self.assertLogs(logger, DEBUG) as logs:
-            reset()
-        assert isfile(self._db_test_file)
-        assert 'Initializing configuration database.' in logs.output[0]
-
-    def test_reset_replaces_existent(self):
-        self._get_db_path_mock.return_value = self._db_test_file
-        with open(self._db_test_file, 'wb') as temp_file:
-            temp_file.write(b'notempty')
-        with self.assertLogs(logger, DEBUG) as logs:
-            reset()
-        with open(self._db_test_file, 'rb') as temp_file:
-            assert temp_file.read() != b'notempty'
-        assert 'Initializing configuration database.' in logs.output[0]
-
-    def test_reset_invalid_db_dir_name(self):
-        self._get_db_path_mock.return_value = join(self._db_test_file, 'impossibledir')
-        with self.assertRaises(ValueError) as e:
-            reset()
+    def test_path_invalid_db_dir_name(self):
+        invalid_path = join(self._db_test_file, 'irrelevant')
+        with self.mocked_environ(
+            f"{MODULE_PATH}.environ", {'BOT_DB_NAME': invalid_path}
+        ):
+            with self.assertRaises(ValueError) as e:
+                reset_connection()
         assert 'Invalid dir name in BOT_DB_NAME var.' == e.exception.args[0]
 
-    def test_reset_invalid_db_file_name(self):
-        self._get_db_path_mock.return_value = join(self._db_test_dir, 'dontexists')
-        chmod(self._db_test_dir, 0)
-        with self.assertRaises(ValueError) as e:
-            reset()
+    def test_path_invalid_db_file_name(self):
+        invalid_path = join(self._db_test_dir, 'irrelevant')
+        with self.mocked_environ(
+            f"{MODULE_PATH}.environ", {'BOT_DB_NAME': invalid_path}
+        ):
+            chmod(self._db_test_dir, 0)
+            with self.assertRaises(ValueError) as e:
+                reset_connection()
+                cursor().__enter__()
         assert 'Invalid file name in BOT_DB_NAME var.' == e.exception.args[0]
+
+
+class DbTests(DbMemoryTests):
+    def setUp(self):
+        super().setUp()
+        reset_connection()
 
 
 class DbCursorTests(DbTests):
-    def test_cursor_creates_new(self):
-        self._get_db_path_mock.return_value = self._db_test_file
-        reset(False)
+    def test_cursor(self):
         with cursor() as cur:
-            cur.execute('CREATE TABLE dummy (key PRIMARY KEY)')
-        assert isfile(self._db_test_file)
-
-    def test_cursor_invalid_db_dir_name(self):
-        self._get_db_path_mock.return_value = join(self._db_test_file, 'impossibledir')
-        reset(False)
-        with self.assertRaises(ValueError) as e:
-            cursor().__enter__()
-        assert 'Invalid dir name in BOT_DB_NAME var.' == e.exception.args[0]
-
-    def test_cursor_invalid_db_file_name(self):
-        self._get_db_path_mock.return_value = join(self._db_test_dir, 'dontexists')
-        reset(False)
-        chmod(self._db_test_dir, 0)
-        with self.assertRaises(ValueError) as e:
-            cursor().__enter__()
-        assert 'Invalid file name in BOT_DB_NAME var.' == e.exception.args[0]
+            cur.execute('CREATE TABLE dummy (key PRIMARY KEY);')
+            cur.execute('INSERT INTO dummy VALUES (1);')
+            table = cur.execute('SELECT * FROM dummy').fetchone()
+            assert table[0] == 1
 
 
 class DbRelationMock(DbRelation):
@@ -138,10 +118,6 @@ class DbRelationEndingUpperMockA(DbRelation):
 
 
 class DbObjectsTests(DbTests):
-    def setUp(self):
-        super().setUp()
-        reset()
-
     def test_db_field(self):
         field = DbField('a', 'b')
         assert 'a' == field.name
