@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, call, patch, sentinel
 
 from telegram.ext import DispatcherHandlerStop
 
+from fjfnaranjobot.auth import friends
 from fjfnaranjobot.common import User
 
 BOT_USERNAME = 'bu'
@@ -101,6 +102,22 @@ class BotHandlerTestCase(BotTestCase):
             del self._update_mock.message
         elif remove_text:
             del self._update_mock.message.text
+
+    @contextmanager
+    def run(self, *args, **kwargs):
+        with self.mocked_environ(
+            'fjfnaranjobot.auth.environ', {'BOT_OWNER_ID': str(OWNER_USER.id)}
+        ):
+            return super().run(*args, **kwargs)
+
+    @staticmethod
+    @contextmanager
+    def set_friends(friend_list):
+        friends.clear()
+        for friend in friend_list:
+            friends.add(User(friend.id, friend.username))
+        yield
+        friends.clear()
 
     def user_is_none(self, remove_message=None, remove_text=None):
         self.update_mock_spec(remove_message, remove_text)

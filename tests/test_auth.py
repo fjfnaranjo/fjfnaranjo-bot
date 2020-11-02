@@ -4,14 +4,7 @@ from unittest.mock import patch, sentinel
 
 from telegram.ext.dispatcher import DispatcherHandlerStop
 
-from fjfnaranjobot.auth import (
-    friends,
-    get_owner_id,
-    logger,
-    only_friends,
-    only_owner,
-    only_real,
-)
+from fjfnaranjobot.auth import friends, logger, only_friends, only_owner, only_real
 from fjfnaranjobot.common import SORRY_TEXT, User
 
 from .base import (
@@ -26,41 +19,7 @@ from .base import (
 
 MODULE_PATH = 'fjfnaranjobot.auth'
 
-
-class AuthGetEnvTests(BotTestCase):
-    def test_get_owner_id_no_default(self):
-        with self.mocked_environ(f'{MODULE_PATH}.environ', None, ['BOT_OWNER_ID']):
-            with self.assertRaises(ValueError) as e:
-                get_owner_id()
-            assert 'BOT_OWNER_ID var must be defined.' == e.exception.args[0]
-
-    def test_get_owner_id_env_not_int(self):
-        with self.mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': 'a'}):
-            with self.assertRaises(ValueError) as e:
-                get_owner_id()
-            assert 'Invalid id in BOT_OWNER_ID var.' == e.exception.args[0]
-
-    def test_get_owner_id_env(self):
-        with self.mocked_environ(f'{MODULE_PATH}.environ', {'BOT_OWNER_ID': '1'}):
-            assert get_owner_id() == 1
-
-
 class AuthTests(BotHandlerTestCase):
-    @staticmethod
-    @contextmanager
-    def owner():
-        with patch(f'{MODULE_PATH}.get_owner_id', return_value=OWNER_USER.id):
-            yield
-
-    @contextmanager
-    def owner_and_friends(self, friend_list):
-        with self.owner():
-            friends.clear()
-            for friend in friend_list:
-                friends.add(User(friend.id, friend.username))
-            yield
-            friends.clear()
-
     def test_only_real_no_user_no_message(self):
         noop = only_real(lambda _update, _context: True)
         self.user_is_none(remove_message=True)
@@ -171,10 +130,9 @@ class AuthTests(BotHandlerTestCase):
     def test_only_owner_no_owner(self):
         noop = only_owner(lambda _update, _context: True)
         self.set_string_command('cmd')
-        with self.owner():
-            with self.assertLogs(logger) as logs:
-                with self.assertRaises(DispatcherHandlerStop):
-                    assert noop(*self.update_and_context) is None
+        with self.assertLogs(logger) as logs:
+            with self.assertRaises(DispatcherHandlerStop):
+                assert noop(*self.update_and_context) is None
         assert (
             f'User u with id {UNKNOWN_USER.id} '
             'tried to access a only_owner command. '
@@ -183,11 +141,10 @@ class AuthTests(BotHandlerTestCase):
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_owner_ok(self):
-        with self.owner():
-            noop = only_owner(lambda _update, _context: True)
-            self.user_is_owner()
-            assert noop(*self.update_and_context) is True
-            self.assert_message_calls([])
+        noop = only_owner(lambda _update, _context: True)
+        self.user_is_owner()
+        assert noop(*self.update_and_context) is True
+        self.assert_message_calls([])
 
     def test_only_friends_no_message(self):
         noop = only_friends(lambda _update, _context: True)
@@ -217,7 +174,7 @@ class AuthTests(BotHandlerTestCase):
     def test_only_friends_not_friend(self):
         noop = only_friends(lambda _update, _context: True)
         self.set_string_command('cmd')
-        with self.owner_and_friends([FIRST_FRIEND_USER]):
+        with self.set_friends([FIRST_FRIEND_USER]):
             with self.assertLogs(logger) as logs:
                 with self.assertRaises(DispatcherHandlerStop):
                     noop(*self.update_and_context)
@@ -231,9 +188,57 @@ class AuthTests(BotHandlerTestCase):
     def test_only_friends_ok(self):
         noop = only_friends(lambda _update, _context: True)
         self.user_is_friend(FIRST_FRIEND_USER)
-        with self.owner_and_friends([FIRST_FRIEND_USER]):
+        with self.set_friends([FIRST_FRIEND_USER]):
             assert noop(*self.update_and_context) is True
             self.assert_message_calls([])
+
+    def test_only_owner_not_defined_no_message(self):
+        with self.mocked_environ(
+            'fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']
+        ):
+            noop = only_owner(lambda _update, _context: True)
+            self.user_is_owner(remove_message=True)
+            with self.assertLogs(logger) as logs:
+                with self.assertRaises(DispatcherHandlerStop):
+                    assert noop(*self.update_and_context) is None
+            assert (
+                f'User o with id {OWNER_USER.id} '
+                'tried to access a only_owner command. '
+                'Command text: \'<unknown>\' (cropped to 10 chars).'
+            ) in logs.output[0]
+
+    def test_only_owner_not_defined_empty_command(self):
+        with self.mocked_environ(
+            'fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']
+        ):
+            noop = only_owner(lambda _update, _context: True)
+            self.user_is_owner(remove_text=True)
+            with self.assertLogs(logger) as logs:
+                with self.assertRaises(DispatcherHandlerStop):
+                    assert noop(*self.update_and_context) is None
+            assert (
+                f'User o with id {OWNER_USER.id} '
+                'tried to access a only_owner command. '
+                'Command text: \'<empty>\' (cropped to 10 chars).'
+            ) in logs.output[0]
+            self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
+
+    def test_only_owner_not_defined(self):
+        with self.mocked_environ(
+            'fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']
+        ):
+            noop = only_owner(lambda _update, _context: True)
+            self.user_is_owner()
+            self.set_string_command('cmd')
+            with self.assertLogs(logger) as logs:
+                with self.assertRaises(DispatcherHandlerStop):
+                    assert noop(*self.update_and_context) is None
+            assert (
+                f'User o with id {OWNER_USER.id} '
+                'tried to access a only_owner command. '
+                'Command text: \'cmd\' (cropped to 10 chars).'
+            ) in logs.output[0]
+            self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
 
 class FriendsTests(TestCase):

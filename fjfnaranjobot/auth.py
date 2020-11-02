@@ -13,12 +13,8 @@ logger = getLogger(__name__)
 
 
 def get_owner_id():
-    try:
-        return int(environ['BOT_OWNER_ID'])
-    except KeyError:
-        raise ValueError("BOT_OWNER_ID var must be defined.")
-    except (TypeError, ValueError):
-        raise ValueError("Invalid id in BOT_OWNER_ID var.")
+    owner_id = environ.get('BOT_OWNER_ID')
+    return int(owner_id) if owner_id is not None else None
 
 
 def _reply_unauthorized(update, context):
@@ -86,8 +82,9 @@ def only_owner(f):
     @only_real
     @wraps(f)
     def wrapper(update, context, *args, **kwargs):
+        owner_id = get_owner_id()
         user = update.effective_user
-        if user.id != get_owner_id():
+        if owner_id is None or user.id != owner_id:
             _reply_unauthorized(update, context)
             _report_user(update, user, 'only_owner')
             raise DispatcherHandlerStop()
@@ -177,9 +174,10 @@ def only_friends(f):
     @only_real
     @wraps(f)
     def wrapper(update, context, *args, **kwargs):
+        owner_id = get_owner_id()
         user = update.effective_user
         friend = User(user.id, user.username)
-        if user.id != get_owner_id() and friend not in friends:
+        if (owner_id is not None and user.id == owner_id) or friend not in friends:
             _reply_unauthorized(update, context)
             _report_user(update, user, 'only_friends')
             raise DispatcherHandlerStop()
