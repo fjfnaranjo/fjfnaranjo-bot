@@ -47,6 +47,7 @@ def _get_handler_callback_name(handler):
     )
 
 
+# TODO: Check and test BOT_TOKEN not defined
 class Bot:
     def __init__(self):
         self.bot = TBot(BOT_TOKEN)

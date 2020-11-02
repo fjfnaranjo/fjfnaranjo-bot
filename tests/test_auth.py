@@ -19,6 +19,7 @@ from .base import (
 
 MODULE_PATH = 'fjfnaranjobot.auth'
 
+
 class AuthTests(BotHandlerTestCase):
     def test_only_real_no_user_no_message(self):
         noop = only_real(lambda _update, _context: True)
@@ -193,9 +194,7 @@ class AuthTests(BotHandlerTestCase):
             self.assert_message_calls([])
 
     def test_only_owner_not_defined_no_message(self):
-        with self.mocked_environ(
-            'fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']
-        ):
+        with self.mocked_environ('fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']):
             noop = only_owner(lambda _update, _context: True)
             self.user_is_owner(remove_message=True)
             with self.assertLogs(logger) as logs:
@@ -208,9 +207,7 @@ class AuthTests(BotHandlerTestCase):
             ) in logs.output[0]
 
     def test_only_owner_not_defined_empty_command(self):
-        with self.mocked_environ(
-            'fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']
-        ):
+        with self.mocked_environ('fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']):
             noop = only_owner(lambda _update, _context: True)
             self.user_is_owner(remove_text=True)
             with self.assertLogs(logger) as logs:
@@ -224,9 +221,7 @@ class AuthTests(BotHandlerTestCase):
             self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_owner_not_defined(self):
-        with self.mocked_environ(
-            'fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']
-        ):
+        with self.mocked_environ('fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']):
             noop = only_owner(lambda _update, _context: True)
             self.user_is_owner()
             self.set_string_command('cmd')
