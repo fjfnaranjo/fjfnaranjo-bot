@@ -6,7 +6,6 @@ from fjfnaranjobot.common import (
     ScheduleEntry,
     User,
     get_bot_components,
-    get_bot_data_dir,
     get_bot_owner_name,
     inline_handler,
     quote_value_for_log,
@@ -16,26 +15,11 @@ from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.common'
 
-BOT_DATA_DIR_DEFAULT = 'botdata'
-BOT_DATA_DIR_TEST = '/bot/data/test'
-
 BOT_OWNER_NAME_DEFAULT = 'fjfnaranjo'
 BOT_OWNER_NAME_TEST = 'owner'
 
 BOT_COMPONENTS_DEFAULT = 'start,config,friends,commands,terraria,sorry'
 BOT_COMPONENTS_TEST = 'comp1,comp2'
-
-
-class BotDataDirTests(BotTestCase):
-    def test_get_bot_data_dir_default(self):
-        with self.mocked_environ(f'{MODULE_PATH}.environ', None, ['BOT_DATA_DIR']):
-            assert get_bot_data_dir() == BOT_DATA_DIR_DEFAULT
-
-    def test_get_bot_data_dir_env(self):
-        with self.mocked_environ(
-            f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': BOT_DATA_DIR_TEST}
-        ):
-            assert get_bot_data_dir() == BOT_DATA_DIR_TEST
 
 
 class BotOwnerNameTests(BotTestCase):

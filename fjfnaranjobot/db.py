@@ -1,12 +1,11 @@
 from contextlib import contextmanager
 from os import environ, makedirs, remove
-from os.path import isdir, isfile, join, split
+from os.path import isdir, isfile, split
 from sqlite3 import connect
 
-from fjfnaranjobot.common import get_bot_data_dir
 from fjfnaranjobot.logging import getLogger
 
-_BOT_DB_DEFAULT_NAME = 'bot.db'
+_BOT_DB_DEFAULT_NAME = 'botdata/bot.db'
 
 logger = getLogger(__name__)
 
@@ -14,7 +13,7 @@ _state = {'initialized': False}
 
 
 def get_db_path():
-    return join(get_bot_data_dir(), environ.get('BOT_DB_NAME', _BOT_DB_DEFAULT_NAME))
+    return environ.get('BOT_DB_NAME', _BOT_DB_DEFAULT_NAME)
 
 
 def _ensure_db():

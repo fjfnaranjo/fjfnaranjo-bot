@@ -106,5 +106,6 @@ ENV/
 /nginx.conf
 /certs
 /botdata
+/botdata_test
 /.settings
 /.dbeaver

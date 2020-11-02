@@ -12,13 +12,12 @@ from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.db'
 
-BOT_DB_NAME_DEFAULT = 'bot.db'
-BOT_DB_NAME_TEST = 'bot.a.test.name.db'
+BOT_DB_NAME_DEFAULT = 'botdata/bot.db'
+BOT_DB_NAME_TEST = 'test/bot.a.test.name.db'
 
 
 class DbGetPathTests(BotTestCase):
-    @patch(f'{MODULE_PATH}.get_bot_data_dir', return_value='dir')
-    def test_get_db_path_join_and_default(self, _get_bot_data_dir):
+    def test_get_db_path_default(self):
         with self.mocked_environ(
             f'{MODULE_PATH}.environ',
             None,
@@ -26,15 +25,14 @@ class DbGetPathTests(BotTestCase):
                 'BOT_DB_NAME',
             ],
         ):
-            assert get_db_path() == join('dir', BOT_DB_NAME_DEFAULT)
+            assert get_db_path() == BOT_DB_NAME_DEFAULT
 
-    @patch(f'{MODULE_PATH}.get_bot_data_dir', return_value='dir')
-    def test_get_db_path_join_and_env(self, _get_bot_data_dir):
+    def test_get_db_path_env(self):
         with self.mocked_environ(
             f'{MODULE_PATH}.environ',
             {'BOT_DB_NAME': BOT_DB_NAME_TEST},
         ):
-            assert get_db_path() == join('dir', BOT_DB_NAME_TEST)
+            assert get_db_path() == BOT_DB_NAME_TEST
 
 
 class DbTests(BotTestCase):

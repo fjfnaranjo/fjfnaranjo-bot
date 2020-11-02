@@ -1,6 +1,5 @@
 from os import environ
 
-_BOT_DATA_DIR_DEFAULT = 'botdata'
 _BOT_OWNER_NAME_DEFAULT = 'fjfnaranjo'
 _BOT_COMPONENTS_DEFAULT = "start,config,friends,commands,terraria,sorry"
 
@@ -10,10 +9,6 @@ LOG_VALUE_MAX_LENGHT = 16
 
 
 command_list = []
-
-
-def get_bot_data_dir():
-    return environ.get('BOT_DATA_DIR', _BOT_DATA_DIR_DEFAULT)
 
 
 def get_bot_owner_name():

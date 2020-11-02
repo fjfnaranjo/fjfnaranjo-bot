@@ -9,26 +9,30 @@ from .base import BotTestCase
 
 MODULE_PATH = 'fjfnaranjobot.logging'
 
-BOT_LOGFILE_DEFAULT = 'bot.log'
-BOT_LOGFILE_TEST = 'bot.a.test.name.log'
+BOT_LOGFILE_DEFAULT = 'botdata/bot.log'
+BOT_LOGFILE_TEST = 'test/bot.a.test.name.log'
 LOGFILE_TEST_FILE = mkstemp()[1]
 LOGFILE_TEST_DIR = mkdtemp()
 FAKE_LEVEL = 99
 
 
 class LoggingTests(BotTestCase):
-    def test_get_log_path_join_and_default(self):
+    def test_get_log_path_default(self):
         with self.mocked_environ(
-            f'{MODULE_PATH}.environ', {'BOT_DATA_DIR': 'dir'}, ['BOT_LOGFILE']
+            f'{MODULE_PATH}.environ',
+            None,
+            [
+                'BOT_LOGFILE',
+            ],
         ):
-            assert _get_log_path() == join('dir', BOT_LOGFILE_DEFAULT)
+            assert _get_log_path() == BOT_LOGFILE_DEFAULT
 
     def test_get_log_path_join_and_env(self):
         with self.mocked_environ(
             f'{MODULE_PATH}.environ',
-            {'BOT_DATA_DIR': 'dir', 'BOT_LOGFILE': BOT_LOGFILE_TEST},
+            {'BOT_LOGFILE': BOT_LOGFILE_TEST},
         ):
-            assert _get_log_path() == join('dir', BOT_LOGFILE_TEST)
+            assert _get_log_path() == BOT_LOGFILE_TEST
 
     @patch(f'{MODULE_PATH}._get_log_path', return_value=LOGFILE_TEST_FILE)
     def test_reset_creates_new(self, _get_log_path):
