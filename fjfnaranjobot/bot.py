@@ -1,4 +1,6 @@
+# TODO: Clean _n and _N
 from importlib import import_module
+from inspect import getmembers, isclass
 from json import JSONDecodeError, loads
 from os import environ
 
@@ -15,6 +17,7 @@ from telegram.ext import (
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
 from fjfnaranjobot.common import Command, command_list, get_bot_components
+from fjfnaranjobot.command import BotCommand
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -26,6 +29,7 @@ BOT_WEBHOOK_CERT = environ.get("BOT_WEBHOOK_CERT", "")
 
 
 _BOT_COMPONENTS_TEMPLATE = "fjfnaranjobot.components.{}.info"
+_N_BOT_COMPONENTS_TEMPLATE = "fjfnaranjobot.components.{}.ninfo"
 
 _state = {"bot": None}
 
@@ -57,6 +61,7 @@ class Bot:
         logger.debug("Bot init done.")
         for component in get_bot_components().split(","):
             self._parse_component_info(component)
+            self._n_parse_component_info(component)
         logger.debug("Bot handlers registered.")
 
     def _log_error_from_context(self, _update, context):
@@ -152,6 +157,36 @@ class Bot:
                 raise ValueError(f"Invalid group for component '{component}'.")
             self._parse_component_handlers(component, info, group)
             self._parse_component_commands(component, info)
+
+    def _n_parse_component_bot_commands(self, component, info, group):
+        members = getmembers(info)
+        for _, member in members:
+            if member is not BotCommand and isclass(member) and issubclass(member, BotCommand):
+                command = member()
+                self.dispatcher.add_handler(command.handler, group)
+                callback_names = self._get_names_callbacks(command.handler)
+                for command, callback in callback_names:
+                    logger.debug(
+                        f"Registered command '{command}' "
+                        f"with callback '{callback}' "
+                        f"for component '{component}' "
+                        f"and group number {group}."
+                    )
+                # TODO: Clean
+                command = member()
+                command_list.append(command)
+
+    def _n_parse_component_info(self, component):
+        try:
+            info = import_module(_N_BOT_COMPONENTS_TEMPLATE.format(component))
+        except ModuleNotFoundError:
+            pass
+        else:
+            try:
+                group = int(getattr(info, "group", DEFAULT_GROUP))
+            except ValueError:
+                raise ValueError(f"Invalid group for component '{component}'.")
+            self._n_parse_component_bot_commands(component, info, group)
 
     def process_request(self, url_path, update):
 
