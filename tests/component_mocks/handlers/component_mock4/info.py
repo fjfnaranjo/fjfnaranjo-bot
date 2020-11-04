@@ -6,9 +6,9 @@ class FakeHandler(Handler):
 
 
 handlers = (
-    CommandHandler('cmdm41', lambda: None),
-    CommandHandler('cmdm42', lambda: None),
-    StringCommandHandler('cmdm43', lambda: None),
+    CommandHandler("cmdm41", lambda: None),
+    CommandHandler("cmdm42", lambda: None),
+    StringCommandHandler("cmdm43", lambda: None),
     MessageHandler(None, lambda: None),
     FakeHandler(lambda: None),
 )

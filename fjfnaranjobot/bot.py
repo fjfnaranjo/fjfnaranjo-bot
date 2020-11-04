@@ -19,15 +19,15 @@ from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
-BOT_TOKEN = environ.get('BOT_TOKEN')
-BOT_WEBHOOK_URL = environ.get('BOT_WEBHOOK_URL', '')
-BOT_WEBHOOK_TOKEN = environ.get('BOT_WEBHOOK_TOKEN', '')
-BOT_WEBHOOK_CERT = environ.get('BOT_WEBHOOK_CERT', '')
+BOT_TOKEN = environ.get("BOT_TOKEN")
+BOT_WEBHOOK_URL = environ.get("BOT_WEBHOOK_URL", "")
+BOT_WEBHOOK_TOKEN = environ.get("BOT_WEBHOOK_TOKEN", "")
+BOT_WEBHOOK_CERT = environ.get("BOT_WEBHOOK_CERT", "")
 
 
-_BOT_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.info'
+_BOT_COMPONENTS_TEMPLATE = "fjfnaranjobot.components.{}.info"
 
-_state = {'bot': None}
+_state = {"bot": None}
 
 
 class BotJSONError(Exception):
@@ -39,11 +39,11 @@ class BotTokenError(Exception):
 
 
 def _get_handler_callback_name(handler):
-    callback_function = getattr(handler, 'callback', None)
+    callback_function = getattr(handler, "callback", None)
     return (
         callback_function.__name__
         if callback_function is not None and callable(callback_function)
-        else '<unknown callback>'
+        else "<unknown callback>"
     )
 
 
@@ -53,9 +53,9 @@ class Bot:
         self.bot = TBot(BOT_TOKEN)
         self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
         self.dispatcher.add_error_handler(self._log_error_from_context)
-        self.webhook_url = '/'.join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
+        self.webhook_url = "/".join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
-        for component in get_bot_components().split(','):
+        for component in get_bot_components().split(","):
             self._parse_component_info(component)
         logger.debug("Bot handlers registered.")
 
@@ -91,14 +91,14 @@ class Bot:
             elif isinstance(handler, MessageHandler):
                 names_callbacks.append(
                     (
-                        '<message>',
+                        "<message>",
                         callback_name,
                     )
                 )
             else:
                 names_callbacks.append(
                     (
-                        '<unknown command>',
+                        "<unknown command>",
                         callback_name,
                     )
                 )
@@ -147,7 +147,7 @@ class Bot:
             pass
         else:
             try:
-                group = int(getattr(info, 'group', DEFAULT_GROUP))
+                group = int(getattr(info, "group", DEFAULT_GROUP))
             except ValueError:
                 raise ValueError(f"Invalid group for component '{component}'.")
             self._parse_component_handlers(component, info, group)
@@ -156,32 +156,32 @@ class Bot:
     def process_request(self, url_path, update):
 
         # Root URL
-        if url_path == '' or url_path == '/':
+        if url_path == "" or url_path == "/":
             logger.info("Reply with salute.")
             return "I'm fjfnaranjo's bot."
 
         # Healt check URL
-        elif url_path == '/ping':
+        elif url_path == "/ping":
             logger.info("Reply with pong.")
-            return 'pong'
+            return "pong"
 
         # Register webhook request URL
-        elif url_path == ('/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook'))):
+        elif url_path == ("/" + "/".join((BOT_WEBHOOK_TOKEN, "register_webhook"))):
             self.bot.set_webhook(url=self.webhook_url)
             logger.info("Reply with ok to register_webhook.")
-            return 'ok'
+            return "ok"
 
         # Register webhook request URL (using self signed cert)
-        elif url_path == ('/' + '/'.join((BOT_WEBHOOK_TOKEN, 'register_webhook_self'))):
+        elif url_path == ("/" + "/".join((BOT_WEBHOOK_TOKEN, "register_webhook_self"))):
             self.bot.set_webhook(
                 url=self.webhook_url,
-                certificate=open(BOT_WEBHOOK_CERT, 'rb'),
+                certificate=open(BOT_WEBHOOK_CERT, "rb"),
             )
             logger.info("Reply with ok to register_webhook_self.")
-            return 'ok (self)'
+            return "ok (self)"
 
         # Don't allow other URLs unless preceded by token
-        elif url_path != '/' + BOT_WEBHOOK_TOKEN:
+        elif url_path != "/" + BOT_WEBHOOK_TOKEN:
             shown_url = url_path[:10]
             logger.info(
                 f"Path '{shown_url}' (cropped to 10 chars) not preceded by token and not handled by bot."
@@ -201,12 +201,12 @@ class Bot:
         logger.debug("Dispatch update to library.")
         self.dispatcher.process_update(Update.de_json(update_json, self.bot))
 
-        return 'ok'
+        return "ok"
 
 
 # TODO: Test
 def ensure_bot():
-    if _state['bot'] is not None:
-        return _state['bot']
-    _state['bot'] = Bot()
-    return _state['bot']
+    if _state["bot"] is not None:
+        return _state["bot"]
+    _state["bot"] = Bot()
+    return _state["bot"]

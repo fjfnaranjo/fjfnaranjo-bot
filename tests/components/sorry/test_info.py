@@ -25,37 +25,37 @@ class SorryHandlersTests(BotHandlerTestCase):
         )
 
     def test_sorry_handler_processor(self):
-        with self.assert_log_dispatch('Sending \'sorry\' back to the user.', logger):
+        with self.assert_log_dispatch("Sending 'sorry' back to the user.", logger):
             sorry_handler(*self.update_and_context)
         self.assert_reply_text(
-            'I don\'t know what to do about that. Sorry :(',
+            "I don't know what to do about that. Sorry :(",
         )
 
     def test_sorry_group_handler_processor_bot(self):
-        bot_mention = f'@{BOT_USERNAME}'
+        bot_mention = f"@{BOT_USERNAME}"
         bot_messages = [
-            f'{bot_mention}',
-            f'{bot_mention} some tail',
+            f"{bot_mention}",
+            f"{bot_mention} some tail",
         ]
         for message in bot_messages:
             with self.subTest(message=message):
                 self._fake_user_mention(message, bot_mention, message.find(bot_mention))
                 with self.assert_log_dispatch(
-                    'Sending \'sorry\' back to the user.', logger
+                    "Sending 'sorry' back to the user.", logger
                 ):
                     sorry_group_handler(*self.update_and_context)
         self.assert_reply_calls(
             [
-                CallWithMarkup('I don\'t know what to do about that. Sorry :('),
-                CallWithMarkup('I don\'t know what to do about that. Sorry :('),
+                CallWithMarkup("I don't know what to do about that. Sorry :("),
+                CallWithMarkup("I don't know what to do about that. Sorry :("),
             ]
         )
 
     def test_sorry_group_handler_processor_not_bot(self):
-        bot_mention = f'@{BOT_USERNAME}'
+        bot_mention = f"@{BOT_USERNAME}"
         not_bot_messages = [
-            f'some header {bot_mention}',
-            f'some header {bot_mention} some tail',
+            f"some header {bot_mention}",
+            f"some header {bot_mention} some tail",
         ]
         for message in not_bot_messages:
             with self.subTest(message=message):

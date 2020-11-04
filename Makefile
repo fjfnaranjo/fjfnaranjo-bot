@@ -18,7 +18,7 @@ cov-full:
 	@$(exec) pytest --cov=fjfnaranjobot --cov=tests --cov-report html tests/
 
 black:
-	@$(exec) black -S fjfnaranjobot tests
+	@$(exec) black fjfnaranjobot tests
 
 docs:
 	@$(exec) $(MAKE) -C $@ html

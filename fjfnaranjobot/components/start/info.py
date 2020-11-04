@@ -14,4 +14,4 @@ def start_handler(update, _context):
     raise DispatcherHandlerStop()
 
 
-handlers = (CommandHandler('start', start_handler),)
+handlers = (CommandHandler("start", start_handler),)

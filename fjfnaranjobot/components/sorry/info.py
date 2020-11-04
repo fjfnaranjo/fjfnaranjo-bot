@@ -15,7 +15,7 @@ def sorry_handler(update, _context):
 
 
 def sorry_group_handler(update, context):
-    bot_mention = '@' + context.bot.username
+    bot_mention = "@" + context.bot.username
     mentions = update.message.parse_entities(MessageEntity.MENTION)
     mentions_keys = list(mentions.keys())
     if (
@@ -23,7 +23,7 @@ def sorry_group_handler(update, context):
         and mentions[mentions_keys[0]] == bot_mention
         and update.message.text.find(bot_mention) == 0
     ):
-        update.message.text = update.message.text.replace(bot_mention, '').strip()
+        update.message.text = update.message.text.replace(bot_mention, "").strip()
         return sorry_handler(update, context)
 
 

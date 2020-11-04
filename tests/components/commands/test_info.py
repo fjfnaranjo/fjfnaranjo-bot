@@ -13,7 +13,7 @@ from ...base import (
     CallWithMarkup,
 )
 
-MODULE_PATH = 'fjfnaranjobot.components.commands.info'
+MODULE_PATH = "fjfnaranjobot.components.commands.info"
 
 
 class CommandsHandlersTests(BotHandlerTestCase):
@@ -42,17 +42,17 @@ class CommandsHandlersTests(BotHandlerTestCase):
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     @patch(
-        f'{MODULE_PATH}.command_list',
+        f"{MODULE_PATH}.command_list",
         [
-            Command('a desc', 'a', None),
-            Command('b desc', 'b', None),
-            Command('c desc', None, 'c'),
-            Command('d desc', None, 'd'),
+            Command("a desc", "a", None),
+            Command("b desc", "b", None),
+            Command("c desc", None, "c"),
+            Command("d desc", None, "d"),
         ],
     )
     def test_commands_handler(self):
         self.user_is_owner()
-        with self.assert_log_dispatch('Sending list of commands.', logger):
+        with self.assert_log_dispatch("Sending list of commands.", logger):
             commands_handler(*self.update_and_context)
         self.assert_reply_calls(
             [
@@ -62,15 +62,15 @@ class CommandsHandlersTests(BotHandlerTestCase):
         )
 
     @patch(
-        f'{MODULE_PATH}.command_list',
+        f"{MODULE_PATH}.command_list",
         [
-            Command('a desc', 'a', None),
-            Command('b desc', 'b', None),
+            Command("a desc", "a", None),
+            Command("b desc", "b", None),
         ],
     )
     def test_commands_handler_only_prod(self):
         self.user_is_owner()
-        with self.assert_log_dispatch('Sending list of commands.', logger):
+        with self.assert_log_dispatch("Sending list of commands.", logger):
             commands_handler(*self.update_and_context)
         self.assert_reply_calls(
             [
@@ -80,15 +80,15 @@ class CommandsHandlersTests(BotHandlerTestCase):
         )
 
     @patch(
-        f'{MODULE_PATH}.command_list',
+        f"{MODULE_PATH}.command_list",
         [
-            Command('c desc', None, 'c'),
-            Command('d desc', None, 'd'),
+            Command("c desc", None, "c"),
+            Command("d desc", None, "d"),
         ],
     )
     def test_commands_handler_only_dev(self):
         self.user_is_owner()
-        with self.assert_log_dispatch('Sending list of commands.', logger):
+        with self.assert_log_dispatch("Sending list of commands.", logger):
             commands_handler(*self.update_and_context)
         self.assert_reply_calls(
             [

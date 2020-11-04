@@ -17,7 +17,7 @@ from .base import (
     BotTestCase,
 )
 
-MODULE_PATH = 'fjfnaranjobot.auth'
+MODULE_PATH = "fjfnaranjobot.auth"
 
 
 class AuthTests(BotHandlerTestCase):
@@ -28,9 +28,9 @@ class AuthTests(BotHandlerTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
         assert (
-            'Message received with no user '
-            'trying to access a only_real command. '
-            'Command text: \'<unknown>\' (cropped to 10 chars).'
+            "Message received with no user "
+            "trying to access a only_real command. "
+            "Command text: '<unknown>' (cropped to 10 chars)."
         ) in logs.output[0]
 
     def test_only_real_no_user_empty_command(self):
@@ -40,23 +40,23 @@ class AuthTests(BotHandlerTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
         assert (
-            'Message received with no user '
-            'trying to access a only_real command. '
-            'Command text: \'<empty>\' (cropped to 10 chars).'
+            "Message received with no user "
+            "trying to access a only_real command. "
+            "Command text: '<empty>' (cropped to 10 chars)."
         ) in logs.output[0]
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_real_no_user(self):
         noop = only_real(lambda _update, _context: True)
         self.user_is_none()
-        self.set_string_command('cmd')
+        self.set_string_command("cmd")
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
         assert (
-            'Message received with no user '
-            'trying to access a only_real command. '
-            'Command text: \'cmd\' (cropped to 10 chars).'
+            "Message received with no user "
+            "trying to access a only_real command. "
+            "Command text: 'cmd' (cropped to 10 chars)."
         ) in logs.output[0]
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
@@ -67,9 +67,9 @@ class AuthTests(BotHandlerTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
         assert (
-            f'Bot with username {BOT_USER.username} and id {BOT_USER.id} '
-            'tried to access a only_real command. '
-            'Command text: \'<unknown>\' (cropped to 10 chars).'
+            f"Bot with username {BOT_USER.username} and id {BOT_USER.id} "
+            "tried to access a only_real command. "
+            "Command text: '<unknown>' (cropped to 10 chars)."
         ) in logs.output[0]
 
     def test_only_real_bot_empty_command(self):
@@ -79,23 +79,23 @@ class AuthTests(BotHandlerTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
         assert (
-            f'Bot with username {BOT_USER.username} and id {BOT_USER.id} '
-            'tried to access a only_real command. '
-            'Command text: \'<empty>\' (cropped to 10 chars).'
+            f"Bot with username {BOT_USER.username} and id {BOT_USER.id} "
+            "tried to access a only_real command. "
+            "Command text: '<empty>' (cropped to 10 chars)."
         ) in logs.output[0]
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_real_bot(self):
         noop = only_real(lambda _update, _context: True)
         self.user_is_bot()
-        self.set_string_command('cmd')
+        self.set_string_command("cmd")
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
         assert (
-            f'Bot with username {BOT_USER.username} and id {BOT_USER.id} '
-            'tried to access a only_real command. '
-            'Command text: \'cmd\' (cropped to 10 chars).'
+            f"Bot with username {BOT_USER.username} and id {BOT_USER.id} "
+            "tried to access a only_real command. "
+            "Command text: 'cmd' (cropped to 10 chars)."
         ) in logs.output[0]
 
     def test_only_real_user_ok(self):
@@ -110,9 +110,9 @@ class AuthTests(BotHandlerTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
         assert (
-            f'User u with id {UNKNOWN_USER.id} '
-            'tried to access a only_owner command. '
-            'Command text: \'<unknown>\' (cropped to 10 chars).'
+            f"User u with id {UNKNOWN_USER.id} "
+            "tried to access a only_owner command. "
+            "Command text: '<unknown>' (cropped to 10 chars)."
         ) in logs.output[0]
 
     def test_only_owner_empty_command(self):
@@ -122,22 +122,22 @@ class AuthTests(BotHandlerTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
         assert (
-            f'User u with id {UNKNOWN_USER.id} '
-            'tried to access a only_owner command. '
-            'Command text: \'<empty>\' (cropped to 10 chars).'
+            f"User u with id {UNKNOWN_USER.id} "
+            "tried to access a only_owner command. "
+            "Command text: '<empty>' (cropped to 10 chars)."
         ) in logs.output[0]
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_owner_no_owner(self):
         noop = only_owner(lambda _update, _context: True)
-        self.set_string_command('cmd')
+        self.set_string_command("cmd")
         with self.assertLogs(logger) as logs:
             with self.assertRaises(DispatcherHandlerStop):
                 assert noop(*self.update_and_context) is None
         assert (
-            f'User u with id {UNKNOWN_USER.id} '
-            'tried to access a only_owner command. '
-            'Command text: \'cmd\' (cropped to 10 chars).'
+            f"User u with id {UNKNOWN_USER.id} "
+            "tried to access a only_owner command. "
+            "Command text: 'cmd' (cropped to 10 chars)."
         ) in logs.output[0]
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
@@ -154,9 +154,9 @@ class AuthTests(BotHandlerTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
         assert (
-            f'User u with id {UNKNOWN_USER.id} '
-            'tried to access a only_friends command. '
-            'Command text: \'<unknown>\' (cropped to 10 chars).'
+            f"User u with id {UNKNOWN_USER.id} "
+            "tried to access a only_friends command. "
+            "Command text: '<unknown>' (cropped to 10 chars)."
         ) in logs.output[0]
 
     def test_only_friends_empty_command(self):
@@ -166,23 +166,23 @@ class AuthTests(BotHandlerTestCase):
             with self.assertRaises(DispatcherHandlerStop):
                 noop(*self.update_and_context)
         assert (
-            f'User u with id {UNKNOWN_USER.id} '
-            'tried to access a only_friends command. '
-            'Command text: \'<empty>\' (cropped to 10 chars).'
+            f"User u with id {UNKNOWN_USER.id} "
+            "tried to access a only_friends command. "
+            "Command text: '<empty>' (cropped to 10 chars)."
         ) in logs.output[0]
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_friends_not_friend(self):
         noop = only_friends(lambda _update, _context: True)
-        self.set_string_command('cmd')
+        self.set_string_command("cmd")
         with self.set_friends([FIRST_FRIEND_USER]):
             with self.assertLogs(logger) as logs:
                 with self.assertRaises(DispatcherHandlerStop):
                     noop(*self.update_and_context)
             assert (
-                f'User u with id {UNKNOWN_USER.id} '
-                'tried to access a only_friends command. '
-                'Command text: \'cmd\' (cropped to 10 chars).'
+                f"User u with id {UNKNOWN_USER.id} "
+                "tried to access a only_friends command. "
+                "Command text: 'cmd' (cropped to 10 chars)."
             ) in logs.output[0]
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
@@ -194,44 +194,44 @@ class AuthTests(BotHandlerTestCase):
             self.assert_message_calls([])
 
     def test_only_owner_not_defined_no_message(self):
-        with self.mocked_environ('fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']):
+        with self.mocked_environ("fjfnaranjobot.auth.environ", None, ["BOT_OWNER_ID"]):
             noop = only_owner(lambda _update, _context: True)
             self.user_is_owner(remove_message=True)
             with self.assertLogs(logger) as logs:
                 with self.assertRaises(DispatcherHandlerStop):
                     assert noop(*self.update_and_context) is None
             assert (
-                f'User o with id {OWNER_USER.id} '
-                'tried to access a only_owner command. '
-                'Command text: \'<unknown>\' (cropped to 10 chars).'
+                f"User o with id {OWNER_USER.id} "
+                "tried to access a only_owner command. "
+                "Command text: '<unknown>' (cropped to 10 chars)."
             ) in logs.output[0]
 
     def test_only_owner_not_defined_empty_command(self):
-        with self.mocked_environ('fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']):
+        with self.mocked_environ("fjfnaranjobot.auth.environ", None, ["BOT_OWNER_ID"]):
             noop = only_owner(lambda _update, _context: True)
             self.user_is_owner(remove_text=True)
             with self.assertLogs(logger) as logs:
                 with self.assertRaises(DispatcherHandlerStop):
                     assert noop(*self.update_and_context) is None
             assert (
-                f'User o with id {OWNER_USER.id} '
-                'tried to access a only_owner command. '
-                'Command text: \'<empty>\' (cropped to 10 chars).'
+                f"User o with id {OWNER_USER.id} "
+                "tried to access a only_owner command. "
+                "Command text: '<empty>' (cropped to 10 chars)."
             ) in logs.output[0]
             self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     def test_only_owner_not_defined(self):
-        with self.mocked_environ('fjfnaranjobot.auth.environ', None, ['BOT_OWNER_ID']):
+        with self.mocked_environ("fjfnaranjobot.auth.environ", None, ["BOT_OWNER_ID"]):
             noop = only_owner(lambda _update, _context: True)
             self.user_is_owner()
-            self.set_string_command('cmd')
+            self.set_string_command("cmd")
             with self.assertLogs(logger) as logs:
                 with self.assertRaises(DispatcherHandlerStop):
                     assert noop(*self.update_and_context) is None
             assert (
-                f'User o with id {OWNER_USER.id} '
-                'tried to access a only_owner command. '
-                'Command text: \'cmd\' (cropped to 10 chars).'
+                f"User o with id {OWNER_USER.id} "
+                "tried to access a only_owner command. "
+                "Command text: 'cmd' (cropped to 10 chars)."
             ) in logs.output[0]
             self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
@@ -280,11 +280,11 @@ class FriendsTests(TestCase):
 
     def test_auth_add_friend_already_friend(self):
         with self.friends([FIRST_FRIEND_USER]):
-            friends.add(User(FIRST_FRIEND_USER.id, 'x'))
+            friends.add(User(FIRST_FRIEND_USER.id, "x"))
             assert 1 == len(friends)
             assert FIRST_FRIEND_USER in friends
             for friend in friends:
-                assert 'x' == friend.username
+                assert "x" == friend.username
 
     def test_auth_add_friend_is_owner(self):
         friends.add(OWNER_USER)

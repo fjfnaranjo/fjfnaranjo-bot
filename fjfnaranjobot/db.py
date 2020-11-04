@@ -5,7 +5,7 @@ from sqlite3 import connect
 
 from fjfnaranjobot.logging import getLogger
 
-_BOT_DB_DEFAULT_NAME = ':memory:'
+_BOT_DB_DEFAULT_NAME = ":memory:"
 
 logger = getLogger(__name__)
 
@@ -13,7 +13,7 @@ _connection = None
 
 
 def _ensure_connection():
-    db_path = environ.get('BOT_DB_NAME', _BOT_DB_DEFAULT_NAME)
+    db_path = environ.get("BOT_DB_NAME", _BOT_DB_DEFAULT_NAME)
     logger.debug(f"Using {db_path} as database.")
     if not db_path.startswith(":"):
         db_dir, _ = split(db_path)
@@ -25,7 +25,7 @@ def _ensure_connection():
         if not isfile(db_path):
             logger.debug("Creating empty database.")
             try:
-                with open(db_path, 'wb'):
+                with open(db_path, "wb"):
                     pass
             except OSError:
                 raise ValueError("Invalid file name in BOT_DB_NAME var.")
@@ -67,11 +67,11 @@ class DbRelation:
                 continue
             if char[1].isupper():
                 if char[0] == len(first_lower) - 1:
-                    return first_lower[: char[0]] + '_' + char[1].lower()
+                    return first_lower[: char[0]] + "_" + char[1].lower()
                 else:
                     new_class_name = (
                         first_lower[: char[0]]
-                        + '_'
+                        + "_"
                         + char[1].lower()
                         + first_lower[char[0] + 1 :]
                     )
@@ -83,21 +83,21 @@ class DbRelation:
     def _cursor(relation_name, fields):
         with cursor() as cur:
             cur.execute(
-                f'CREATE TABLE IF NOT EXISTS {relation_name} ('
+                f"CREATE TABLE IF NOT EXISTS {relation_name} ("
                 + (
-                    ','.join(
+                    ",".join(
                         [
                             field.name
                             + (
-                                f' {field.definition}'
+                                f" {field.definition}"
                                 if field.definition is not None
-                                else ''
+                                else ""
                             )
                             for field in fields
                         ]
                     )
                 )
-                + ')'
+                + ")"
             )
             yield cur
 
@@ -116,7 +116,7 @@ class DbRelation:
     @staticmethod
     def _from_db(instance, pk, relation_name, fields):
         with DbRelation._cursor(relation_name, fields) as cur:
-            cur.execute(f'SELECT * FROM {relation_name} WHERE id=?', (pk,))
+            cur.execute(f"SELECT * FROM {relation_name} WHERE id=?", (pk,))
             values = cur.fetchone()
             if values is None:
                 raise RuntimeError(
@@ -127,18 +127,18 @@ class DbRelation:
 
     def _commit_new(self, cur):
         cur.execute(
-            f'INSERT INTO {self.relation_name} VALUES ('
-            + ', '.join(['?' for _ in self.fields])
-            + ')',
+            f"INSERT INTO {self.relation_name} VALUES ("
+            + ", ".join(["?" for _ in self.fields])
+            + ")",
             [getattr(self, field.name) for field in self.fields],
         )
         return cur.lastrowid
 
     def _commit_replace(self, cur):
         cur.execute(
-            f'UPDATE {self.relation_name} SET '
-            + ', '.join([f'{field.name}=?' for field in self.fields][1:])
-            + ' WHERE id=?',
+            f"UPDATE {self.relation_name} SET "
+            + ", ".join([f"{field.name}=?" for field in self.fields][1:])
+            + " WHERE id=?",
             [getattr(self, field.name) for field in self.fields[1:]] + [self.id],
         )
 
@@ -146,7 +146,7 @@ class DbRelation:
         with self._cursor(self.relation_name, self.fields) as cur:
             if self.id is not None:
                 cur.execute(
-                    f'SELECT * FROM {self.relation_name} WHERE id=?', (self.id,)
+                    f"SELECT * FROM {self.relation_name} WHERE id=?", (self.id,)
                 )
                 values = cur.fetchone()
                 if values is None:
@@ -160,7 +160,7 @@ class DbRelation:
     def delete(self):
         with self._cursor(self.relation_name, self.fields) as cur:
             if self.id is not None:
-                cur.execute(f'DELETE FROM {self.relation_name} WHERE id=?', (self.id,))
+                cur.execute(f"DELETE FROM {self.relation_name} WHERE id=?", (self.id,))
             else:
                 raise ValueError("The db object doesn't have id.")
 
@@ -169,7 +169,7 @@ class DbRelation:
         all_values = []
         dummy = cls()
         with DbRelation._cursor(dummy.relation_name, cls.fields) as cur:
-            cur.execute(f'SELECT * FROM {dummy.relation_name}')
+            cur.execute(f"SELECT * FROM {dummy.relation_name}")
             rows = cur.fetchall()
             for row in rows:
                 new_relation = cls()
@@ -189,10 +189,10 @@ class DbRelation:
             for key in kwargs:
                 where_keys.append(key)
                 where_values.append(kwargs[key])
-            where_conditions = [f'{key}=?' for key in where_keys]
-            where_body = ' AND '.join(where_conditions)
+            where_conditions = [f"{key}=?" for key in where_keys]
+            where_body = " AND ".join(where_conditions)
             cur.execute(
-                f'SELECT * FROM {dummy.relation_name} WHERE {where_body}', where_values
+                f"SELECT * FROM {dummy.relation_name} WHERE {where_body}", where_values
             )
             rows = cur.fetchall()
             for row in rows:

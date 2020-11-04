@@ -1,6 +1,6 @@
 from os import environ
 
-_BOT_OWNER_NAME_DEFAULT = 'fjfnaranjo'
+_BOT_OWNER_NAME_DEFAULT = "fjfnaranjo"
 _BOT_COMPONENTS_DEFAULT = "start,config,friends,commands,terraria,sorry"
 
 SORRY_TEXT = "I don't know what to do about that. Sorry :("
@@ -12,11 +12,11 @@ command_list = []
 
 
 def get_bot_owner_name():
-    return environ.get('BOT_OWNER_NAME', _BOT_OWNER_NAME_DEFAULT)
+    return environ.get("BOT_OWNER_NAME", _BOT_OWNER_NAME_DEFAULT)
 
 
 def get_bot_components():
-    return environ.get('BOT_COMPONENTS', _BOT_COMPONENTS_DEFAULT)
+    return environ.get("BOT_COMPONENTS", _BOT_COMPONENTS_DEFAULT)
 
 
 class User:

@@ -8,16 +8,16 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 
-_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}'
-_TASKS_COMPONENTS_TEMPLATE = 'fjfnaranjobot.components.{}.tasks'
+_COMPONENTS_TEMPLATE = "fjfnaranjobot.components.{}"
+_TASKS_COMPONENTS_TEMPLATE = "fjfnaranjobot.components.{}.tasks"
 
 
-app = Celery('tasks')
+app = Celery("tasks")
 
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **_kwargs):
-    for component in get_bot_components().split(','):
+    for component in get_bot_components().split(","):
         try:
             component_tasks = import_module(
                 _TASKS_COMPONENTS_TEMPLATE.format(component)
@@ -52,6 +52,6 @@ def setup_tasks(sender, **_kwargs):
     sender.autodiscover_tasks(
         [
             _COMPONENTS_TEMPLATE.format(component)
-            for component in get_bot_components().split(',')
+            for component in get_bot_components().split(",")
         ],
     )

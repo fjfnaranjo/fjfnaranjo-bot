@@ -11,11 +11,11 @@ logger = getLogger(__name__)
 
 
 handlers = (
-    CommandHandler('terraria', terraria_handler),
+    CommandHandler("terraria", terraria_handler),
     terraria_admin_conversation,
 )
 
 commands = (
-    Command("Manage Terraria servers.", 'terraria', 'terraria'),
-    Command("Manage Terraria servers (admin).", None, 'terraria_admin'),
+    Command("Manage Terraria servers.", "terraria", "terraria"),
+    Command("Manage Terraria servers (admin).", None, "terraria_admin"),
 )

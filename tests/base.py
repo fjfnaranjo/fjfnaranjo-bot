@@ -10,21 +10,21 @@ from telegram.ext import DispatcherHandlerStop
 from fjfnaranjobot.auth import friends
 from fjfnaranjobot.common import User
 
-BOT_USERNAME = 'bu'
+BOT_USERNAME = "bu"
 
-OWNER_USER = User(11, 'o')
-FIRST_FRIEND_USER = User(21, 'f')
-SECOND_FRIEND_USER = User(22, 's')
-UNKNOWN_USER = User(31, 'u')
-BOT_USER = User(41, 'b')
+OWNER_USER = User(11, "o")
+FIRST_FRIEND_USER = User(21, "f")
+SECOND_FRIEND_USER = User(22, "s")
+UNKNOWN_USER = User(31, "u")
+BOT_USER = User(41, "b")
 
-LOG_NO_USER_HEAD = 'Message received with no user'
-LOG_USER_UNAUTHORIZED_HEAD = f'User {UNKNOWN_USER.username} with id {UNKNOWN_USER.id}'
+LOG_NO_USER_HEAD = "Message received with no user"
+LOG_USER_UNAUTHORIZED_HEAD = f"User {UNKNOWN_USER.username} with id {UNKNOWN_USER.id}"
 LOG_BOT_UNAUTHORIZED_HEAD = (
-    f'Bot with username {BOT_USER.username} and id {BOT_USER.id}'
+    f"Bot with username {BOT_USER.username} and id {BOT_USER.id}"
 )
 LOG_FRIEND_UNAUTHORIZED_HEAD = (
-    f'User {FIRST_FRIEND_USER.username} with id {FIRST_FRIEND_USER.id}'
+    f"User {FIRST_FRIEND_USER.username} with id {FIRST_FRIEND_USER.id}"
 )
 
 
@@ -41,7 +41,7 @@ class BotTestCase(TestCase):
             edit_keys = {}
         if delete_keys is None:
             delete_keys = []
-        if not hasattr(self, '_environ'):
+        if not hasattr(self, "_environ"):
             self._environ = environ.copy()
         for key in delete_keys:
             if key in self._environ:
@@ -90,7 +90,7 @@ class BotHandlerTestCase(BotTestCase):
 
     def set_string_command(self, cmd, cmd_args=None):
         self._update_mock.message.text = cmd + (
-            (' ' + (' '.join(cmd_args))) if cmd_args is not None else ''
+            (" " + (" ".join(cmd_args))) if cmd_args is not None else ""
         )
         self._context_mock.args = cmd_args
 
@@ -106,7 +106,7 @@ class BotHandlerTestCase(BotTestCase):
     @contextmanager
     def run(self, *args, **kwargs):
         with self.mocked_environ(
-            'fjfnaranjobot.auth.environ', {'BOT_OWNER_ID': str(OWNER_USER.id)}
+            "fjfnaranjobot.auth.environ", {"BOT_OWNER_ID": str(OWNER_USER.id)}
         ):
             return super().run(*args, **kwargs)
 
@@ -166,9 +166,9 @@ class BotHandlerTestCase(BotTestCase):
             called = self._update_mock.message.reply_text.mock_calls[idx]
             call_args = called[1]
             call_kwargs = called[2].copy()
-            reply_markup_call = call_kwargs.get('reply_markup')
-            if 'reply_markup' in call_kwargs:
-                del call_kwargs['reply_markup']
+            reply_markup_call = call_kwargs.get("reply_markup")
+            if "reply_markup" in call_kwargs:
+                del call_kwargs["reply_markup"]
             self.assertEqual(call, call(*call_args, **call_kwargs))
             if reply_markup_call is not None:
                 self.assertEqual(reply_markup_dict, reply_markup_call.to_dict())
@@ -218,9 +218,9 @@ class BotHandlerTestCase(BotTestCase):
             called = self._context_mock.bot.edit_message_text.mock_calls[idx]
             call_args = called[1]
             call_kwargs = called[2].copy()
-            reply_markup_call = call_kwargs.get('reply_markup')
-            if 'reply_markup' in call_kwargs:
-                del call_kwargs['reply_markup']
+            reply_markup_call = call_kwargs.get("reply_markup")
+            if "reply_markup" in call_kwargs:
+                del call_kwargs["reply_markup"]
             self.assertEqual(call, call(*call_args, **call_kwargs))
             if reply_markup_call is not None:
                 self.assertEqual(reply_markup_dict, reply_markup_call.to_dict())

@@ -13,7 +13,7 @@ logger = getLogger(__name__)
 
 
 def get_owner_id():
-    owner_id = environ.get('BOT_OWNER_ID')
+    owner_id = environ.get("BOT_OWNER_ID")
     return int(owner_id) if owner_id is not None else None
 
 
@@ -27,11 +27,11 @@ def _reply_unauthorized(update, context):
 
 
 def _parse_command(update):
-    message = getattr(update, 'message', None)
+    message = getattr(update, "message", None)
     if message is not None:
-        return getattr(message, 'text', '<empty>')
+        return getattr(message, "text", "<empty>")
     else:
-        return '<unknown>'
+        return "<unknown>"
 
 
 def _report_no_user(update, permission):
@@ -67,11 +67,11 @@ def only_real(f):
         user = update.effective_user
         if user is None:
             _reply_unauthorized(update, context)
-            _report_no_user(update, 'only_real')
+            _report_no_user(update, "only_real")
             raise DispatcherHandlerStop()
         if user.is_bot:
             _reply_unauthorized(update, context)
-            _report_bot(update, user, 'only_real')
+            _report_bot(update, user, "only_real")
             raise DispatcherHandlerStop()
         return f(update, context, *args, **kwargs)
 
@@ -86,7 +86,7 @@ def only_owner(f):
         user = update.effective_user
         if owner_id is None or user.id != owner_id:
             _reply_unauthorized(update, context)
-            _report_user(update, user, 'only_owner')
+            _report_user(update, user, "only_owner")
             raise DispatcherHandlerStop()
         return f(update, context, *args, **kwargs)
 
@@ -99,23 +99,23 @@ class _FriendsProxy(MutableSet):
     def _friends_cursor():
         with cursor() as cur:
             cur.execute(
-                'CREATE TABLE IF NOT EXISTS friends (id INTEGER PRIMARY KEY, username)'
+                "CREATE TABLE IF NOT EXISTS friends (id INTEGER PRIMARY KEY, username)"
             )
             yield cur
 
     def __contains__(self, user):
         with self._friends_cursor() as cur:
             cur.execute(
-                'SELECT id FROM friends WHERE id=?',
+                "SELECT id FROM friends WHERE id=?",
                 (user.id,),
             )
             exists = cur.fetchone()
             return True if exists is not None else None
 
     def __iter__(self, *, sort=False):
-        statement = 'SELECT id, username FROM friends'
+        statement = "SELECT id, username FROM friends"
         if sort:
-            statement += ' ORDER BY id'
+            statement += " ORDER BY id"
         with self._friends_cursor() as cur:
             cur.execute(statement)
             rows = cur.fetchall()
@@ -124,7 +124,7 @@ class _FriendsProxy(MutableSet):
 
     def __len__(self):
         with self._friends_cursor() as cur:
-            cur.execute('SELECT count(*) FROM friends')
+            cur.execute("SELECT count(*) FROM friends")
             return cur.fetchone()[0]
 
     def add(self, user):
@@ -133,20 +133,20 @@ class _FriendsProxy(MutableSet):
         )
         with self._friends_cursor() as cur:
             cur.execute(
-                'SELECT id FROM friends WHERE id=?',
+                "SELECT id FROM friends WHERE id=?",
                 (user.id,),
             )
             exists = True if len(cur.fetchall()) > 0 else False
             if exists:
                 with self._friends_cursor() as cur:
                     cur.execute(
-                        'UPDATE friends SET id=?, username=? WHERE id=?',
+                        "UPDATE friends SET id=?, username=? WHERE id=?",
                         (user.id, user.username, user.id),
                     )
             else:
                 with self._friends_cursor() as cur:
                     cur.execute(
-                        'INSERT INTO friends VALUES (?, ?)',
+                        "INSERT INTO friends VALUES (?, ?)",
                         (user.id, user.username),
                     )
 
@@ -156,7 +156,7 @@ class _FriendsProxy(MutableSet):
         )
         with self._friends_cursor() as cur:
             cur.execute(
-                'DELETE FROM friends WHERE id=?',
+                "DELETE FROM friends WHERE id=?",
                 (user.id,),
             )
 
@@ -179,7 +179,7 @@ def only_friends(f):
         friend = User(user.id, user.username)
         if (owner_id is not None and user.id == owner_id) or friend not in friends:
             _reply_unauthorized(update, context)
-            _report_user(update, user, 'only_friends')
+            _report_user(update, user, "only_friends")
             raise DispatcherHandlerStop()
         return f(update, context, *args, **kwargs)
 

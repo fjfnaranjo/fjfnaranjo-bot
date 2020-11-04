@@ -10,6 +10,6 @@ class TerrariaHandlersTests(BotHandlerTestCase):
 
     def test_terraria_handler_does_nothing(self):
         with self.assert_log_dispatch(
-            'The \'terraria\' command is not implemented.', logger
+            "The 'terraria' command is not implemented.", logger
         ):
             terraria_handler(*self.update_and_context)
