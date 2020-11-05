@@ -158,23 +158,19 @@ class Bot:
             self._parse_component_handlers(component, info, group)
             self._parse_component_commands(component, info)
 
-    def _n_parse_component_bot_commands(self, component, info, group):
+    def _n_parse_component_bot_commands(self, component, info):
         members = getmembers(info)
         for _, member in members:
             if member is not BotCommand and isclass(member) and issubclass(member, BotCommand):
                 command = member()
-                self.dispatcher.add_handler(command.handler, group)
-                callback_names = self._get_names_callbacks(command.handler)
-                for command, callback in callback_names:
-                    logger.debug(
-                        f"Registered command '{command}' "
-                        f"with callback '{callback}' "
-                        f"for component '{component}' "
-                        f"and group number {group}."
-                    )
-                # TODO: Clean
-                command = member()
                 command_list.append(command)
+                logger.debug(
+                    "Registering handlers"
+                    f" for command '{command.__class__.__name__}'"
+                    f" (component '{component}')."
+                )
+                for group, handler in command.handlers:
+                    self.dispatcher.add_handler(handler, group)
 
     def _n_parse_component_info(self, component):
         try:
@@ -182,11 +178,7 @@ class Bot:
         except ModuleNotFoundError:
             pass
         else:
-            try:
-                group = int(getattr(info, "group", DEFAULT_GROUP))
-            except ValueError:
-                raise ValueError(f"Invalid group for component '{component}'.")
-            self._n_parse_component_bot_commands(component, info, group)
+            self._n_parse_component_bot_commands(component, info)
 
     def process_request(self, url_path, update):
 
