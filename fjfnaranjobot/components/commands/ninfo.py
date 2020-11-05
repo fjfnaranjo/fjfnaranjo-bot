@@ -1,12 +1,12 @@
 from fjfnaranjobot.auth import n_only_owner
 from fjfnaranjobot.bot import command_list
-from fjfnaranjobot.command import BotCommand, CommandHandlerMixin
+from fjfnaranjobot.command import BotCommand
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
 
-class Commands(BotCommand, CommandHandlerMixin):
+class Commands(BotCommand):
     name = "ncommands"
     description = "Print the list of bot commands."
     is_dev_command = True

@@ -16,23 +16,9 @@ class Command:
         self.update = None
         self.context = None
 
-    def reply(self, text):
-        self.update.message.reply_text(text)
-
-    # TODO: Consider reporting hadlers registration in children of this def
     @property
     def handlers(self):
-        return []
-
-    def handle_command(self):
-        pass
-
-
-# TODO: Consider merging with Command
-class CommandHandlerMixin(Command):
-    @property
-    def handlers(self):
-        return super().handlers + [
+        return [
             (
                 self.group,
                 CommandHandler(
@@ -50,11 +36,18 @@ class CommandHandlerMixin(Command):
         logger.debug(f"Command {self.__class__.__name__} processed.")
         raise DispatcherHandlerStop()
 
+    def handle_command(self):
+        pass
 
-class MessageCommandHandlerMixin(CommandHandlerMixin):
+
+    def reply(self, text):
+        self.update.message.reply_text(text)
+
+
+class MessageCommandHandlerMixin(Command):
     @property
     def handlers(self):
-        return super(CommandHandlerMixin, self).handlers + [
+        return super().handlers + [
             (
                 self.group,
                 MessageHandler(
