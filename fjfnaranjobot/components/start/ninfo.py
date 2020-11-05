@@ -6,7 +6,7 @@ logger = getLogger(__name__)
 
 
 class Start(BotCommand):
-    name = 'nstart'
+    name = "nstart"
 
     def handle_command(self):
         logger.debug(f"Greeting a new user with id {self.update.effective_user.id}.")
