@@ -1,8 +1,7 @@
 from telegram import MessageEntity
-from telegram.ext import MessageHandler, Filters, DispatcherHandlerStop
-from telegram.ext.dispatcher import DEFAULT_GROUP
+from telegram.ext import DispatcherHandlerStop, Filters, MessageHandler
 from telegram.ext.commandhandler import CommandHandler
-
+from telegram.ext.dispatcher import DEFAULT_GROUP
 
 from fjfnaranjobot.logging import getLogger
 
@@ -10,7 +9,7 @@ logger = getLogger(__name__)
 
 
 class Command:
-    name = ''
+    name = ""
     group = DEFAULT_GROUP
 
     def __init__(self):
@@ -32,9 +31,15 @@ class Command:
 class CommandHandlerMixin(Command):
     @property
     def handlers(self):
-        return super().handlers + [(self.group, CommandHandler(
-            self.name, self.entrypoint,
-        ))]
+        return super().handlers + [
+            (
+                self.group,
+                CommandHandler(
+                    self.name,
+                    self.entrypoint,
+                ),
+            )
+        ]
 
     def entrypoint(self, update, context):
         self.update, self.context = update, context
@@ -48,9 +53,15 @@ class CommandHandlerMixin(Command):
 class MessageCommandHandlerMixin(CommandHandlerMixin):
     @property
     def handlers(self):
-        return super(CommandHandlerMixin, self).handlers + [(self.group, MessageHandler(
-            Filters.private & Filters.text, self.entrypoint,
-        ))]
+        return super(CommandHandlerMixin, self).handlers + [
+            (
+                self.group,
+                MessageHandler(
+                    Filters.private & Filters.text,
+                    self.entrypoint,
+                ),
+            )
+        ]
 
     def entrypoint(self, update, context):
         self.update, self.context = update, context
@@ -64,9 +75,16 @@ class MessageCommandHandlerMixin(CommandHandlerMixin):
 class GroupCommandHandlerMixin(Command):
     @property
     def handlers(self):
-        return super().handlers + [(self.group, CommandHandler(
-            self.name, self.group_entrypoint, filters=Filters.group,
-        ))]
+        return super().handlers + [
+            (
+                self.group,
+                CommandHandler(
+                    self.name,
+                    self.group_entrypoint,
+                    filters=Filters.group,
+                ),
+            )
+        ]
 
     def group_entrypoint(self, update, context):
         self.update, self.context = update, context
@@ -81,8 +99,7 @@ class GroupCommandHandlerMixin(Command):
             and mentions[mentions_keys[0]] == bot_mention
             and update.message.text.find(bot_mention) == 0
         ):
-            update.message.text = \
-                update.message.text.replace(bot_mention, "").strip()
+            update.message.text = update.message.text.replace(bot_mention, "").strip()
 
         self.handle_group_command()
         logger.debug(f"Group command {self.__class__.__name__} processed.")
@@ -95,12 +112,17 @@ class GroupCommandHandlerMixin(Command):
 class GroupMessageCommandHandlerMixin(GroupCommandHandlerMixin):
     @property
     def handlers(self):
-        return super(GroupCommandHandlerMixin, self).handlers + [(self.group, MessageHandler(
-            Filters.group
-            & Filters.text
-            & Filters.entity(MessageEntity.MENTION),
-            self.group_entrypoint,
-        ))]
+        return super(GroupCommandHandlerMixin, self).handlers + [
+            (
+                self.group,
+                MessageHandler(
+                    Filters.group
+                    & Filters.text
+                    & Filters.entity(MessageEntity.MENTION),
+                    self.group_entrypoint,
+                ),
+            )
+        ]
 
     def group_entrypoint(self, update, context):
         self.update, self.context = update, context
@@ -112,7 +134,7 @@ class GroupMessageCommandHandlerMixin(GroupCommandHandlerMixin):
 
 
 class BotCommand(Command):
-    description = ''
+    description = ""
     is_prod_command = False
     is_dev_command = False
 

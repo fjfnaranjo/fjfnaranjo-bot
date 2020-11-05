@@ -16,8 +16,8 @@ from telegram.ext import (
 )
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
-from fjfnaranjobot.common import Command, command_list, get_bot_components
 from fjfnaranjobot.command import BotCommand
+from fjfnaranjobot.common import Command, command_list, get_bot_components
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -161,7 +161,11 @@ class Bot:
     def _n_parse_component_bot_commands(self, component, info):
         members = getmembers(info)
         for _, member in members:
-            if member is not BotCommand and isclass(member) and issubclass(member, BotCommand):
+            if (
+                member is not BotCommand
+                and isclass(member)
+                and issubclass(member, BotCommand)
+            ):
                 command = member()
                 command_list.append(command)
                 logger.debug(
