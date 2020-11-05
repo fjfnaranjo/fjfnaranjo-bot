@@ -30,6 +30,9 @@ def commands_handler(update, _context):
     raise DispatcherHandlerStop()
 
 
+# TODO: Debug
+group = 1
+
 handlers = (CommandHandler("commands", commands_handler),)
 
 commands = (Command("Print the list of bot commands.", None, "commands"),)

@@ -28,6 +28,7 @@ class Command:
         pass
 
 
+# TODO: Consider merging with Command
 class CommandHandlerMixin(Command):
     @property
     def handlers(self):

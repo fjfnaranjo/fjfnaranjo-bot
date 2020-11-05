@@ -1,3 +1,4 @@
+# TODO: Clean _n
 from collections.abc import MutableSet
 from contextlib import contextmanager
 from functools import wraps
@@ -78,6 +79,25 @@ def only_real(f):
     return wrapper
 
 
+def n_only_real(f):
+    @wraps(f)
+    def wrapper(self, *args, **kwargs):
+        update = self.update
+        context = self.context
+        user = update.effective_user
+        if user is None:
+            _reply_unauthorized(update, context)
+            _report_no_user(update, "only_real")
+            raise DispatcherHandlerStop()
+        if user.is_bot:
+            _reply_unauthorized(update, context)
+            _report_bot(update, user, "only_real")
+            raise DispatcherHandlerStop()
+        return f(self, *args, **kwargs)
+
+    return wrapper
+
+
 def only_owner(f):
     @only_real
     @wraps(f)
@@ -89,6 +109,23 @@ def only_owner(f):
             _report_user(update, user, "only_owner")
             raise DispatcherHandlerStop()
         return f(update, context, *args, **kwargs)
+
+    return wrapper
+
+
+def n_only_owner(f):
+    @n_only_real
+    @wraps(f)
+    def wrapper(self, *args, **kwargs):
+        update = self.update
+        context = self.context
+        owner_id = get_owner_id()
+        user = update.effective_user
+        if owner_id is None or user.id != owner_id:
+            _reply_unauthorized(update, context)
+            _report_user(update, user, "only_owner")
+            raise DispatcherHandlerStop()
+        return f(self, *args, **kwargs)
 
     return wrapper
 
