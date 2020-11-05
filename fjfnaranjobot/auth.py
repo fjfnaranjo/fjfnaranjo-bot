@@ -88,11 +88,11 @@ def n_only_real(f):
         if user is None:
             _reply_unauthorized(update, context)
             _report_no_user(update, "only_real")
-            raise DispatcherHandlerStop()
+            self.abort()
         if user.is_bot:
             _reply_unauthorized(update, context)
             _report_bot(update, user, "only_real")
-            raise DispatcherHandlerStop()
+            self.abort()
         return f(self, *args, **kwargs)
 
     return wrapper
@@ -124,7 +124,7 @@ def n_only_owner(f):
         if owner_id is None or user.id != owner_id:
             _reply_unauthorized(update, context)
             _report_user(update, user, "only_owner")
-            raise DispatcherHandlerStop()
+            self.abort()
         return f(self, *args, **kwargs)
 
     return wrapper

@@ -39,6 +39,8 @@ class Command:
     def handle_command(self):
         pass
 
+    def abort(self):
+        raise DispatcherHandlerStop()
 
     def reply(self, text):
         self.update.message.reply_text(text)
