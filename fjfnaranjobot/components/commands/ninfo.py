@@ -13,7 +13,7 @@ class Commands(BotCommand, CommandHandlerMixin):
 
     @n_only_owner
     def handle_command(self):
-        logger.info("Sending list of commands.")
+        logger.debug("Sending list of commands.")
 
         prod_commands = [
             command.prod_command + " - " + command.description
