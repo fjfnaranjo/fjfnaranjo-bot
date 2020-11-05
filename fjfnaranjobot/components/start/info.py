@@ -14,4 +14,7 @@ def start_handler(update, _context):
     raise DispatcherHandlerStop()
 
 
+# TODO: Debug
+group = 1
+
 handlers = (CommandHandler("start", start_handler),)
