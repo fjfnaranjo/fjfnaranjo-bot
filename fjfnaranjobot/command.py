@@ -82,6 +82,9 @@ class GroupCommandHandlerMixin(Command):
             )
         ]
 
+    # TODO: Consider removing group_entrypoint for an overrided entrypoint here
+    #       just doing the message substitution and calling original entrypoint
+    #       with super() at the end. Without logs.
     def group_entrypoint(self, update, context):
         self.update, self.context = update, context
 
