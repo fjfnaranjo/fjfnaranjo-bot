@@ -1,17 +1,16 @@
-from fjfnaranjobot.auth import n_only_owner
 from fjfnaranjobot.bot import command_list
-from fjfnaranjobot.command import BotCommand
+from fjfnaranjobot.command import ONLY_OWNER, BotCommand, CommandHandlerMixin
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
 
-class Commands(BotCommand):
+class Commands(BotCommand, CommandHandlerMixin):
     name = "ncommands"
     description = "Print the list of bot commands."
     is_dev_command = True
+    permissions = ONLY_OWNER
 
-    @n_only_owner
     def handle_command(self):
         logger.debug("Sending list of commands.")
 

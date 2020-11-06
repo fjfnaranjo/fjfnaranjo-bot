@@ -1,11 +1,11 @@
-from fjfnaranjobot.command import BotCommand
+from fjfnaranjobot.command import BotCommand, CommandHandlerMixin
 from fjfnaranjobot.common import get_bot_owner_name
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
 
-class Start(BotCommand):
+class Start(BotCommand, CommandHandlerMixin):
     name = "nstart"
 
     def handle_command(self):

@@ -158,31 +158,23 @@ class Bot:
             self._parse_component_handlers(component, info, group)
             self._parse_component_commands(component, info)
 
-    def _n_parse_component_bot_commands(self, component, info):
-        members = getmembers(info)
-        for _, member in members:
-            if (
-                member is not BotCommand
-                and isclass(member)
-                and issubclass(member, BotCommand)
-            ):
-                command = member()
-                command_list.append(command)
-                logger.debug(
-                    "Registering handlers"
-                    f" for command '{command.__class__.__name__}'"
-                    f" (component '{component}')."
-                )
-                for group, handler in command.handlers:
-                    self.dispatcher.add_handler(handler, group)
-
     def _n_parse_component_info(self, component):
         try:
             info = import_module(_N_BOT_COMPONENTS_TEMPLATE.format(component))
         except ModuleNotFoundError:
             pass
         else:
-            self._n_parse_component_bot_commands(component, info)
+            members = getmembers(info)
+            for _, member in members:
+                if (
+                    member is not BotCommand
+                    and isclass(member)
+                    and issubclass(member, BotCommand)
+                ):
+                    command = member()
+                    command_list.append(command)
+                    for group, handler in command.handlers:
+                        self.dispatcher.add_handler(handler, group)
 
     def process_request(self, url_path, update):
 

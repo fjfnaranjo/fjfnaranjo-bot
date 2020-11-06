@@ -1,24 +1,156 @@
-from telegram import MessageEntity
-from telegram.ext import DispatcherHandlerStop, Filters, MessageHandler
-from telegram.ext.commandhandler import CommandHandler
+from telegram import MessageEntity, Update
+from telegram.ext import (
+    CommandHandler,
+    ConversationHandler,
+    DispatcherHandlerStop,
+    Filters,
+    Handler,
+    MessageHandler,
+    StringCommandHandler,
+)
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
+from fjfnaranjobot.auth import (
+    User,
+    _report_bot,
+    _report_no_user,
+    _report_user,
+    friends,
+    get_owner_id,
+)
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
+ALL, ONLY_REAL, ONLY_OWNER, ONLY_FRIENDS = range(4)
+
+
+class AnyHandler(Handler):
+    def check_update(self, update):
+        return update
 
 
 class Command:
     name = ""
     group = DEFAULT_GROUP
+    permissions = ALL
 
     def __init__(self):
         self.update = None
         self.context = None
 
+    @staticmethod
+    def extract_commands(handler):
+        commands = []
+        if isinstance(handler, ConversationHandler):
+            for entry_point in handler.entry_points:
+                commands.append(Command.extract_commands(entry_point))
+        else:
+            if isinstance(handler, CommandHandler):
+                for command in handler.command:
+                    commands.append(command)
+            elif isinstance(handler, StringCommandHandler):
+                commands.append(handler.command)
+            elif isinstance(handler, MessageHandler):
+                commands.append("<message>")
+            elif isinstance(handler, AnyHandler):
+                commands.append("<any>")
+            else:
+                commands.append("<unknown command>")
+        return commands
+
+    @staticmethod
+    def log_handlers_info(handlers, command_class):
+        for group, handler in handlers:
+            commands = Command.extract_commands(handler)
+            for command in commands:
+                logger.debug(
+                    f"New handler for {command}"
+                    f" created by {command_class.__name__} command"
+                    f" in group {group}."
+                )
+
     @property
     def handlers(self):
-        return [
+        return []
+
+    def abort(self):
+        pass
+
+    def user_is_real(self):
+        user = self.update.effective_user
+        if user is None:
+            _report_no_user(self.update, "only_real")
+            return False
+        if user.is_bot:
+            _report_bot(self.update, user, "only_real")
+            return False
+        return True
+
+    def user_is_owner(self):
+        if not self.user_is_real():
+            return False
+        owner_id = get_owner_id()
+        user = self.update.effective_user
+        if owner_id is None or user.id != owner_id:
+            _report_user(self.update, user, "only_owner")
+            return False
+        return True
+
+    def user_is_friend(self):
+        if not self.user_is_real():
+            return False
+        owner_id = get_owner_id()
+        user = self.update.effective_user
+        friend = User(user.id, user.username)
+        if (owner_id is not None and user.id == owner_id) or friend not in friends:
+            _report_user(self.update, user, "only_friends")
+            return False
+        return True
+
+    def handle_command(self):
+        pass
+
+    def entrypoint(self, update, context):
+        self.update, self.context = update, context
+
+        if self.permissions == ONLY_REAL:
+            if not self.user_is_real():
+                return
+        if self.permissions == ONLY_OWNER:
+            if not self.user_is_owner():
+                return
+        if self.permissions == ONLY_FRIENDS:
+            if not self.user_is_friend():
+                return
+
+        logger.info(f"Handler for {self.__class__.__name__} command entered.")
+        self.handle_command()
+        logger.debug(f"Handler for {self.__class__.__name__} command exited.")
+        raise DispatcherHandlerStop()
+
+    def reply(self, text):
+        self.update.message.reply_text(text)
+
+
+class AnyHandlerMixin(Command):
+    @property
+    def handlers(self):
+        new_handlers = [
+            (
+                self.group,
+                AnyHandler(
+                    self.entrypoint,
+                ),
+            )
+        ]
+        self.log_handlers_info(new_handlers, self.__class__)
+        return super().handlers + new_handlers
+
+
+class CommandHandlerMixin(Command):
+    @property
+    def handlers(self):
+        new_handlers = [
             (
                 self.group,
                 CommandHandler(
@@ -27,29 +159,14 @@ class Command:
                 ),
             )
         ]
-
-    def entrypoint(self, update, context):
-        self.update, self.context = update, context
-
-        logger.info(f"Command {self.__class__.__name__} received.")
-        self.handle_command()
-        logger.debug(f"Command {self.__class__.__name__} processed.")
-        raise DispatcherHandlerStop()
-
-    def handle_command(self):
-        pass
-
-    def abort(self):
-        raise DispatcherHandlerStop()
-
-    def reply(self, text):
-        self.update.message.reply_text(text)
+        self.log_handlers_info(new_handlers, self.__class__)
+        return super().handlers + new_handlers
 
 
 class MessageCommandHandlerMixin(Command):
     @property
     def handlers(self):
-        return super().handlers + [
+        new_handlers = [
             (
                 self.group,
                 MessageHandler(
@@ -58,38 +175,12 @@ class MessageCommandHandlerMixin(Command):
                 ),
             )
         ]
+        self.log_handlers_info(new_handlers, self.__class__)
+        return super().handlers + new_handlers
 
+
+class CommandEntrypointMixin(Command):
     def entrypoint(self, update, context):
-        self.update, self.context = update, context
-
-        logger.info(f"Message {self.__class__.__name__} received.")
-        self.handle_command()
-        logger.debug(f"Message {self.__class__.__name__} processed.")
-        raise DispatcherHandlerStop()
-
-
-class GroupCommandHandlerMixin(Command):
-    @property
-    def handlers(self):
-        return super().handlers + [
-            (
-                self.group,
-                CommandHandler(
-                    self.name,
-                    self.group_entrypoint,
-                    filters=Filters.group,
-                ),
-            )
-        ]
-
-    # TODO: Consider removing group_entrypoint for an overrided entrypoint here
-    #       just doing the message substitution and calling original entrypoint
-    #       with super() at the end. Without logs.
-    def group_entrypoint(self, update, context):
-        self.update, self.context = update, context
-
-        logger.info(f"Group command {self.__class__.__name__} received.")
-
         bot_mention = "@" + context.bot.username
         mentions = update.message.parse_entities(MessageEntity.MENTION)
         mentions_keys = list(mentions.keys())
@@ -100,36 +191,42 @@ class GroupCommandHandlerMixin(Command):
         ):
             update.message.text = update.message.text.replace(bot_mention, "").strip()
 
-        self.handle_group_command()
-        logger.debug(f"Group command {self.__class__.__name__} processed.")
-        raise DispatcherHandlerStop()
-
-    def handle_group_command(self):
-        return self.handle_command()
+        return super().entrypoint(update, context)
 
 
-class GroupMessageCommandHandlerMixin(GroupCommandHandlerMixin):
+class GroupCommandHandlerMixin(CommandEntrypointMixin, Command):
     @property
     def handlers(self):
-        return super(GroupCommandHandlerMixin, self).handlers + [
+        new_handlers = [
+            (
+                self.group,
+                CommandHandler(
+                    self.name,
+                    self.entrypoint,
+                    filters=Filters.group,
+                ),
+            )
+        ]
+        self.log_handlers_info(new_handlers, self.__class__)
+        return super().handlers + new_handlers
+
+
+class GroupMessageCommandHandlerMixin(CommandEntrypointMixin, Command):
+    @property
+    def handlers(self):
+        new_handlers = [
             (
                 self.group,
                 MessageHandler(
                     Filters.group
                     & Filters.text
                     & Filters.entity(MessageEntity.MENTION),
-                    self.group_entrypoint,
+                    self.entrypoint,
                 ),
             )
         ]
-
-    def group_entrypoint(self, update, context):
-        self.update, self.context = update, context
-
-        logger.info(f"Group message {self.__class__.__name__} received.")
-        self.handle_group_command()
-        logger.debug(f"Group message {self.__class__.__name__} processed.")
-        raise DispatcherHandlerStop()
+        self.log_handlers_info(new_handlers, self.__class__)
+        return super().handlers + new_handlers
 
 
 class BotCommand(Command):
