@@ -10,12 +10,13 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 
-handlers = (
-    CommandHandler("terraria", terraria_handler),
-    terraria_admin_conversation,
-)
+# TODO: Debug
+handlers = tuple()  # (
+#    CommandHandler("terraria", terraria_handler),
+#    terraria_admin_conversation,
+# )
 
-commands = (
-    Command("Manage Terraria servers.", "terraria", "terraria"),
-    Command("Manage Terraria servers (admin).", None, "terraria_admin"),
-)
+commands = tuple()  # (
+#    Command("Manage Terraria servers.", "terraria", "terraria"),
+#    Command("Manage Terraria servers (admin).", None, "terraria_admin"),
+# )

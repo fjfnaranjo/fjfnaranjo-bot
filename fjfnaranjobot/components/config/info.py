@@ -262,38 +262,39 @@ action_inlines = {
 }
 
 
-handlers = (
-    ConversationHandler(
-        entry_points=[CommandHandler("config", config_handler)],
-        states={
-            GET_SET_OR_DEL: [
-                CallbackQueryHandler(inline_handler(action_inlines, logger)),
-            ],
-            GET_VAR: [
-                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.text, get_var_handler),
-            ],
-            SET_VAR: [
-                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.text, set_var_handler),
-            ],
-            SET_VALUE: [
-                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.text, set_value_handler),
-            ],
-            DEL_VAR: [
-                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.text, del_var_handler),
-            ],
-        },
-        fallbacks=[],
-    ),
-)
+# TODO: Debug
+handlers = tuple()  # (
+#    ConversationHandler(
+#        entry_points=[CommandHandler("config", config_handler)],
+#        states={
+#            GET_SET_OR_DEL: [
+#                CallbackQueryHandler(inline_handler(action_inlines, logger)),
+#            ],
+#            GET_VAR: [
+#                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
+#                MessageHandler(Filters.text, get_var_handler),
+#            ],
+#            SET_VAR: [
+#                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
+#                MessageHandler(Filters.text, set_var_handler),
+#            ],
+#            SET_VALUE: [
+#                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
+#                MessageHandler(Filters.text, set_value_handler),
+#            ],
+#            DEL_VAR: [
+#                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
+#                MessageHandler(Filters.text, del_var_handler),
+#            ],
+#        },
+#        fallbacks=[],
+#    ),
+# )
 
-commands = (
-    Command(
-        "Edit bot configuration.",
-        None,
-        "config",
-    ),
-)
+commands = tuple()  # (
+#    Command(
+#        "Edit bot configuration.",
+#        None,
+#        "config",
+#    ),
+# )

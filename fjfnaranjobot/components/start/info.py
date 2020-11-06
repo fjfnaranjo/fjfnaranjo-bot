@@ -15,6 +15,4 @@ def start_handler(update, _context):
 
 
 # TODO: Debug
-group = 1
-
-handlers = (CommandHandler("start", start_handler),)
+handlers = tuple()  # (CommandHandler("start", start_handler),)

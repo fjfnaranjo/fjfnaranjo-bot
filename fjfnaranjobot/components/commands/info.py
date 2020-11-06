@@ -31,8 +31,6 @@ def commands_handler(update, _context):
 
 
 # TODO: Debug
-group = 1
+handlers = tuple()  # (CommandHandler("commands", commands_handler),)
 
-handlers = (CommandHandler("commands", commands_handler),)
-
-commands = (Command("Print the list of bot commands.", None, "commands"),)
+commands = tuple()  # (Command("Print the list of bot commands.", None, "commands"),)

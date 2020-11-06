@@ -28,12 +28,10 @@ def sorry_group_handler(update, context):
 
 
 # TODO: Debug
-group = 1
-
-handlers = (
-    MessageHandler(Filters.private & Filters.text, sorry_handler),
-    MessageHandler(
-        Filters.group & Filters.text & Filters.entity(MessageEntity.MENTION),
-        sorry_group_handler,
-    ),
-)
+handlers = tuple()  # (
+#    MessageHandler(Filters.private & Filters.text, sorry_handler),
+#    MessageHandler(
+#        Filters.group & Filters.text & Filters.entity(MessageEntity.MENTION),
+#        sorry_group_handler,
+#    ),
+# )

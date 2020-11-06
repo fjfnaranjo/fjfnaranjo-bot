@@ -459,38 +459,39 @@ list_del_confirm_inlines = {
 }
 
 
-handlers = (
-    ConversationHandler(
-        entry_points=[CommandHandler("friends", friends_handler)],
-        states={
-            GET_ADD_OR_DEL: [
-                CallbackQueryHandler(inline_handler(action_inlines, logger)),
-            ],
-            LIST: [
-                CallbackQueryHandler(inline_handler(list_pos_next_inlines, logger)),
-            ],
-            DEL_FRIEND_CONFIRM: [
-                CallbackQueryHandler(inline_handler(list_del_confirm_inlines, logger)),
-            ],
-            ADD_FRIEND: [
-                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.contact, add_friend_handler),
-                MessageHandler(Filters.text, add_friend_id_handler),
-            ],
-            DEL_FRIEND: [
-                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.contact, del_friend_handler),
-                MessageHandler(Filters.text, del_friend_id_handler),
-            ],
-        },
-        fallbacks=[],
-    ),
-)
+# TODO: Debug
+handlers = tuple()  # (
+#    ConversationHandler(
+#        entry_points=[CommandHandler("friends", friends_handler)],
+#        states={
+#            GET_ADD_OR_DEL: [
+#                CallbackQueryHandler(inline_handler(action_inlines, logger)),
+#            ],
+#            LIST: [
+#                CallbackQueryHandler(inline_handler(list_pos_next_inlines, logger)),
+#            ],
+#            DEL_FRIEND_CONFIRM: [
+#                CallbackQueryHandler(inline_handler(list_del_confirm_inlines, logger)),
+#            ],
+#            ADD_FRIEND: [
+#                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
+#                MessageHandler(Filters.contact, add_friend_handler),
+#                MessageHandler(Filters.text, add_friend_id_handler),
+#            ],
+#            DEL_FRIEND: [
+#                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
+#                MessageHandler(Filters.contact, del_friend_handler),
+#                MessageHandler(Filters.text, del_friend_id_handler),
+#            ],
+#        },
+#        fallbacks=[],
+#    ),
+# )
 
-commands = (
-    Command(
-        "Manage friends.",
-        None,
-        "friends",
-    ),
-)
+commands = tuple()  # (
+#    Command(
+#        "Manage friends.",
+#        None,
+#        "friends",
+#    ),
+# )
