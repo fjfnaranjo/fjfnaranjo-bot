@@ -166,6 +166,7 @@ class CommandHandlerMixin(Command):
                 CommandHandler(
                     self.name,
                     self.entrypoint,
+                    filters=Filters.private & Filters.command,
                 ),
             )
         ]
@@ -173,7 +174,7 @@ class CommandHandlerMixin(Command):
         return super().handlers + new_handlers
 
 
-class MessageCommandHandlerMixin(Command):
+class TextHandlerMixin(Command):
     @property
     def handlers(self):
         new_handlers = [
@@ -189,7 +190,7 @@ class MessageCommandHandlerMixin(Command):
         return super().handlers + new_handlers
 
 
-class CommandEntrypointMixin(Command):
+class GroupEntrypointMixin(Command):
     def entrypoint(self, update, context):
         bot_mention = "@" + context.bot.username
         mentions = update.message.parse_entities(MessageEntity.MENTION)
@@ -204,7 +205,7 @@ class CommandEntrypointMixin(Command):
         return super().entrypoint(update, context)
 
 
-class GroupCommandHandlerMixin(CommandEntrypointMixin, Command):
+class GroupCommandHandlerMixin(GroupEntrypointMixin, Command):
     @property
     def handlers(self):
         new_handlers = [
@@ -213,7 +214,9 @@ class GroupCommandHandlerMixin(CommandEntrypointMixin, Command):
                 CommandHandler(
                     self.name,
                     self.entrypoint,
-                    filters=Filters.group,
+                    filters=Filters.group
+                    & Filters.command
+                    & Filters.entity(MessageEntity.MENTION),
                 ),
             )
         ]
@@ -221,7 +224,7 @@ class GroupCommandHandlerMixin(CommandEntrypointMixin, Command):
         return super().handlers + new_handlers
 
 
-class GroupMessageCommandHandlerMixin(CommandEntrypointMixin, Command):
+class GroupTextHandlerMixin(GroupEntrypointMixin, Command):
     @property
     def handlers(self):
         new_handlers = [
