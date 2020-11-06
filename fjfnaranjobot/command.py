@@ -73,37 +73,47 @@ class Command:
     def handlers(self):
         return []
 
-    def abort(self):
+    def clean(self):
         pass
+
+    def stop(self):
+        self.clean()
+        raise DispatcherHandlerStop()
 
     def user_is_real(self):
         user = self.update.effective_user
         if user is None:
             _report_no_user(self.update, "only_real")
+            self.clean()
             return False
         if user.is_bot:
             _report_bot(self.update, user, "only_real")
+            self.clean()
             return False
         return True
 
     def user_is_owner(self):
         if not self.user_is_real():
+            self.clean()
             return False
         owner_id = get_owner_id()
         user = self.update.effective_user
         if owner_id is None or user.id != owner_id:
             _report_user(self.update, user, "only_owner")
+            self.clean()
             return False
         return True
 
     def user_is_friend(self):
         if not self.user_is_real():
+            self.clean()
             return False
         owner_id = get_owner_id()
         user = self.update.effective_user
         friend = User(user.id, user.username)
         if (owner_id is not None and user.id == owner_id) or friend not in friends:
             _report_user(self.update, user, "only_friends")
+            self.clean()
             return False
         return True
 
@@ -126,7 +136,7 @@ class Command:
         logger.info(f"Handler for {self.__class__.__name__} command entered.")
         self.handle_command()
         logger.debug(f"Handler for {self.__class__.__name__} command exited.")
-        raise DispatcherHandlerStop()
+        self.stop()
 
     def reply(self, text):
         self.update.message.reply_text(text)
