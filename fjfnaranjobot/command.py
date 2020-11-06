@@ -1,3 +1,4 @@
+# TODO: Instead of having the Group...Handler, use filters to detect group
 from telegram import MessageEntity, Update
 from telegram.ext import (
     CommandHandler,
@@ -26,7 +27,13 @@ ALL, ONLY_REAL, ONLY_OWNER, ONLY_FRIENDS = range(4)
 
 class AnyHandler(Handler):
     def check_update(self, update):
-        return update
+        if Filters.group(update) and Filters.entity(MessageEntity.MENTION).filter(
+            update.message
+        ):
+            return update
+        if Filters.private(update):
+            return update
+        return None
 
 
 class Command:
