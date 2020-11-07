@@ -13,9 +13,6 @@ from telegram.ext.dispatcher import DEFAULT_GROUP
 
 from fjfnaranjobot.auth import (
     User,
-    _report_bot,
-    _report_no_user,
-    _report_user,
     friends,
     get_owner_id,
 )
@@ -39,7 +36,7 @@ class AnyHandler(Handler):
 class Command:
     name = ""
     group = DEFAULT_GROUP
-    permissions = ALL
+    permissions = ONLY_REAL
 
     def __init__(self):
         self.update = None
@@ -83,46 +80,79 @@ class Command:
     def clean(self):
         pass
 
-    def stop(self):
-        self.clean()
-        raise DispatcherHandlerStop()
+    def crop_update_text(self):
+        message = getattr(self.update, "message", None)
+        if message is not None:
+            text = getattr(message, "text", None)
+            if text is not None:
+                if len(text) > 10:
+                    text = text[:10] + " (cropped to 10 chars)"
+                return text
+            else:
+                return "<empty>"
+        else:
+            return "<unknown>"
 
     def user_is_real(self):
         user = self.update.effective_user
+        update_text = self.crop_update_text()
         if user is None:
-            _report_no_user(self.update, "only_real")
-            self.clean()
+            logger.warning(
+                "Message received with no user"
+                f" trying to access an ONLY_REAL command."
+                f" Message text: {update_text} ."
+            )
             return False
         if user.is_bot:
-            _report_bot(self.update, user, "only_real")
-            self.clean()
+            logger.warning(
+                "Message received from"
+                f" bot with username {user.username} and id {user.id}"
+                f" trying to access an ONLY_REAL command."
+                f" Message text: {update_text} ."
+            )
             return False
         return True
 
     def user_is_owner(self):
-        if not self.user_is_real():
-            self.clean()
-            return False
         owner_id = get_owner_id()
         user = self.update.effective_user
+        update_text = self.crop_update_text()
         if owner_id is None or user.id != owner_id:
-            _report_user(self.update, user, "only_owner")
-            self.clean()
+            logger.warning(
+                "Message received from"
+                f" user {user.username} with id {user.id}"
+                f" trying to access an ONLY_OWNER command."
+                f" Message text: {update_text} ."
+            )
             return False
         return True
 
     def user_is_friend(self):
-        if not self.user_is_real():
-            self.clean()
-            return False
         owner_id = get_owner_id()
         user = self.update.effective_user
+        update_text = self.crop_update_text()
         friend = User(user.id, user.username)
         if (owner_id is not None and user.id == owner_id) or friend not in friends:
-            _report_user(self.update, user, "only_friends")
-            self.clean()
+            logger.warning(
+                "Message received from"
+                f" user {user.username} with id {user.id}"
+                f" trying to access an ONLY_FRIENDS command."
+                f" Message text: {update_text} ."
+            )
             return False
         return True
+
+    def remove_bot_mention(self):
+        bot_mention = "@" + self.context.bot.username
+        mentions = self.update.message.parse_entities(MessageEntity.MENTION)
+        mentions_keys = list(mentions.keys())
+        if (
+            len(mentions_keys) == 1
+            and mentions[mentions_keys[0]] == bot_mention
+            and self.update.message.text.find(bot_mention) == 0
+        ):
+            self.update.message.text = \
+                self.update.message.text.replace(bot_mention, "").lstrip()
 
     def handle_command(self):
         pass
@@ -130,20 +160,30 @@ class Command:
     def entrypoint(self, update, context):
         self.update, self.context = update, context
 
-        if self.permissions == ONLY_REAL:
-            if not self.user_is_real():
-                return
-        if self.permissions == ONLY_OWNER:
-            if not self.user_is_owner():
-                return
-        if self.permissions == ONLY_FRIENDS:
-            if not self.user_is_friend():
-                return
+        if (
+            (self.permissions == ONLY_REAL and not self.user_is_real())
+            or (
+                self.permissions == ONLY_OWNER
+                and (not self.user_is_real() or not self.user_is_owner())
+            )
+            or (
+                self.permissions == ONLY_FRIENDS
+                and (not self.user_is_real() or not self.user_is_friend())
+            )
+        ):
+            self.clean()
+            return
+
+        self.remove_bot_mention()
 
         logger.info(f"Handler for {self.__class__.__name__} command entered.")
         self.handle_command()
         logger.debug(f"Handler for {self.__class__.__name__} command exited.")
         self.stop()
+
+    def stop(self):
+        self.clean()
+        raise DispatcherHandlerStop()
 
     def reply(self, text):
         self.update.message.reply_text(text)
@@ -197,22 +237,7 @@ class TextHandlerMixin(Command):
         return super().handlers + new_handlers
 
 
-class GroupEntrypointMixin(Command):
-    def entrypoint(self, update, context):
-        bot_mention = "@" + context.bot.username
-        mentions = update.message.parse_entities(MessageEntity.MENTION)
-        mentions_keys = list(mentions.keys())
-        if (
-            len(mentions_keys) == 1
-            and mentions[mentions_keys[0]] == bot_mention
-            and update.message.text.find(bot_mention) == 0
-        ):
-            update.message.text = update.message.text.replace(bot_mention, "").strip()
-
-        return super().entrypoint(update, context)
-
-
-class GroupCommandHandlerMixin(GroupEntrypointMixin, Command):
+class GroupCommandHandlerMixin(Command):
     @property
     def handlers(self):
         new_handlers = [
@@ -231,7 +256,7 @@ class GroupCommandHandlerMixin(GroupEntrypointMixin, Command):
         return super().handlers + new_handlers
 
 
-class GroupTextHandlerMixin(GroupEntrypointMixin, Command):
+class GroupTextHandlerMixin(Command):
     @property
     def handlers(self):
         new_handlers = [
