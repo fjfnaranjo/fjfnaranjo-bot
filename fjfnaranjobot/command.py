@@ -1,4 +1,3 @@
-# TODO: Instead of having the Group...Handler, use filters to detect group
 from telegram import MessageEntity, Update
 from telegram.ext import (
     CommandHandler,
@@ -11,11 +10,7 @@ from telegram.ext import (
 )
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
-from fjfnaranjobot.auth import (
-    User,
-    friends,
-    get_owner_id,
-)
+from fjfnaranjobot.auth import User, friends, get_owner_id
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -24,8 +19,10 @@ ALL, ONLY_REAL, ONLY_OWNER, ONLY_FRIENDS = range(4)
 
 class AnyHandler(Handler):
     def check_update(self, update):
-        if Filters.group(update) and Filters.entity(MessageEntity.MENTION).filter(
-            update.message
+        if (
+            Filters.group(update)
+            and hasattr(update, "message")
+            and Filters.entity(MessageEntity.MENTION).filter(update.message)
         ):
             return update
         if Filters.private(update):
@@ -37,6 +34,7 @@ class Command:
     name = ""
     group = DEFAULT_GROUP
     permissions = ONLY_REAL
+    allow_groups = False
 
     def __init__(self):
         self.update = None
@@ -140,17 +138,21 @@ class Command:
             return False
         return True
 
-    def remove_bot_mention(self):
-        bot_mention = "@" + self.context.bot.username
-        mentions = self.update.message.parse_entities(MessageEntity.MENTION)
-        mentions_keys = list(mentions.keys())
-        if (
-            len(mentions_keys) == 1
-            and mentions[mentions_keys[0]] == bot_mention
-            and self.update.message.text.find(bot_mention) == 0
-        ):
-            self.update.message.text = \
-                self.update.message.text.replace(bot_mention, "").lstrip()
+    def check_and_remove_bot_mention(self):
+        if hasattr(self.update, "message"):
+            bot_mention = "@" + self.context.bot.username
+            mentions = self.update.message.parse_entities(MessageEntity.MENTION)
+            mentions_keys = list(mentions.keys())
+            if (
+                len(mentions_keys) == 1
+                and mentions[mentions_keys[0]] == bot_mention
+                and self.update.message.text.find(bot_mention) == 0
+            ):
+                self.update.message.text = self.update.message.text.replace(
+                    bot_mention, ""
+                ).lstrip()
+                return True
+        return False
 
     def handle_command(self):
         pass
@@ -158,8 +160,12 @@ class Command:
     def entrypoint(self, update, context):
         self.update, self.context = update, context
 
+        bot_mentioned = self.check_and_remove_bot_mention()
+
         if (
-            (self.permissions == ONLY_REAL and not self.user_is_real())
+            (not self.allow_groups and Filters.group(self.update))
+            or (self.allow_groups and Filters.group(self.update) and not bot_mentioned)
+            or (self.permissions == ONLY_REAL and not self.user_is_real())
             or (
                 self.permissions == ONLY_OWNER
                 and (not self.user_is_real() or not self.user_is_owner())
@@ -171,8 +177,6 @@ class Command:
         ):
             self.clean()
             return
-
-        self.remove_bot_mention()
 
         logger.info(f"Handler for {self.__class__.__name__} command entered.")
         self.handle_command()
@@ -210,7 +214,7 @@ class CommandHandlerMixin(Command):
                 CommandHandler(
                     self.name,
                     self.entrypoint,
-                    filters=Filters.private & Filters.command,
+                    filters=Filters.command,
                 ),
             )
         ]
@@ -224,42 +228,7 @@ class TextHandlerMixin(Command):
             (
                 self.group,
                 MessageHandler(
-                    Filters.private & Filters.text,
-                    self.entrypoint,
-                ),
-            )
-        ]
-        return super().handlers + new_handlers
-
-
-class GroupCommandHandlerMixin(Command):
-    @property
-    def handlers(self):
-        new_handlers = [
-            (
-                self.group,
-                CommandHandler(
-                    self.name,
-                    self.entrypoint,
-                    filters=Filters.group
-                    & Filters.command
-                    & Filters.entity(MessageEntity.MENTION),
-                ),
-            )
-        ]
-        return super().handlers + new_handlers
-
-
-class GroupTextHandlerMixin(Command):
-    @property
-    def handlers(self):
-        new_handlers = [
-            (
-                self.group,
-                MessageHandler(
-                    Filters.group
-                    & Filters.text
-                    & Filters.entity(MessageEntity.MENTION),
+                    Filters.text,
                     self.entrypoint,
                 ),
             )

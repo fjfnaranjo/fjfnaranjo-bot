@@ -7,6 +7,7 @@ logger = getLogger(__name__)
 
 class Sorry(BotCommand, AnyHandlerMixin):
     group = 1
+    allow_groups = True
 
     def handle_command(self):
         logger.debug("Sending 'sorry' back to the user.")
