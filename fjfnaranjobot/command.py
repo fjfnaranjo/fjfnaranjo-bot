@@ -62,16 +62,14 @@ class Command:
                 commands.append("<unknown command>")
         return commands
 
-    @staticmethod
-    def log_handlers_info(handlers, command_class):
-        for group, handler in handlers:
-            commands = Command.extract_commands(handler)
-            for command in commands:
-                logger.debug(
-                    f"New handler for {command}"
-                    f" created by {command_class.__name__} command"
-                    f" in group {group}."
-                )
+    def log_handler(self, group, handler):
+        commands = Command.extract_commands(handler)
+        for command in commands:
+            logger.debug(
+                f"New handler for {command}"
+                f" created by {self.__class__.__name__} command"
+                f" in group {group}."
+            )
 
     @property
     def handlers(self):
@@ -200,7 +198,6 @@ class AnyHandlerMixin(Command):
                 ),
             )
         ]
-        self.log_handlers_info(new_handlers, self.__class__)
         return super().handlers + new_handlers
 
 
@@ -217,7 +214,6 @@ class CommandHandlerMixin(Command):
                 ),
             )
         ]
-        self.log_handlers_info(new_handlers, self.__class__)
         return super().handlers + new_handlers
 
 
@@ -233,7 +229,6 @@ class TextHandlerMixin(Command):
                 ),
             )
         ]
-        self.log_handlers_info(new_handlers, self.__class__)
         return super().handlers + new_handlers
 
 
@@ -252,7 +247,6 @@ class GroupCommandHandlerMixin(Command):
                 ),
             )
         ]
-        self.log_handlers_info(new_handlers, self.__class__)
         return super().handlers + new_handlers
 
 
@@ -270,7 +264,6 @@ class GroupTextHandlerMixin(Command):
                 ),
             )
         ]
-        self.log_handlers_info(new_handlers, self.__class__)
         return super().handlers + new_handlers
 
 

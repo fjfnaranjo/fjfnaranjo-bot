@@ -174,6 +174,7 @@ class Bot:
                     command = member()
                     command_list.append(command)
                     for group, handler in command.handlers:
+                        command.log_handler(group, handler)
                         self.dispatcher.add_handler(handler, group)
 
     def process_request(self, url_path, update):
