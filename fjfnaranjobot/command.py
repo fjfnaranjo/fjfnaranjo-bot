@@ -5,12 +5,11 @@ from telegram.ext import (
     DispatcherHandlerStop,
     Filters,
     Handler,
-    MessageHandler,
-    StringCommandHandler,
 )
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
 from fjfnaranjobot.auth import User, friends, get_owner_id
+from fjfnaranjobot.common import SORRY_TEXT
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -50,10 +49,6 @@ class Command:
             if isinstance(handler, CommandHandler):
                 for command in handler.command:
                     commands.append(command)
-            elif isinstance(handler, StringCommandHandler):
-                commands.append(handler.command)
-            elif isinstance(handler, MessageHandler):
-                commands.append("<message>")
             elif isinstance(handler, AnyHandler):
                 commands.append("<any>")
             else:
@@ -221,21 +216,6 @@ class CommandHandlerMixin(Command):
         return super().handlers + new_handlers
 
 
-class TextHandlerMixin(Command):
-    @property
-    def handlers(self):
-        new_handlers = [
-            (
-                self.group,
-                MessageHandler(
-                    Filters.text,
-                    self.entrypoint,
-                ),
-            )
-        ]
-        return super().handlers + new_handlers
-
-
 class BotCommand(Command):
     description = ""
     is_prod_command = False
@@ -249,3 +229,12 @@ class BotCommand(Command):
     @property
     def dev_command(self):
         return self.name
+
+
+class Sorry(BotCommand, AnyHandlerMixin):
+    group = 999
+    allow_groups = True
+
+    def handle_command(self):
+        logger.debug("Sending 'sorry' back to the user.")
+        self.reply(SORRY_TEXT)
