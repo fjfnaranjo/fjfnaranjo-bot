@@ -1,7 +1,7 @@
 from functools import wraps
 
-from telegram import MessageEntity, Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CommandHandler, CallbackQueryHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, Update
+from telegram.ext import CallbackQueryHandler, CommandHandler
 from telegram.ext import ConversationHandler as ConversationHandler
 from telegram.ext import DispatcherHandlerStop, Filters, Handler, MessageHandler
 from telegram.ext.dispatcher import DEFAULT_GROUP
@@ -36,6 +36,7 @@ def _store_update_context(f):
     def wrapper(instance, update, context):
         instance.update, instance.context = update, context
         return f(instance)
+
     return wrapper
 
 
@@ -210,9 +211,7 @@ class CommandHandlerMixin(Command):
     @property
     def handlers(self):
         if self.command_name is None:
-            raise BotCommandError(
-                f"Command name not defined for {self}"
-            )
+            raise BotCommandError(f"Command name not defined for {self}")
         new_handlers = [
             (
                 self.group,
@@ -227,7 +226,7 @@ class CommandHandlerMixin(Command):
 
 
 class ConversationHandlerMixin(Command):
-    START = 999  # TODO: Consider removing magic number
+    START = 999  # TODO: Magic number
 
     command_name = None
     states = {}
@@ -238,9 +237,7 @@ class ConversationHandlerMixin(Command):
     @property
     def handlers(self):
         if self.command_name is None:
-            raise BotCommandError(
-                f"Conversation command name not defined for {self}"
-            )
+            raise BotCommandError(f"Conversation command name not defined for {self}")
         new_handlers = [
             (
                 self.group,
@@ -301,12 +298,9 @@ class ConversationHandlerMixin(Command):
 
     def end(self):
         logger.debug(f"Ending '{self}' conversation.")
-        self.context.bot.send_message(
-            self.context.chat_data["chat_id"], "Ok."
-        )
+        self.context.bot.send_message(self.context.chat_data["chat_id"], "Ok.")
         self.clean()
         return ConversationHandler.END
-
 
     @property
     def cancel_markup(self):
@@ -316,14 +310,13 @@ class ConversationHandlerMixin(Command):
 
     @property
     def cancel_inlines(self):
-        return {
-            "cancel": self.end
-        }
+        return {"cancel": self.end}
 
     def actions_cancel_inlines(self, actions):
-        return {**self.cancel_inlines, **{
-            key: getattr(self, value) for key, value in actions
-        }}
+        return {
+            **self.cancel_inlines,
+            **{key: getattr(self, value) for key, value in actions},
+        }
 
     @staticmethod
     def inlines_proxy(inlines):
@@ -338,6 +331,7 @@ class ConversationHandlerMixin(Command):
 
         return inline_handler_function
 
+
 class BotCommand(Command):
     description = ""
     is_prod_command = False
@@ -345,7 +339,7 @@ class BotCommand(Command):
 
 
 class Sorry(BotCommand, AnyHandlerMixin):
-    group = 999
+    group = 999  # TODO: Magic number
     allow_groups = True
 
     def handle_command(self):
