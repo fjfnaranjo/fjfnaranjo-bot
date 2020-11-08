@@ -145,7 +145,7 @@ class Command:
         return True
 
     def check_and_remove_bot_mention(self):
-        if hasattr(self.update, "message"):
+        if hasattr(self.update, "message") and self.update.message is not None:
             bot_mention = "@" + self.context.bot.username
             mentions = self.update.message.parse_entities(MessageEntity.MENTION)
             mentions_keys = list(mentions.keys())
@@ -183,12 +183,17 @@ class Command:
             return
 
         logger.info(f"Handler for {self} command entered.")
-        self.handle_command()
+        should_return = self.handle_command()
         logger.debug(f"Handler for {self} command exited.")
+        if should_return is not None:
+            return should_return
         raise DispatcherHandlerStop()
 
     def reply(self, *args, **kwargs):
-        return self.update.message.reply_text(*args, **kwargs)
+        if hasattr(self.update, "message") and self.update.message is not None:
+            return self.update.message.reply_text(*args, **kwargs)
+        else:
+            return self.context.bot.send_message(self.update.effective_chat.id, *args, **kwargs)
 
 
 class AnyHandlerMixin(Command):
@@ -229,10 +234,29 @@ class ConversationHandlerMixin(Command):
     START = 999  # TODO: Magic number
 
     command_name = None
-    states = {}
+    _states = None
     initial_text = "Conversation"
-    fallbacks = {}
     remembered_keys = []
+
+    def __init__(self):
+        super().__init__()
+        self.initial_markup = None
+
+    @store_update_context
+    def _initial(self):
+        pass
+
+    @property
+    def states(self):
+        if self._states is None:
+            self._states = self.build()
+        return self._states
+
+    def build(self):
+        default_states =  {
+            self.START: [AnyHandler(self._initial)],
+        }
+        return default_states
 
     @property
     def handlers(self):
@@ -250,27 +274,17 @@ class ConversationHandlerMixin(Command):
         ]
         return super().handlers + new_handlers
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.states = {
-            self.START: [AnyHandler(self._initial)],
-        }
-
-    @store_update_context
-    def _initial(self):
-        pass
-
     def handle_command(self):
         logger.debug(f"Conversation '{self}' started.")
-        reply_markup = None
         conversation_message = self.reply(
             self.initial_text,
-            reply_markup=reply_markup,
+            reply_markup=self.initial_markup,
         )
         self.remember("chat_id", conversation_message.chat.id)
         self.remember("message_id", conversation_message.message_id)
         if len(self.states) == 1 and self.START in self.states:
             self.end()
+        return self.START
 
     @store_update_context
     def fallback(self):
@@ -280,8 +294,11 @@ class ConversationHandlerMixin(Command):
         self.remember("message_id", conversation_message.message_id)
         self.end()
 
-    def edit_message(self, text):
-        self.context.bot.send_message(self.context.chat_data["chat_id"], text)
+    def edit_message(self, text, reply_markup=None):
+        self.context.bot.edit_message_text(
+            self.context.chat_data["chat_id"],
+            text, reply_markup=reply_markup
+        )
 
     def remember(self, key, value):
         self.remembered_keys.append(key)
@@ -296,30 +313,17 @@ class ConversationHandlerMixin(Command):
             if key in self.context.chat_data:
                 del self.context.chat_data[key]
 
-    def end(self):
+    def end(self, text='Ok.'):
         logger.debug(f"Ending '{self}' conversation.")
-        self.context.bot.send_message(self.context.chat_data["chat_id"], "Ok.")
+        self.context.bot.send_message(self.context.chat_data["chat_id"], text)
         self.clean()
         return ConversationHandler.END
 
-    @property
-    def cancel_markup(self):
-        return InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Cancel", callback_data="cancel")]]
-        )
+    @store_update_context
+    def cancel_handler(self):
+        return self.end()
 
-    @property
-    def cancel_inlines(self):
-        return {"cancel": self.end}
-
-    def actions_cancel_inlines(self, actions):
-        return {
-            **self.cancel_inlines,
-            **{key: getattr(self, value) for key, value in actions},
-        }
-
-    @staticmethod
-    def inlines_proxy(inlines):
+    def inline_handler(self, inlines):
         def inline_handler_function(update, context):
             logger.debug("Received inline selection.")
             query = update.callback_query.data
@@ -330,6 +334,87 @@ class ConversationHandlerMixin(Command):
                 raise ValueError(f"No valid handlers for query '{query}'.")
 
         return inline_handler_function
+
+
+class StateSet:
+    def __init__(self, command):
+        self.command = command
+        self.inlines = {}
+        self.texts = {}
+
+    def add_inline(self, state, handler, caption):
+        if state not in self.inlines:
+            self.inlines[state] = {}
+        self.inlines[state][handler] = caption
+
+    def add_cancel_inline(self, state):
+        self.add_inline(state, 'cancel', 'Cancel')
+
+    def add_text(self, state, handler):
+        if state not in self.texts:
+            self.texts[state] = []
+        self.texts[state].append(handler)
+
+    def inlines_captions(self, state):
+        return {
+            self.inlines[state][handler]: handler
+            for handler in self.inlines[state]
+        }
+
+    def _state_inlines_handlers(self, state):
+        return {
+            handler: getattr(self.command, handler + "_handler")
+            for handler in self.inlines[state]
+        }
+
+    def _state_handlers(self, state):
+        handlers = []
+        if state in self.inlines:
+            for inline in self.inlines[state]:
+                handlers.append(CallbackQueryHandler(
+                    self.command.inline_handler(self._state_inlines_handlers(state))
+                ))
+        if state in self.texts:
+            for text in self.texts[state]:
+                handlers.append(MessageHandler(
+                    Filters.text, getattr(self.command, text + "_handler")
+                ))
+        return handlers
+
+    @property
+    def all_states(self):
+        states_ids = {}
+        for _id in self.inlines:
+            states_ids[_id] = None
+        for _id in self.texts:
+            states_ids[_id] = None
+        states = {}
+        for _id in states_ids:
+            states[_id] = self._state_handlers(_id)
+
+        return states
+
+
+class MarkupBuilder:
+    @property
+    def cancel_only(self):
+        return InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Cancel", callback_data="cancel")]]
+        )
+
+    def from_inlines(self, inlines):
+        cancel_tag = inlines.get('cancel')
+        if cancel_tag is not None:
+            del inlines['cancel']
+        markup = [[
+            InlineKeyboardButton(caption, callback_data=inlines[caption])
+            for caption in inlines
+        ]]
+        if cancel_tag is not None:
+            markup.append(
+                InlineKeyboardButton(cancel_tag, callback_data="cancel")
+            )
+        return InlineKeyboardMarkup(markup)
 
 
 class BotCommand(Command):
