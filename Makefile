@@ -1,4 +1,4 @@
-.PHONY: all isort test cov cov-full black docs up down restart host-run checks sh logs
+.PHONY: all isort test cov cov-full black docs up down restart restart-bot host-run checks sh logs
 
 compose := docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml
 exec := $(compose) exec bot
@@ -30,6 +30,9 @@ down:
 	@$(compose) down
 
 restart: down up
+
+restart-bot:
+	@$(compose) restart bot
 
 host-run: up
 	@$(compose) stop bot
