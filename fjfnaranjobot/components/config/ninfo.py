@@ -2,9 +2,9 @@
 from fjfnaranjobot.command import (
     BotCommand,
     ConversationHandlerMixin,
-    store_update_context,
-    StateSet,
     MarkupBuilder,
+    StateSet,
+    store_update_context,
 )
 from fjfnaranjobot.common import inline_handler, quote_value_for_log
 from fjfnaranjobot.config import config
@@ -22,6 +22,7 @@ logger = getLogger(__name__)
 # * --> end
 #
 
+
 class Config(BotCommand, ConversationHandlerMixin):
     command_name = "nconfig"
     description = "Edit bot configuration."
@@ -38,23 +39,24 @@ class Config(BotCommand, ConversationHandlerMixin):
         states = StateSet(self)
 
         states.add_cancel_inline(self.START)
-        states.add_inline(self.START, 'get', 'Get')
-        states.add_inline(self.START, 'set', 'Set')
-        states.add_inline(self.START, 'del', 'Del')
-        self.initial_markup = \
-            self.builder.from_inlines(states.inlines_captions(self.START))
+        states.add_inline(self.START, "get", "Get")
+        states.add_inline(self.START, "set", "Set")
+        states.add_inline(self.START, "del", "Del")
+        self.initial_markup = self.builder.from_inlines(
+            states.inlines_captions(self.START)
+        )
 
         states.add_cancel_inline(self.GET_VAR)
-        states.add_text(self.GET_VAR, 'get_var')
+        states.add_text(self.GET_VAR, "get_var")
 
         states.add_cancel_inline(self.SET_VAR)
-        states.add_text(self.SET_VAR, 'set_var')
+        states.add_text(self.SET_VAR, "set_var")
 
         states.add_cancel_inline(self.DEL_VAR)
-        states.add_text(self.DEL_VAR, 'del_var')
+        states.add_text(self.DEL_VAR, "del_var")
 
         states.add_cancel_inline(self.SET_VALUE)
-        states.add_text(self.SET_VALUE, 'set_value')
+        states.add_text(self.SET_VALUE, "set_value")
 
         return states.all_states
 

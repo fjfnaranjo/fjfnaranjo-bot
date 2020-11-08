@@ -193,7 +193,9 @@ class Command:
         if hasattr(self.update, "message") and self.update.message is not None:
             return self.update.message.reply_text(*args, **kwargs)
         else:
-            return self.context.bot.send_message(self.update.effective_chat.id, *args, **kwargs)
+            return self.context.bot.send_message(
+                self.update.effective_chat.id, *args, **kwargs
+            )
 
 
 class AnyHandlerMixin(Command):
@@ -253,7 +255,7 @@ class ConversationHandlerMixin(Command):
         return self._states
 
     def build(self):
-        default_states =  {
+        default_states = {
             self.START: [AnyHandler(self._initial)],
         }
         return default_states
@@ -296,8 +298,7 @@ class ConversationHandlerMixin(Command):
 
     def edit_message(self, text, reply_markup=None):
         self.context.bot.edit_message_text(
-            self.context.chat_data["chat_id"],
-            text, reply_markup=reply_markup
+            self.context.chat_data["chat_id"], text, reply_markup=reply_markup
         )
 
     def remember(self, key, value):
@@ -313,7 +314,7 @@ class ConversationHandlerMixin(Command):
             if key in self.context.chat_data:
                 del self.context.chat_data[key]
 
-    def end(self, text='Ok.'):
+    def end(self, text="Ok."):
         logger.debug(f"Ending '{self}' conversation.")
         self.context.bot.send_message(self.context.chat_data["chat_id"], text)
         self.clean()
@@ -348,7 +349,7 @@ class StateSet:
         self.inlines[state][handler] = caption
 
     def add_cancel_inline(self, state):
-        self.add_inline(state, 'cancel', 'Cancel')
+        self.add_inline(state, "cancel", "Cancel")
 
     def add_text(self, state, handler):
         if state not in self.texts:
@@ -357,8 +358,7 @@ class StateSet:
 
     def inlines_captions(self, state):
         return {
-            self.inlines[state][handler]: handler
-            for handler in self.inlines[state]
+            self.inlines[state][handler]: handler for handler in self.inlines[state]
         }
 
     def _state_inlines_handlers(self, state):
@@ -371,14 +371,18 @@ class StateSet:
         handlers = []
         if state in self.inlines:
             for inline in self.inlines[state]:
-                handlers.append(CallbackQueryHandler(
-                    self.command.inline_handler(self._state_inlines_handlers(state))
-                ))
+                handlers.append(
+                    CallbackQueryHandler(
+                        self.command.inline_handler(self._state_inlines_handlers(state))
+                    )
+                )
         if state in self.texts:
             for text in self.texts[state]:
-                handlers.append(MessageHandler(
-                    Filters.text, getattr(self.command, text + "_handler")
-                ))
+                handlers.append(
+                    MessageHandler(
+                        Filters.text, getattr(self.command, text + "_handler")
+                    )
+                )
         return handlers
 
     @property
@@ -403,17 +407,17 @@ class MarkupBuilder:
         )
 
     def from_inlines(self, inlines):
-        cancel_tag = inlines.get('cancel')
+        cancel_tag = inlines.get("cancel")
         if cancel_tag is not None:
-            del inlines['cancel']
-        markup = [[
-            InlineKeyboardButton(caption, callback_data=inlines[caption])
-            for caption in inlines
-        ]]
+            del inlines["cancel"]
+        markup = [
+            [
+                InlineKeyboardButton(caption, callback_data=inlines[caption])
+                for caption in inlines
+            ]
+        ]
         if cancel_tag is not None:
-            markup.append(
-                InlineKeyboardButton(cancel_tag, callback_data="cancel")
-            )
+            markup.append(InlineKeyboardButton(cancel_tag, callback_data="cancel"))
         return InlineKeyboardMarkup(markup)
 
 
