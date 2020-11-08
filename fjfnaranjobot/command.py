@@ -30,7 +30,6 @@ class AnyHandler(Handler):
 
 
 class Command:
-    name = ""
     group = DEFAULT_GROUP
     permissions = ONLY_REAL
     allow_groups = False
@@ -201,13 +200,15 @@ class AnyHandlerMixin(Command):
 
 
 class CommandHandlerMixin(Command):
+    command_name = "<undefined>"
+
     @property
     def handlers(self):
         new_handlers = [
             (
                 self.group,
                 CommandHandler(
-                    self.name,
+                    self.command_name,
                     self.entrypoint,
                     filters=Filters.command,
                 ),
@@ -219,16 +220,7 @@ class CommandHandlerMixin(Command):
 class BotCommand(Command):
     description = ""
     is_prod_command = False
-    is_dev_command = False
-
-    # TODO: Remove proxy
-    @property
-    def prod_command(self):
-        return self.name
-
-    @property
-    def dev_command(self):
-        return self.name
+    is_dev_command = True
 
 
 class Sorry(BotCommand, AnyHandlerMixin):
