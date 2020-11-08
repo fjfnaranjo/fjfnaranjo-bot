@@ -277,8 +277,11 @@ class ConversationHandlerMixin(Command):
 
     @_store_update_context
     def fallback(self):
-        self.clean()
-        return
+        logger.info(f"Conversation {self} fallback handler started.")
+        conversation_message = self.reply("Ups!")
+        self.remember("chat_id", conversation_message.chat.id)
+        self.remember("message_id", conversation_message.message_id)
+        self.end()
 
     def edit_message(self, text):
         self.context.bot.send_message(self.context.chat_data["chat_id"], text)
