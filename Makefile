@@ -1,4 +1,4 @@
-.PHONY: all isort test cov cov-full black docs up down restart checks sh logs
+.PHONY: all isort test cov cov-full black docs up down restart host-run checks sh logs
 
 compose := docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml
 exec := $(compose) exec bot
@@ -30,6 +30,11 @@ down:
 	@$(compose) down
 
 restart: down up
+
+host-run: up
+	@$(compose) stop bot
+	-@$(compose) run bot python -m fjfnaranjobot.server
+	@$(compose) up -d
 
 checks: isort black
 
