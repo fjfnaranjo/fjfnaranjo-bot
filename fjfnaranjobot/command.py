@@ -31,7 +31,7 @@ class AnyHandler(Handler):
         return None
 
 
-def _store_update_context(f):
+def store_update_context(f):
     @wraps(f)
     def wrapper(instance, update, context):
         instance.update, instance.context = update, context
@@ -163,7 +163,7 @@ class Command:
     def handle_command(self):
         pass
 
-    @_store_update_context
+    @store_update_context
     def entrypoint(self):
         bot_mentioned = self.check_and_remove_bot_mention()
 
@@ -256,7 +256,7 @@ class ConversationHandlerMixin(Command):
             self.START: [AnyHandler(self._initial)],
         }
 
-    @_store_update_context
+    @store_update_context
     def _initial(self):
         pass
 
@@ -272,7 +272,7 @@ class ConversationHandlerMixin(Command):
         if len(self.states) == 1 and self.START in self.states:
             self.end()
 
-    @_store_update_context
+    @store_update_context
     def fallback(self):
         logger.info(f"Conversation {self} fallback handler started.")
         conversation_message = self.reply("Ups!")
