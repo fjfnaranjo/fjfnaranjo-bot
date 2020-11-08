@@ -1,11 +1,7 @@
 from telegram import MessageEntity, Update
-from telegram.ext import (
-    CommandHandler,
-    ConversationHandler,
-    DispatcherHandlerStop,
-    Filters,
-    Handler,
-)
+from telegram.ext import CommandHandler
+from telegram.ext import ConversationHandler as TConversationHandler
+from telegram.ext import DispatcherHandlerStop, Filters, Handler
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
 from fjfnaranjobot.auth import User, friends, get_owner_id
@@ -14,6 +10,10 @@ from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 ALL, ONLY_REAL, ONLY_OWNER, ONLY_FRIENDS = range(4)
+
+
+class BotCommandError(Exception):
+    pass
 
 
 class AnyHandler(Handler):
@@ -41,9 +41,10 @@ class Command:
     @staticmethod
     def extract_commands(handler):
         commands = []
-        if isinstance(handler, ConversationHandler):
+        if isinstance(handler, TConversationHandler):
             for entry_point in handler.entry_points:
-                commands.append(Command.extract_commands(entry_point))
+                for command in Command.extract_commands(entry_point):
+                    commands.append(command)
         else:
             if isinstance(handler, CommandHandler):
                 for command in handler.command:
@@ -200,10 +201,14 @@ class AnyHandlerMixin(Command):
 
 
 class CommandHandlerMixin(Command):
-    command_name = "<undefined>"
+    command_name = None
 
     @property
     def handlers(self):
+        if self.command_name is None:
+            raise BotCommandError(
+                f"Command name not defined for {self.__class__.__name__}"
+            )
         new_handlers = [
             (
                 self.group,
@@ -215,6 +220,33 @@ class CommandHandlerMixin(Command):
             )
         ]
         return super().handlers + new_handlers
+
+
+class ConversationHandler(Command):
+    command_name = None
+    states = {}
+    fallbacks = {}
+
+    @property
+    def handlers(self):
+        if self.command_name is None:
+            raise BotCommandError(
+                f"Conversation command name not defined for {self.__class__.__name__}"
+            )
+        new_handlers = [
+            (
+                self.group,
+                TConversationHandler(
+                    [CommandHandler(self.command_name, self.entrypoint)],
+                    self.states,
+                    [AnyHandler(self.fallback)],
+                ),
+            )
+        ]
+        return super().handlers + new_handlers
+
+    def fallback(self, update, context):
+        self.update, self.context = update, context
 
 
 class BotCommand(Command):
