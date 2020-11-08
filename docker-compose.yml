@@ -11,7 +11,7 @@ services:
   bot:
     working_dir: /bot
     env_file: .env
-    command: python3 -m fjfnaranjobot.server
+    command: uwsgi --plugins python3 --http 0.0.0.0:8001 --wsgi-file fjfnaranjobot/wsgi.py --chdir /bot --py-autoreload 1
     links:
       - redis
   celery-worker:
