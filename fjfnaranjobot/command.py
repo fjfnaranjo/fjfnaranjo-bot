@@ -23,6 +23,7 @@ class AnyHandler(Handler):
         if (
             Filters.group(update)
             and hasattr(update, "message")
+            and update.message is not None
             and Filters.entity(MessageEntity.MENTION).filter(update.message)
         ):
             return update
@@ -157,16 +158,27 @@ class Command:
         if hasattr(self.update, "message") and self.update.message is not None:
             bot_mention = "@" + self.context.bot.username
             mentions = self.update.message.parse_entities(MessageEntity.MENTION)
+            commands = self.update.message.parse_entities(MessageEntity.BOT_COMMAND)
             mentions_keys = list(mentions.keys())
+            commands_keys = list(commands.keys())
             if (
                 len(mentions_keys) == 1
                 and mentions[mentions_keys[0]] == bot_mention
-                and self.update.message.text.find(bot_mention) == 0
+                and (
+                    self.update.message.text.find(bot_mention) == 0
+                    or self.update.message.text.find(bot_mention)
+                    == len(self.update.message.text) - len(bot_mention)
+                )
+            ) or (
+                len(commands_keys) == 1
+                and hasattr(self, "command_name")
+                and commands[commands_keys[0]] == "/" + self.command_name + bot_mention
             ):
                 self.update.message.text = self.update.message.text.replace(
                     bot_mention, ""
                 ).lstrip()
                 return True
+
         return False
 
     def handle_command(self):

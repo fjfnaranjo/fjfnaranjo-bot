@@ -25,6 +25,7 @@ logger = getLogger(__name__)
 
 
 class Config(BotCommand, ConversationHandlerMixin):
+    allow_groups = True
     command_name = "nconfig"
     description = "Edit bot configuration."
     initial_text = (
