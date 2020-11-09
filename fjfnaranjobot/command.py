@@ -1,13 +1,13 @@
 from functools import wraps
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
 from telegram.ext import CallbackQueryHandler, CommandHandler
 from telegram.ext import ConversationHandler as ConversationHandler
 from telegram.ext import DispatcherHandlerStop, Filters, Handler, MessageHandler
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
 from fjfnaranjobot.auth import User, friends, get_owner_id
-from fjfnaranjobot.common import SORRY_TEXT
+from fjfnaranjobot.common import SORRY_TEXT, quote_value_for_log
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -87,9 +87,7 @@ class Command:
         if message is not None:
             text = getattr(message, "text", None)
             if text is not None:
-                if len(text) > 10:
-                    text = text[:10] + " (cropped to 10 chars)"
-                return text
+                return quote_value_for_log(text)
             else:
                 return "<empty>"
         else:
@@ -182,12 +180,15 @@ class Command:
         ):
             return
 
-        logger.info(f"Handler for {self} command entered.")
-        should_return = self.handle_command()
-        logger.debug(f"Handler for {self} command exited.")
-        if should_return is not None:
-            return should_return
-        raise DispatcherHandlerStop()
+        logger.info(f"Handler for {self} command invoked by dispatcher.")
+        try:
+            handler_return = self.handle_command()
+        except DispatcherHandlerStop:
+            logger.debug(f"Handler for {self} command stopped the dispatcher.")
+            raise
+        else:
+            logger.debug(f"Handler for {self} command lets the dispacther continue.")
+            return handler_return
 
     def reply(self, *args, **kwargs):
         if hasattr(self.update, "message") and self.update.message is not None:
@@ -233,7 +234,7 @@ class CommandHandlerMixin(Command):
 
 
 class ConversationHandlerMixin(Command):
-    START = 999  # TODO: Magic number
+    START = 0
 
     command_name = None
     _states = None
@@ -285,20 +286,20 @@ class ConversationHandlerMixin(Command):
         self.remember("chat_id", conversation_message.chat.id)
         self.remember("message_id", conversation_message.message_id)
         if len(self.states) == 1 and self.START in self.states:
-            self.end()
-        return self.START
+            self.end("Ups!")
+        self.next(self.START)
 
     @store_update_context
     def fallback(self):
-        logger.info(f"Conversation {self} fallback handler started.")
-        conversation_message = self.reply("Ups!")
-        self.remember("chat_id", conversation_message.chat.id)
-        self.remember("message_id", conversation_message.message_id)
-        self.end()
+        logger.warning(f"Conversation {self} fallback handler started.")
+        self.end("Ups!")
 
     def edit_message(self, text, reply_markup=None):
         self.context.bot.edit_message_text(
-            self.context.chat_data["chat_id"], text, reply_markup=reply_markup
+            text,
+            self.context.chat_data["chat_id"],
+            self.context.chat_data["message_id"],
+            reply_markup=reply_markup,
         )
 
     def remember(self, key, value):
@@ -306,29 +307,38 @@ class ConversationHandlerMixin(Command):
         self.context.chat_data[key] = value
 
     def clean(self):
-        self.context.bot.delete_message(
-            self.context.chat_data["chat_id"],
-            self.context.chat_data["message_id"],
-        )
+        if "chat_id" in self.context.chat_data:
+            self.context.bot.delete_message(
+                self.context.chat_data["chat_id"],
+                self.context.chat_data["message_id"],
+            )
         for key in self.remembered_keys:
             if key in self.context.chat_data:
                 del self.context.chat_data[key]
 
-    def end(self, text="Ok."):
-        logger.debug(f"Ending '{self}' conversation.")
-        self.context.bot.send_message(self.context.chat_data["chat_id"], text)
+    def end(self, end_message=None):
+        if end_message is not None:
+            self.reply(end_message)
         self.clean()
-        return ConversationHandler.END
+        logger.debug(f"'{self}' conversation ends and stops the dispatcher.")
+        raise DispatcherHandlerStop(ConversationHandler.END)
+
+    def next(self, state, new_message=None, reply_markup=None):
+        if new_message is not None:
+            self.edit_message(new_message, reply_markup=reply_markup)
+        logger.debug(
+            f"'{self}' conversation changes state to {state} and stops the dispatcher."
+        )
+        raise DispatcherHandlerStop(state)
 
     @store_update_context
     def cancel_handler(self):
-        return self.end()
+        return self.end("Ok.")
 
     def inline_handler(self, inlines):
         def inline_handler_function(update, context):
-            logger.debug("Received inline selection.")
             query = update.callback_query.data
-            logger.debug(f"Inline selection was '{query}'.")
+            logger.info(f"Received inline selection '{query}' for command '{self}'.")
             if query in inlines:
                 return inlines[query](update, context)
             else:
@@ -348,8 +358,8 @@ class StateSet:
             self.inlines[state] = {}
         self.inlines[state][handler] = caption
 
-    def add_cancel_inline(self, state):
-        self.add_inline(state, "cancel", "Cancel")
+    def add_cancel_inline(self, state, caption="Cancel"):
+        self.add_inline(state, "cancel", caption)
 
     def add_text(self, state, handler):
         if state not in self.texts:
@@ -370,12 +380,11 @@ class StateSet:
     def _state_handlers(self, state):
         handlers = []
         if state in self.inlines:
-            for inline in self.inlines[state]:
-                handlers.append(
-                    CallbackQueryHandler(
-                        self.command.inline_handler(self._state_inlines_handlers(state))
-                    )
+            handlers.append(
+                CallbackQueryHandler(
+                    self.command.inline_handler(self._state_inlines_handlers(state))
                 )
+            )
         if state in self.texts:
             for text in self.texts[state]:
                 handlers.append(
@@ -407,17 +416,20 @@ class MarkupBuilder:
         )
 
     def from_inlines(self, inlines):
-        cancel_tag = inlines.get("cancel")
-        if cancel_tag is not None:
-            del inlines["cancel"]
+        cancel_caption = "Cancel"
+        cancel_handler = inlines.get(cancel_caption)
+        if cancel_handler is not None:
+            del inlines[cancel_caption]
         markup = [
             [
                 InlineKeyboardButton(caption, callback_data=inlines[caption])
                 for caption in inlines
             ]
         ]
-        if cancel_tag is not None:
-            markup.append(InlineKeyboardButton(cancel_tag, callback_data="cancel"))
+        if cancel_handler is not None:
+            markup.append(
+                [InlineKeyboardButton(cancel_caption, callback_data=cancel_handler)]
+            )
         return InlineKeyboardMarkup(markup)
 
 

@@ -6,7 +6,7 @@ from fjfnaranjobot.command import (
     StateSet,
     store_update_context,
 )
-from fjfnaranjobot.common import inline_handler, quote_value_for_log
+from fjfnaranjobot.common import quote_value_for_log
 from fjfnaranjobot.config import config
 from fjfnaranjobot.logging import getLogger
 
@@ -33,7 +33,7 @@ class Config(BotCommand, ConversationHandlerMixin):
     )
     builder = MarkupBuilder()
 
-    GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(4)
+    GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(1, 5)
 
     def build(self):
         states = StateSet(self)
@@ -63,11 +63,11 @@ class Config(BotCommand, ConversationHandlerMixin):
     @store_update_context
     def get_handler(self):
         logger.debug("Requesting key name to get its value.")
-        self.edit_message(
+        self.next(
+            self.GET_VAR,
             "Tell me what key do you want to get.",
             self.builder.cancel_only,
         )
-        return self.GET_VAR
 
     @store_update_context
     def get_var_handler(self):
@@ -91,11 +91,11 @@ class Config(BotCommand, ConversationHandlerMixin):
     @store_update_context
     def set_handler(self):
         logger.debug("Requesting key name to set its value.")
-        self.edit_message(
+        self.next(
+            self.SET_VAR,
             "Tell me what key do you want to set.",
             reply_markup=self.builder.cancel_only,
         )
-        return self.SET_VAR
 
     @store_update_context
     def set_var_handler(self):
@@ -111,11 +111,11 @@ class Config(BotCommand, ConversationHandlerMixin):
             pass
         self.remember("key", key)
         logger.debug("Requesting value to set the key.")
-        self.edit_message(
+        self.next(
+            self.SET_VALUE,
             f"Tell me what value do you want to put in the key '{key}'.",
             reply_markup=self.builder.cancel_only,
         )
-        return SET_VALUE
 
     @store_update_context
     def set_value_handler(self):
@@ -131,11 +131,11 @@ class Config(BotCommand, ConversationHandlerMixin):
     @store_update_context
     def del_handler(self):
         logger.debug("Requesting key name to clear its value.")
-        self.edit_message(
+        self.next(
+            self.DEL_VAR,
             "Tell me what key do you want to clear.",
-            reply_markup=_cancel_markup,
+            reply_markup=self.builder.cancel_only,
         )
-        return self.DEL_VAR
 
     @store_update_context
     def del_var_handler(self):
