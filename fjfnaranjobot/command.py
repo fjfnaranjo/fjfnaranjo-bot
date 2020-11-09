@@ -209,6 +209,11 @@ class Command:
                 self.update.effective_chat.id, *args, **kwargs
             )
 
+    def end(self, end_message=None):
+        if end_message is not None:
+            self.reply(end_message)
+        raise DispatcherHandlerStop()
+
 
 class AnyHandlerMixin(Command):
     @property
@@ -464,4 +469,4 @@ class Sorry(BotCommand, AnyHandlerMixin):
 
     def handle_command(self):
         logger.debug("Sending 'sorry' back to the user.")
-        self.reply(SORRY_TEXT)
+        self.end(SORRY_TEXT)
