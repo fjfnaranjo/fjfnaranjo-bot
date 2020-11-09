@@ -102,7 +102,7 @@ class Config(BotCommand, ConversationHandlerMixin):
             self.end(f"The key '{key}' is not a valid key.")
         except KeyError:
             pass
-        self.remember("key", key)
+        self.context_set("key", key)
         logger.debug("Requesting value to set the key.")
         self.next(
             self.SET_VALUE,
@@ -115,8 +115,7 @@ class Config(BotCommand, ConversationHandlerMixin):
         value = self.update.message.text
         shown_value = quote_value_for_log(value)
         logger.debug(f"Received value {shown_value}.")
-        key = self.context.chat_data["key"]
-        del self.context.chat_data["key"]
+        key = self.context_del("key")
         config[key] = value
         logger.debug(f"Stored {shown_value} in key '{key}'.")
         self.end("I'll remember that.")

@@ -269,8 +269,8 @@ class ConversationHandlerMixin(Command):
             self.initial_text,
             reply_markup=self.markup.from_inlines(self.inlines_captions(self.START)),
         )
-        self.remember("chat_id", conversation_message.chat.id)
-        self.remember("message_id", conversation_message.message_id)
+        self.context_set("chat_id", conversation_message.chat.id)
+        self.context_set("message_id", conversation_message.message_id)
         self.next(self.START)
 
     @store_update_context
@@ -281,29 +281,48 @@ class ConversationHandlerMixin(Command):
     def edit_message(self, text, reply_markup=None):
         self.context.bot.edit_message_text(
             text,
-            self.context.chat_data["chat_id"],
-            self.context.chat_data["message_id"],
+            self.context_get("chat_id"),
+            self.context_get("message_id"),
             reply_markup=reply_markup,
         )
 
-    def remember(self, key, value):
-        self.remembered_keys.append(key)
+    def context_set(self, key, value):
+        old_value = self.context.chat_data.get(key)
+        if key not in self.remembered_keys:
+            self.remembered_keys.append(key)
         self.context.chat_data[key] = value
+        return old_value
 
-    def clean(self):
-        if "chat_id" in self.context.chat_data:
-            self.context.bot.delete_message(
-                self.context.chat_data["chat_id"],
-                self.context.chat_data["message_id"],
-            )
+    def context_exists(self, key):
+        return key in self.context.chat_data
+
+    def context_get(self, key, default=None):
+        return self.context.chat_data.get(key, default)
+
+    def context_del(self, key):
+        old_value = self.context.chat_data[key]
+        del self.context.chat_data[key]
+        if key in self.remembered_keys:
+            self.remembered_keys.remove(key)
+        return old_value
+
+    def _clear_context(self):
         for key in self.remembered_keys:
             if key in self.context.chat_data:
                 del self.context.chat_data[key]
 
+    def _clean(self):
+        if self.context_exists("chat_id"):
+            self.context.bot.delete_message(
+                self.context_get("chat_id"),
+                self.context_get("message_id"),
+            )
+        self._clear_context()
+
     def end(self, end_message=None):
         if end_message is not None:
             self.reply(end_message)
-        self.clean()
+        self._clean()
         logger.debug(f"'{self}' conversation ends and stops the dispatcher.")
         raise DispatcherHandlerStop(ConversationHandler.END)
 
@@ -313,6 +332,7 @@ class ConversationHandlerMixin(Command):
         logger.debug(
             f"'{self}' conversation changes state to {state} and stops the dispatcher."
         )
+        self.context_set("local_state", state)
         raise DispatcherHandlerStop(state)
 
     @store_update_context
