@@ -7,7 +7,7 @@ from telegram.ext import DispatcherHandlerStop, Filters, Handler, MessageHandler
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
 from fjfnaranjobot.auth import User, friends, get_owner_id
-from fjfnaranjobot.common import SORRY_TEXT, quote_value_for_log
+from fjfnaranjobot.common import quote_value_for_log
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -461,12 +461,3 @@ class BotCommand(Command):
     description = ""
     is_prod_command = False
     is_dev_command = True
-
-
-class Sorry(BotCommand, AnyHandlerMixin):
-    group = 65536
-    allow_groups = True
-
-    def handle_command(self):
-        logger.debug("Sending 'sorry' back to the user.")
-        self.end(SORRY_TEXT)

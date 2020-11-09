@@ -139,17 +139,17 @@ class ComponentLoaderHandlersTests(TestCase):
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="")
     def test_no_components(self, _get_bot_components, _dispatcher, _tbot):
         bot = Bot()
-        bot.dispatcher.add_handler.assert_called_once()
+        bot.dispatcher.add_handler.assert_not_called()
 
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="component_mock1")
     def test_component_without_info(self, _get_bot_components, _dispatcher, _tbot):
         bot = Bot()
-        bot.dispatcher.add_handler.assert_called_once()
+        bot.dispatcher.add_handler.assert_not_called()
 
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="component_mock2")
     def test_component_with_no_handlers(self, _get_bot_components, _dispatcher, _tbot):
         bot = Bot()
-        bot.dispatcher.add_handler.assert_called_once()
+        bot.dispatcher.add_handler.assert_not_called()
 
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="component_mock3")
     def test_component_with_invalid_handlers(
@@ -166,7 +166,7 @@ class ComponentLoaderHandlersTests(TestCase):
     def test_component_with_ok_handlers(self, _get_bot_components, _dispatcher, _tbot):
         with self.assertLogs(logger, DEBUG) as logs:
             bot = Bot()
-        assert 6 == bot.dispatcher.add_handler.call_count
+        assert 5 == bot.dispatcher.add_handler.call_count
         assert (
             "Registered command 'cmdm41' with callback '<lambda>' "
             "for component 'component_mock4' and group number 0." in logs.output[-6]
@@ -194,7 +194,7 @@ class ComponentLoaderHandlersTests(TestCase):
     ):
         with self.assertLogs(logger, DEBUG) as logs:
             bot = Bot()
-        assert 2 == bot.dispatcher.add_handler.call_count
+        assert 1 == bot.dispatcher.add_handler.call_count
         assert (
             "Registered command 'cmdm51' with callback '<lambda>' "
             "for component 'component_mock5' and group number 0." in logs.output[-2]
@@ -216,17 +216,17 @@ class ComponentLoaderGroupTests(TestCase):
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="")
     def test_no_components(self, _get_bot_components, _dispatcher, _tbot):
         bot = Bot()
-        bot.dispatcher.add_handler.assert_called_once()
+        bot.dispatcher.add_handler.assert_not_called()
 
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="component_mock1")
     def test_component_without_info(self, _get_bot_components, _dispatcher, _tbot):
         bot = Bot()
-        bot.dispatcher.add_handler.assert_called_once()
+        bot.dispatcher.add_handler.assert_not_called()
 
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="component_mock2")
     def test_component_with_no_group(self, _get_bot_components, _dispatcher, _tbot):
         bot = Bot()
-        bot.dispatcher.add_handler.assert_called_once()
+        bot.dispatcher.add_handler.assert_not_called()
 
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="component_mock3")
     def test_component_with_invalid_group(
@@ -242,7 +242,7 @@ class ComponentLoaderGroupTests(TestCase):
     ):
         with self.assertLogs(logger, DEBUG) as logs:
             bot = Bot()
-        assert 2 == bot.dispatcher.add_handler.call_count
+        assert 1 == bot.dispatcher.add_handler.call_count
         assert (
             "Registered command 'cmdm41' with callback '<lambda>' "
             "for component 'component_mock4' and group number 0." in logs.output[-2]
@@ -254,7 +254,7 @@ class ComponentLoaderGroupTests(TestCase):
     ):
         with self.assertLogs(logger, DEBUG) as logs:
             bot = Bot()
-        assert 2 == bot.dispatcher.add_handler.call_count
+        assert 1 == bot.dispatcher.add_handler.call_count
         assert (
             "Registered command 'cmdm51' with callback '<lambda>' "
             "for component 'component_mock5' and group number 99." in logs.output[-2]
@@ -270,17 +270,17 @@ class ComponentLoaderCommandsTests(TestCase):
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="")
     def test_no_components(self, _get_bot_components, _dispatcher, _tbot):
         bot = Bot()
-        bot.dispatcher.add_handler.assert_called_once()
+        bot.dispatcher.add_handler.assert_not_called()
 
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="component_mock1")
     def test_component_without_info(self, _get_bot_components, _dispatcher, _tbot):
         bot = Bot()
-        bot.dispatcher.add_handler.assert_called_once()
+        bot.dispatcher.add_handler.assert_not_called()
 
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="component_mock2")
     def test_component_with_no_commands(self, _get_bot_components, _dispatcher, _tbot):
         bot = Bot()
-        bot.dispatcher.add_handler.assert_called_once()
+        bot.dispatcher.add_handler.assert_not_called()
 
     @patch(f"{MODULE_PATH}.get_bot_components", return_value="component_mock3")
     def test_component_with_invalid_command(

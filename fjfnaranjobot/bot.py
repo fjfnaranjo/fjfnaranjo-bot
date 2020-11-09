@@ -16,7 +16,7 @@ from telegram.ext import (
 )
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
-from fjfnaranjobot.command import BotCommand, Sorry
+from fjfnaranjobot.command import BotCommand
 from fjfnaranjobot.common import Command, command_list, get_bot_components
 from fjfnaranjobot.logging import getLogger
 
@@ -62,7 +62,6 @@ class Bot:
         for component in get_bot_components().split(","):
             self._parse_component_info(component)
             self._n_parse_component_info(component)
-        self._n_register_command(Sorry())
         logger.debug("Bot handlers registered.")
 
     def _log_error_from_context(self, _update, context):
