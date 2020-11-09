@@ -32,7 +32,7 @@ class Config(BotCommand, ConversationHandlerMixin):
         "You can also cancel the config command at any time."
     )
 
-    GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(1, 5)
+    GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(4)
 
     def __init__(self):
         super().__init__()

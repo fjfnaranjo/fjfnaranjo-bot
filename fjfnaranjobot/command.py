@@ -444,7 +444,7 @@ class BotCommand(Command):
 
 
 class Sorry(BotCommand, AnyHandlerMixin):
-    group = 999  # TODO: Magic number
+    group = 65536
     allow_groups = True
 
     def handle_command(self):
