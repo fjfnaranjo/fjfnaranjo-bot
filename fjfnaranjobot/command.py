@@ -237,40 +237,26 @@ class ConversationHandlerMixin(Command):
     START = 0
 
     command_name = None
-    _states = None
     initial_text = "Conversation"
     remembered_keys = []
 
     def __init__(self):
         super().__init__()
-        self.initial_markup = None
-
-    @store_update_context
-    def _initial(self):
-        pass
-
-    @property
-    def states(self):
-        if self._states is None:
-            self._states = self.build()
-        return self._states
-
-    def build(self):
-        default_states = {
-            self.START: [AnyHandler(self._initial)],
-        }
-        return default_states
+        if self.command_name is None:
+            raise BotCommandError(f"Conversation command name not defined")
+        self.states = StateSet(self)
+        self.states.add_cancel_inline(self.START)
+        self.markup = MarkupBuilder()
+        self.context_set("local_state", self.START)
 
     @property
     def handlers(self):
-        if self.command_name is None:
-            raise BotCommandError(f"Conversation command name not defined for {self}")
         new_handlers = [
             (
                 self.group,
                 ConversationHandler(
                     [CommandHandler(self.command_name, self.entrypoint)],
-                    self.states,
+                    self.states.graph,
                     [AnyHandler(self.fallback)],
                 ),
             )
@@ -281,12 +267,10 @@ class ConversationHandlerMixin(Command):
         logger.debug(f"Conversation '{self}' started.")
         conversation_message = self.reply(
             self.initial_text,
-            reply_markup=self.initial_markup,
+            reply_markup=self.markup.from_inlines(self.inlines_captions(self.START)),
         )
         self.remember("chat_id", conversation_message.chat.id)
         self.remember("message_id", conversation_message.message_id)
-        if len(self.states) == 1 and self.START in self.states:
-            self.end("Ups!")
         self.next(self.START)
 
     @store_update_context
@@ -395,7 +379,7 @@ class StateSet:
         return handlers
 
     @property
-    def all_states(self):
+    def graph(self):
         states_ids = {}
         for _id in self.inlines:
             states_ids[_id] = None

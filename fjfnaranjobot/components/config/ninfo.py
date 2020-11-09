@@ -31,34 +31,27 @@ class Config(BotCommand, ConversationHandlerMixin):
         "set it of change it if exists, or clear the key. "
         "You can also cancel the config command at any time."
     )
-    builder = MarkupBuilder()
 
     GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(1, 5)
 
-    def build(self):
-        states = StateSet(self)
+    def __init__(self):
+        super().__init__()
 
-        states.add_cancel_inline(self.START)
-        states.add_inline(self.START, "get", "Get")
-        states.add_inline(self.START, "set", "Set")
-        states.add_inline(self.START, "del", "Del")
-        self.initial_markup = self.builder.from_inlines(
-            states.inlines_captions(self.START)
-        )
+        self.states.add_inline(self.START, "get", "Get")
+        self.states.add_inline(self.START, "set", "Set")
+        self.states.add_inline(self.START, "del", "Del")
 
-        states.add_cancel_inline(self.GET_VAR)
-        states.add_text(self.GET_VAR, "get_var")
+        self.states.add_cancel_inline(self.GET_VAR)
+        self.states.add_text(self.GET_VAR, "get_var")
 
-        states.add_cancel_inline(self.SET_VAR)
-        states.add_text(self.SET_VAR, "set_var")
+        self.states.add_cancel_inline(self.SET_VAR)
+        self.states.add_text(self.SET_VAR, "set_var")
 
-        states.add_cancel_inline(self.DEL_VAR)
-        states.add_text(self.DEL_VAR, "del_var")
+        self.states.add_cancel_inline(self.DEL_VAR)
+        self.states.add_text(self.DEL_VAR, "del_var")
 
-        states.add_cancel_inline(self.SET_VALUE)
-        states.add_text(self.SET_VALUE, "set_value")
-
-        return states.all_states
+        self.states.add_cancel_inline(self.SET_VALUE)
+        self.states.add_text(self.SET_VALUE, "set_value")
 
     @store_update_context
     def get_handler(self):
