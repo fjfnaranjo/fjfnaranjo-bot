@@ -107,3 +107,4 @@ ENV/
 /botdata
 /.settings
 /.dbeaver
+/local
