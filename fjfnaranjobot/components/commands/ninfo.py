@@ -43,3 +43,4 @@ class Commands(BotCommand, CommandHandlerMixin):
             "\n".join(prod_commands) if len(prod_commands) > 1 else "no commands"
         )
         self.reply("\n".join(dev_commands) if len(dev_commands) > 1 else "no commands")
+        self.end()

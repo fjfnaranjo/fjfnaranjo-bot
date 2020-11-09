@@ -40,6 +40,17 @@ def store_update_context(f):
     return wrapper
 
 
+def log_text_handler(f):
+    @wraps(f)
+    def log_and_call(instance, *args, **kwargs):
+        logger.info(
+            f"Text handler {f.__name__} in {instance} command invoked by dispatcher."
+        )
+        return f(instance, *args, **kwargs)
+
+    return log_and_call
+
+
 class Command:
     group = DEFAULT_GROUP
     permissions = ONLY_REAL
@@ -344,7 +355,9 @@ class ConversationHandlerMixin(Command):
     def inline_handler(self, inlines):
         def inline_handler_function(update, context):
             query = update.callback_query.data
-            logger.info(f"Received inline selection '{query}' for command '{self}'.")
+            logger.info(
+                f"Handler for received inline selection '{query}' for command '{self}' invoked by dispatcher."
+            )
             if query in inlines:
                 return inlines[query](update, context)
             else:

@@ -4,6 +4,7 @@ from fjfnaranjobot.command import (
     ConversationHandlerMixin,
     MarkupBuilder,
     StateSet,
+    log_text_handler,
     store_update_context,
 )
 from fjfnaranjobot.common import quote_value_for_log
@@ -63,6 +64,7 @@ class Config(BotCommand, ConversationHandlerMixin):
         )
 
     @store_update_context
+    @log_text_handler
     def get_var_handler(self):
         key = self.update.message.text
         shown_key = quote_value_for_log(key)
@@ -91,6 +93,7 @@ class Config(BotCommand, ConversationHandlerMixin):
         )
 
     @store_update_context
+    @log_text_handler
     def set_var_handler(self):
         key = self.update.message.text
         shown_key = quote_value_for_log(key)
@@ -111,6 +114,7 @@ class Config(BotCommand, ConversationHandlerMixin):
         )
 
     @store_update_context
+    @log_text_handler
     def set_value_handler(self):
         value = self.update.message.text
         shown_value = quote_value_for_log(value)
@@ -130,6 +134,7 @@ class Config(BotCommand, ConversationHandlerMixin):
         )
 
     @store_update_context
+    @log_text_handler
     def del_var_handler(self):
         key = self.update.message.text
         shown_key = quote_value_for_log(key)
