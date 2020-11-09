@@ -59,7 +59,7 @@ class Config(BotCommand, ConversationHandlerMixin):
         self.next(
             self.GET_VAR,
             "Tell me what key do you want to get.",
-            self.builder.cancel_only,
+            self.markup.cancel_inline,
         )
 
     @store_update_context
@@ -87,7 +87,7 @@ class Config(BotCommand, ConversationHandlerMixin):
         self.next(
             self.SET_VAR,
             "Tell me what key do you want to set.",
-            reply_markup=self.builder.cancel_only,
+            reply_markup=self.markup.cancel_inline,
         )
 
     @store_update_context
@@ -107,7 +107,7 @@ class Config(BotCommand, ConversationHandlerMixin):
         self.next(
             self.SET_VALUE,
             f"Tell me what value do you want to put in the key '{key}'.",
-            reply_markup=self.builder.cancel_only,
+            reply_markup=self.markup.cancel_inline,
         )
 
     @store_update_context
@@ -126,7 +126,7 @@ class Config(BotCommand, ConversationHandlerMixin):
         self.next(
             self.DEL_VAR,
             "Tell me what key do you want to clear.",
-            reply_markup=self.builder.cancel_only,
+            reply_markup=self.markup.cancel_inline,
         )
 
     @store_update_context

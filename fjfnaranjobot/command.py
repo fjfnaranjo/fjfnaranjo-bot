@@ -247,7 +247,6 @@ class ConversationHandlerMixin(Command):
         self.states = StateSet(self)
         self.states.add_cancel_inline(self.START)
         self.markup = MarkupBuilder()
-        self.context_set("local_state", self.START)
 
     @property
     def handlers(self):
@@ -267,7 +266,9 @@ class ConversationHandlerMixin(Command):
         logger.debug(f"Conversation '{self}' started.")
         conversation_message = self.reply(
             self.initial_text,
-            reply_markup=self.markup.from_inlines(self.inlines_captions(self.START)),
+            reply_markup=self.markup.from_inlines(
+                self.states.inlines_captions(self.START)
+            ),
         )
         self.context_set("chat_id", conversation_message.chat.id)
         self.context_set("message_id", conversation_message.message_id)
@@ -287,7 +288,9 @@ class ConversationHandlerMixin(Command):
         )
 
     def context_set(self, key, value):
-        old_value = self.context.chat_data.get(key)
+        old_value = (
+            self.context.chat_data.get(key) if key in self.context.chat_data else None
+        )
         if key not in self.remembered_keys:
             self.remembered_keys.append(key)
         self.context.chat_data[key] = value
@@ -332,7 +335,6 @@ class ConversationHandlerMixin(Command):
         logger.debug(
             f"'{self}' conversation changes state to {state} and stops the dispatcher."
         )
-        self.context_set("local_state", state)
         raise DispatcherHandlerStop(state)
 
     @store_update_context
@@ -362,8 +364,8 @@ class StateSet:
             self.inlines[state] = {}
         self.inlines[state][handler] = caption
 
-    def add_cancel_inline(self, state, caption="Cancel"):
-        self.add_inline(state, "cancel", caption)
+    def add_cancel_inline(self, state, cancel_caption="Cancel"):
+        self.add_inline(state, "cancel", cancel_caption)
 
     def add_text(self, state, handler):
         if state not in self.texts:
@@ -414,7 +416,7 @@ class StateSet:
 
 class MarkupBuilder:
     @property
-    def cancel_only(self):
+    def cancel_inline(self):
         return InlineKeyboardMarkup(
             [[InlineKeyboardButton("Cancel", callback_data="cancel")]]
         )
