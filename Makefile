@@ -9,7 +9,7 @@ isort:
 	@$(exec) isort fjfnaranjobot tests
 
 test:
-	@$(exec) pytest $(TEST_EXTRA)
+	@$(exec) pytest tests/
 
 cov:
 	@$(exec) pytest --cov=fjfnaranjobot --cov-report html tests/
