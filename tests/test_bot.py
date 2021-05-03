@@ -28,13 +28,17 @@ class BotTests(TestCase):
         assert "Bot init done." in logs.output[-2]
         assert "Bot handlers registered." in logs.output[-1]
 
+    @patch(f"{MODULE_PATH}.Dispatcher")
     @patch(f"{MODULE_PATH}.Update")
-    def test_bot_log_exceptions(self, update, _get_bot_components, _tbot):
+    def test_bot_log_exceptions(self, _update, _dispatcher, _get_bot_components, _tbot):
         bot = Bot()
-        parsed_update = TelegramError("msg")
-        update.de_json.return_value = parsed_update
+        bot.dispatcher.add_error_handler.assert_called_once_with(
+            bot._log_error_from_context
+        )
+        context = MagicMock()
+        context.error = TelegramError("msg")
         with self.assertLogs(logger) as logs:
-            bot.process_request("/bwt", "{}")
+            bot._log_error_from_context(None, context)
         assert "Error inside the framework raised by the dispatcher." in logs.output[0]
 
     @patch(f"{MODULE_PATH}.Dispatcher")
