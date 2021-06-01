@@ -1,6 +1,6 @@
 python-telegram-bot~=13.5
 boto3~=1.17
-celery~=5.0
+celery~=5.1
 redis~=3.5
 requests~=2.25
 bjoern~=3.1
