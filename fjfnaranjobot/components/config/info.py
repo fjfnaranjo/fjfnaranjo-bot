@@ -10,8 +10,8 @@ from telegram.ext import (
 )
 
 from fjfnaranjobot.auth import only_owner
+from fjfnaranjobot.backends import config
 from fjfnaranjobot.common import Command, inline_handler, quote_value_for_log
-from fjfnaranjobot.config import config
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)

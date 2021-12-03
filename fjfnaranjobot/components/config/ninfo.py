@@ -1,4 +1,5 @@
 # TODO: Review all tests
+from fjfnaranjobot.backends import config
 from fjfnaranjobot.command import (
     BotCommand,
     ConversationHandlerMixin,
@@ -8,7 +9,6 @@ from fjfnaranjobot.command import (
     store_update_context,
 )
 from fjfnaranjobot.common import quote_value_for_log
-from fjfnaranjobot.config import config
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
