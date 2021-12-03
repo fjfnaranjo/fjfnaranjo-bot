@@ -1,4 +1,4 @@
-pytest-cov~=2.11
-Sphinx~=3.5
-python-dotenv~=0.17
+pytest-cov~=3.0
+Sphinx~=4.3
+python-dotenv~=0.19
 uWSGI~=2.0

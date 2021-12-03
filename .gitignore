@@ -108,3 +108,4 @@ ENV/
 /.settings
 /.dbeaver
 /local
+/.pytest_cache/
