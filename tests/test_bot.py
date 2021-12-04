@@ -25,8 +25,8 @@ class BotTests(TestCase):
         dispatcher.assert_called_once_with(
             created_bot, None, workers=0, use_context=True
         )
-        assert "Bot init done." in logs.output[-2]
-        assert "Bot handlers registered." in logs.output[-1]
+        assert "DEBUG:app.fjfnaranjobot.bot:Bot init done." in logs.output
+        assert "DEBUG:app.fjfnaranjobot.bot:Bot handlers registered." in logs.output
 
     @patch(f"{MODULE_PATH}.Dispatcher")
     @patch(f"{MODULE_PATH}.Update")

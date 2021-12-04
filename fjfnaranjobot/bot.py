@@ -61,20 +61,13 @@ class Bot:
         self.webhook_url = "/".join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
         for component in get_bot_components().split(","):
-            try:
-                logger.debug(
-                    f"Trying to parse component {component} with new parser..."
-                )
+            if component.startswith("n"):
+                logger.debug(f"Parsing component {component} with new parser.")
                 self._n_parse_component_info(component)
-                logger.debug("Done")
-            except BotCommandError:
-                try:
-                    logger.debug("Failed, trying the old parser...")
-                    self._parse_component_info(component)
-                except BotCommandError:
-                    raise RuntimeError(
-                        f"Can't parse component {component} with any parser."
-                    )
+            else:
+                logger.debug(f"Parsing component {component} with old parser.")
+                self._parse_component_info(component)
+
         logger.debug("Bot handlers registered.")
 
     def _log_error_from_context(self, _update, context):
