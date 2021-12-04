@@ -3,10 +3,6 @@ from fjfnaranjobot.backends import config
 from fjfnaranjobot.command import (
     BotCommand,
     ConversationHandlerMixin,
-    MarkupBuilder,
-    StateSet,
-    log_text_handler,
-    store_update_context,
 )
 from fjfnaranjobot.common import quote_value_for_log
 from fjfnaranjobot.logging import getLogger
@@ -24,8 +20,8 @@ logger = getLogger(__name__)
 #
 
 
-class Config(BotCommand, ConversationHandlerMixin):
-    allow_groups = True
+class Config(ConversationHandlerMixin, BotCommand):
+    allow_chats = True
     command_name = "nconfig"
     description = "Edit bot configuration."
     initial_text = (
@@ -55,7 +51,6 @@ class Config(BotCommand, ConversationHandlerMixin):
         self.states.add_cancel_inline(self.SET_VALUE)
         self.states.add_text(self.SET_VALUE, "set_value")
 
-    @store_update_context
     def get_handler(self):
         logger.debug("Requesting key name to get its value.")
         self.next(
@@ -64,8 +59,6 @@ class Config(BotCommand, ConversationHandlerMixin):
             self.markup.cancel_inline,
         )
 
-    @store_update_context
-    @log_text_handler
     def get_var_handler(self):
         key = self.update.message.text
         shown_key = quote_value_for_log(key)
@@ -84,7 +77,6 @@ class Config(BotCommand, ConversationHandlerMixin):
             logger.debug(f"Replying with result {shown_result}.")
             self.end(f"The value for key '{key}' is '{result}'.")
 
-    @store_update_context
     def set_handler(self):
         logger.debug("Requesting key name to set its value.")
         self.next(
@@ -93,8 +85,6 @@ class Config(BotCommand, ConversationHandlerMixin):
             reply_markup=self.markup.cancel_inline,
         )
 
-    @store_update_context
-    @log_text_handler
     def set_var_handler(self):
         key = self.update.message.text
         shown_key = quote_value_for_log(key)
@@ -114,8 +104,6 @@ class Config(BotCommand, ConversationHandlerMixin):
             reply_markup=self.markup.cancel_inline,
         )
 
-    @store_update_context
-    @log_text_handler
     def set_value_handler(self):
         value = self.update.message.text
         shown_value = quote_value_for_log(value)
@@ -125,7 +113,6 @@ class Config(BotCommand, ConversationHandlerMixin):
         logger.debug(f"Stored {shown_value} in key '{key}'.")
         self.end("I'll remember that.")
 
-    @store_update_context
     def del_handler(self):
         logger.debug("Requesting key name to clear its value.")
         self.next(
@@ -134,8 +121,6 @@ class Config(BotCommand, ConversationHandlerMixin):
             reply_markup=self.markup.cancel_inline,
         )
 
-    @store_update_context
-    @log_text_handler
     def del_var_handler(self):
         key = self.update.message.text
         shown_key = quote_value_for_log(key)

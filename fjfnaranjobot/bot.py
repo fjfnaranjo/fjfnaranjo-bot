@@ -16,8 +16,9 @@ from telegram.ext import (
 )
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
-from fjfnaranjobot.command import BotCommand
-from fjfnaranjobot.common import Command, command_list, get_bot_components
+from fjfnaranjobot.command import Command, BotCommand, BotCommandError
+from fjfnaranjobot.common import command_list, get_bot_components
+from fjfnaranjobot.common import Command as OldCommand
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -60,8 +61,20 @@ class Bot:
         self.webhook_url = "/".join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
         for component in get_bot_components().split(","):
-            self._parse_component_info(component)
-            self._n_parse_component_info(component)
+            try:
+                logger.debug(
+                    f"Trying to parse component {component} with new parser..."
+                )
+                self._n_parse_component_info(component)
+                logger.debug("Done")
+            except BotCommandError:
+                try:
+                    logger.debug("Failed, trying the old parser...")
+                    self._parse_component_info(component)
+                except BotCommandError:
+                    raise RuntimeError(
+                        f"Can't parse component {component} with any parser."
+                    )
         logger.debug("Bot handlers registered.")
 
     def _log_error_from_context(self, _update, context):
@@ -141,7 +154,7 @@ class Bot:
             pass
         else:
             for command in commands:
-                if not isinstance(command, Command):
+                if not isinstance(command, OldCommand):
                     raise ValueError(f"Invalid command for component '{component}'.")
                 command_list.append(command)
 
@@ -159,26 +172,40 @@ class Bot:
             self._parse_component_commands(component, info)
 
     def _n_register_command(self, command):
-        for group, handler in command.handlers:
+        for group, handler, class_name in command.handlers:
             command.log_handler(group, handler)
+            # TODO: Remove this log and 3rd component in handlers (not used anymore)
+            logger.debug(f"Adding handler {class_name}.")
             self.dispatcher.add_handler(handler, group)
 
     def _n_parse_component_info(self, component):
+        component_module = _N_BOT_COMPONENTS_TEMPLATE.format(component)
         try:
-            info = import_module(_N_BOT_COMPONENTS_TEMPLATE.format(component))
+            info = import_module(component_module)
         except ModuleNotFoundError:
             pass
         else:
-            members = getmembers(info)
+
+            def predicate(value):
+                return (
+                    isclass(value)
+                    and issubclass(value, Command)
+                    and hasattr(value, "__module__")
+                    and value.__module__.startswith(component_module)
+                )
+
+            members = getmembers(info, predicate=predicate)
             for _, member in members:
-                if (
-                    member is not BotCommand
-                    and isclass(member)
-                    and issubclass(member, BotCommand)
-                ):
+                if issubclass(member, BotCommand):
                     command = member()
                     command_list.append(command)
-                    self._n_register_command(command)
+                    try:
+                        self._n_register_command(command)
+                    except BotCommandError:
+                        raise RuntimeError(
+                            "BotCommandError raised trying to register "
+                            f"'{component}' component handlers."
+                        )
 
     def process_request(self, url_path, update):
 

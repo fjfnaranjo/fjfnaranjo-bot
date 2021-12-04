@@ -1,3 +1,19 @@
+"""Commands module.
+
+This module abstracts the python-telegram-bot library and contains the basic
+tools to define new bot commands. Each of the bot components use the definitions
+in this file to add commands to the bot.
+
+Commands intended for internal use should inherit from the Command class but
+commands that will appear in the bot commands list (in Telegram) should inherit
+from BotCommand.
+
+Check each class docstring for details about its required paramenters.
+
+Any command will need a 'command handler mixin'. This mixins connect the command
+to the updates handlers in python-telegram-bot . See each *Mixin docstring.
+"""
+
 from functools import wraps
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
@@ -18,44 +34,45 @@ class BotCommandError(Exception):
     pass
 
 
-class AnyHandler(Handler):
-    def check_update(self, update):
-        if (
-            Filters.group(update)
-            and hasattr(update, "message")
-            and update.message is not None
-            and Filters.entity(MessageEntity.MENTION).filter(update.message)
-        ):
-            return update
-        if Filters.private(update):
-            return update
-        return None
-
-
+# TODO: This probably shoul be removed
 def store_update_context(f):
     @wraps(f)
-    def wrapper(instance, update, context):
-        instance.update, instance.context = update, context
-        return f(instance)
-
-    return wrapper
-
-
-def log_text_handler(f):
-    @wraps(f)
-    def log_and_call(instance, *args, **kwargs):
-        logger.info(
-            f"Text handler {f.__name__} in {instance} command invoked by dispatcher."
-        )
+    def store_update_context_wrapper(instance, update, context, *args, **kwargs):
+        instance.update = update
+        instance.context = context
         return f(instance, *args, **kwargs)
 
-    return log_and_call
+    return store_update_context_wrapper
+
+
+# TODO: This decorator can be avoided if implementing a text_handler method
+def store_update_context_text_command(f, command, query):
+    @wraps(f)
+    def store_update_context_text_command_wrapper(update, context, *args, **kwargs):
+        command.update = update
+        command.context = context
+        logger.info(
+            f"Continuing conversation {command} after receiving text selection '{query}'..."
+        )
+        return f(*args, **kwargs)
+
+    return store_update_context_text_command_wrapper
 
 
 class Command:
-    group = DEFAULT_GROUP
+    """Base command for all the bot commands.
+
+    Parameters:
+          - dispatcher_group: python-telegram-bot priority group. See 'group' in
+                   telegram.ext.dispatcher.Dispatcher.add_handler() .
+          - permissions: Who can use this command (anyone, non-bot users,
+                        friends or the owner).
+          - allow_chats: If the command will be allowed in group chats.
+    """
+
+    dispatcher_group = DEFAULT_GROUP
     permissions = ONLY_REAL
-    allow_groups = False
+    allow_chats = False
 
     def __init__(self):
         self.update = None
@@ -81,13 +98,13 @@ class Command:
                 commands.append("<unknown command>")
         return commands
 
-    def log_handler(self, group, handler):
+    def log_handler(self, dispatcher_group, handler):
         commands = Command.extract_commands(handler)
         for command in commands:
             logger.debug(
                 f"New handler for {command}"
                 f" created by {self} command"
-                f" in group {group}."
+                f" in dispatcher group {dispatcher_group}."
             )
 
     @property
@@ -154,7 +171,8 @@ class Command:
             return False
         return True
 
-    def check_and_remove_bot_mention(self):
+    # TODO: If this uses hasattr it belongs outside the class or should be better deisnged
+    def _check_and_remove_bot_mention(self):
         if hasattr(self.update, "message") and self.update.message is not None:
             bot_mention = "@" + self.context.bot.username
             mentions = self.update.message.parse_entities(MessageEntity.MENTION)
@@ -172,6 +190,7 @@ class Command:
             ) or (
                 len(commands_keys) == 1
                 and hasattr(self, "command_name")
+                and self.command_name is not None
                 and commands[commands_keys[0]] == "/" + self.command_name + bot_mention
             ):
                 self.update.message.text = self.update.message.text.replace(
@@ -181,37 +200,42 @@ class Command:
 
         return False
 
-    def handle_command(self):
-        pass
+    # TODO: Log security warnings
+    def filter_command(self):
+        bot_mentioned = self._check_and_remove_bot_mention()
+
+        return (
+            False
+            if (
+                (not self.allow_chats and Filters.chat_type.groups(self.update))
+                or (
+                    self.allow_chats
+                    and Filters.chat_type.groups(self.update)
+                    and not bot_mentioned
+                )
+                or (self.permissions == ONLY_REAL and not self.user_is_real())
+                or (
+                    self.permissions == ONLY_OWNER
+                    and (not self.user_is_real() or not self.user_is_owner())
+                )
+                or (
+                    self.permissions == ONLY_FRIENDS
+                    and (not self.user_is_real() or not self.user_is_friend())
+                )
+            )
+            else True
+        )
+
+    def entrypoint(self):
+        raise NotImplementedError()
 
     @store_update_context
-    def entrypoint(self):
-        bot_mentioned = self.check_and_remove_bot_mention()
-
-        if (
-            (not self.allow_groups and Filters.group(self.update))
-            or (self.allow_groups and Filters.group(self.update) and not bot_mentioned)
-            or (self.permissions == ONLY_REAL and not self.user_is_real())
-            or (
-                self.permissions == ONLY_OWNER
-                and (not self.user_is_real() or not self.user_is_owner())
-            )
-            or (
-                self.permissions == ONLY_FRIENDS
-                and (not self.user_is_real() or not self.user_is_friend())
-            )
-        ):
+    def handle_command(self):
+        if not self.filter_command():
             return
-
-        logger.info(f"Handler for {self} command invoked by dispatcher.")
-        try:
-            handler_return = self.handle_command()
-        except DispatcherHandlerStop:
-            logger.debug(f"Handler for {self} command stopped the dispatcher.")
-            raise
-        else:
-            logger.debug(f"Handler for {self} command lets the dispacther continue.")
-            return handler_return
+        logger.info(f"Calling command entrypoint in {self}...")
+        self.entrypoint()
+        raise DispatcherHandlerStop()
 
     def reply(self, *args, **kwargs):
         if hasattr(self.update, "message") and self.update.message is not None:
@@ -221,28 +245,61 @@ class Command:
                 self.update.effective_chat.id, *args, **kwargs
             )
 
-    def end(self, end_message=None):
-        if end_message is not None:
-            self.reply(end_message)
-        raise DispatcherHandlerStop()
+
+class AnyHandler(Handler):
+    """Extra python-telegram-bot handler to select any update."""
+
+    def check_update(self, update):
+        if (
+            Filters.chat_type.groups(update)
+            and hasattr(update, "message")
+            and update.message is not None
+            and Filters.entity(MessageEntity.MENTION).filter(update.message)
+        ):
+            return update
+        if Filters.chat_type.private(update):
+            return update
+        return None
 
 
 class AnyHandlerMixin(Command):
+    """Mixin to handle any command."""
+
     @property
     def handlers(self):
         new_handlers = [
             (
-                self.group,
+                self.dispatcher_group,
                 AnyHandler(
-                    self.entrypoint,
+                    self.handle_command,
                 ),
+                self.__class__.__name__,
             )
         ]
         return super().handlers + new_handlers
 
 
-class CommandHandlerMixin(Command):
+class BotCommand(Command):
+    """Command notified to BotFather.
+
+    Inherit from this base instead of Command to notify the command as a bot
+    command. This will make the command available as an option in Telegram's
+    conversations.
+
+    Parameters:
+      - description: Little text used in the Telegram commands interface.
+      - is_(dev|prod)_command: Filter to determine if the commands is meant to
+                               be exposed in the dev/prod versions of the bot.
+    """
+
     command_name = None
+    description = ""
+    is_dev_command = True
+    is_prod_command = False
+
+
+class CommandHandlerMixin(BotCommand):
+    """Mixin to handle simple and single commands."""
 
     @property
     def handlers(self):
@@ -250,21 +307,23 @@ class CommandHandlerMixin(Command):
             raise BotCommandError(f"Command name not defined for {self}")
         new_handlers = [
             (
-                self.group,
+                self.dispatcher_group,
                 CommandHandler(
                     self.command_name,
-                    self.entrypoint,
+                    self.handle_command,
                     filters=Filters.command,
                 ),
+                self.__class__.__name__,
             )
         ]
         return super().handlers + new_handlers
 
 
-class ConversationHandlerMixin(Command):
+class ConversationHandlerMixin(BotCommand):
+    """Mixin to handle python-telegram-bot conversation."""
+
     START = 0
 
-    command_name = None
     initial_text = "Conversation"
     remembered_keys = []
 
@@ -280,18 +339,22 @@ class ConversationHandlerMixin(Command):
     def handlers(self):
         new_handlers = [
             (
-                self.group,
+                self.dispatcher_group,
                 ConversationHandler(
-                    [CommandHandler(self.command_name, self.entrypoint)],
+                    [CommandHandler(self.command_name, self.start_conversation)],
                     self.states.graph,
                     [AnyHandler(self.fallback)],
                 ),
+                self.__class__.__name__,
             )
         ]
         return super().handlers + new_handlers
 
-    def handle_command(self):
-        logger.debug(f"Conversation '{self}' started.")
+    @store_update_context
+    def start_conversation(self):
+        if not self.filter_command():
+            return
+        logger.info(f"Starting conversation '{self}'...")
         conversation_message = self.reply(
             self.initial_text,
             reply_markup=self.markup.from_inlines(
@@ -354,7 +417,7 @@ class ConversationHandlerMixin(Command):
         if end_message is not None:
             self.reply(end_message)
         self._clean()
-        logger.debug(f"'{self}' conversation ends and stops the dispatcher.")
+        logger.info(f"'{self}' conversation ends.")
         raise DispatcherHandlerStop(ConversationHandler.END)
 
     def next(self, state, new_message=None, reply_markup=None):
@@ -365,19 +428,26 @@ class ConversationHandlerMixin(Command):
         )
         raise DispatcherHandlerStop(state)
 
-    @store_update_context
     def cancel_handler(self):
+        logger.info(f"Cancelling conversation '{self}'...")
         return self.end("Ok.")
 
     def inline_handler(self, inlines):
         def inline_handler_function(update, context):
+            self.update = update
+            self.context = context
             query = update.callback_query.data
-            logger.info(
-                f"Handler for received inline selection '{query}' for command '{self}' invoked by dispatcher."
-            )
+
             if query in inlines:
-                return inlines[query](update, context)
+                if query != 'cancel':
+                    logger.info(
+                        f"Continuing conversation {self} after receiving inline selection '{query}'..."
+                    )
+                return inlines[query]()
             else:
+                logger.warning(
+                    f"Invalid selection '{query}' received for conversation {self}."
+                )
                 raise ValueError(f"No valid handlers for query '{query}'.")
 
         return inline_handler_function
@@ -425,7 +495,10 @@ class StateSet:
             for text in self.texts[state]:
                 handlers.append(
                     MessageHandler(
-                        Filters.text, getattr(self.command, text + "_handler")
+                        Filters.text,
+                        store_update_context_text_command(
+                            getattr(self.command, text + "_handler"), self.command, text
+                        ),
                     )
                 )
         return handlers
@@ -467,9 +540,3 @@ class MarkupBuilder:
                 [InlineKeyboardButton(cancel_caption, callback_data=cancel_handler)]
             )
         return InlineKeyboardMarkup(markup)
-
-
-class BotCommand(Command):
-    description = ""
-    is_prod_command = False
-    is_dev_command = True

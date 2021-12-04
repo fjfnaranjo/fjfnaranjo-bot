@@ -6,9 +6,9 @@ logger = getLogger(__name__)
 
 
 class Sorry(BotCommand, AnyHandlerMixin):
-    group = 65536
-    allow_groups = True
+    dispatcher_group = 65536
+    allow_chats = True
 
-    def handle_command(self):
+    def entrypoint(self):
         logger.debug("Sending 'sorry' back to the user.")
-        self.end(SORRY_TEXT)
+        self.reply(SORRY_TEXT)
