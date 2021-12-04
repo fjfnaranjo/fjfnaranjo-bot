@@ -221,7 +221,7 @@ class Bot:
 
         # Register webhook request URL
         elif url_path == ("/" + "/".join((BOT_WEBHOOK_TOKEN, "register_webhook"))):
-            self.bot.set_webhook(url=self.webhook_url)
+            self.bot.set_webhook(url=self.webhook_url, drop_pending_updates=True)
             logger.info("Reply with ok to register_webhook.")
             return "ok"
 
@@ -230,6 +230,7 @@ class Bot:
             self.bot.set_webhook(
                 url=self.webhook_url,
                 certificate=open(BOT_WEBHOOK_CERT, "rb"),
+                drop_pending_updates=True,
             )
             logger.info("Reply with ok to register_webhook_self.")
             return "ok (self)"

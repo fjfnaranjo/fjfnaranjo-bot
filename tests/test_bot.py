@@ -71,7 +71,9 @@ class BotTests(TestCase):
         bot = Bot()
         with self.assertLogs(logger) as logs:
             assert "ok" == bot.process_request("/bwt/register_webhook", None)
-        created_bot.set_webhook.assert_called_once_with(url="bwu/bwt")
+        created_bot.set_webhook.assert_called_once_with(
+            url="bwu/bwt", drop_pending_updates=True
+        )
         assert "Reply with ok to register_webhook." in logs.output[-1]
 
     @patch(f"{MODULE_PATH}.Dispatcher")
@@ -90,7 +92,7 @@ class BotTests(TestCase):
             )
         open_.assert_called_once_with("cert", "rb")
         created_bot.set_webhook.assert_called_once_with(
-            url="bwu/bwt", certificate=opened_file
+            url="bwu/bwt", certificate=opened_file, drop_pending_updates=True
         )
         assert "Reply with ok to register_webhook_self." in logs.output[-1]
 
