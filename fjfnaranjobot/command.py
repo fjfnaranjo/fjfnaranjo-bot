@@ -439,7 +439,7 @@ class ConversationHandlerMixin(BotCommand):
             query = update.callback_query.data
 
             if query in inlines:
-                if query != 'cancel':
+                if query != "cancel":
                     logger.info(
                         f"Continuing conversation {self} after receiving inline selection '{query}'..."
                     )

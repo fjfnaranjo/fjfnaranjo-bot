@@ -16,9 +16,9 @@ from telegram.ext import (
 )
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
-from fjfnaranjobot.command import Command, BotCommand, BotCommandError
-from fjfnaranjobot.common import command_list, get_bot_components
+from fjfnaranjobot.command import BotCommand, BotCommandError, Command
 from fjfnaranjobot.common import Command as OldCommand
+from fjfnaranjobot.common import command_list, get_bot_components
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
