@@ -11,7 +11,7 @@ from fjfnaranjobot.common import (
     quote_value_for_log,
 )
 
-from .base import BotTestCase
+from .base import MockedEnvironTestCase
 
 MODULE_PATH = "fjfnaranjobot.common"
 
@@ -22,7 +22,7 @@ BOT_COMPONENTS_DEFAULT = "start,config,friends,commands,terraria,sorry"
 BOT_COMPONENTS_TEST = "comp1,comp2"
 
 
-class BotOwnerNameTests(BotTestCase):
+class BotOwnerNameTests(MockedEnvironTestCase):
     def test_get_owner_name_default(self):
         with self.mocked_environ(f"{MODULE_PATH}.environ", None, ["BOT_OWNER_NAME"]):
             assert get_bot_owner_name() == BOT_OWNER_NAME_DEFAULT
@@ -34,7 +34,7 @@ class BotOwnerNameTests(BotTestCase):
             assert get_bot_owner_name() == BOT_OWNER_NAME_TEST
 
 
-class BotComponentsTests(BotTestCase):
+class BotComponentsTests(MockedEnvironTestCase):
     def test_get_owner_name_default(self):
         with self.mocked_environ(f"{MODULE_PATH}.environ", None, ["BOT_COMPONENTS"]):
             assert get_bot_components() == BOT_COMPONENTS_DEFAULT

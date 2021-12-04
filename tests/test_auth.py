@@ -1,10 +1,15 @@
 from contextlib import contextmanager
-from unittest import TestCase
 from unittest.mock import sentinel
 
 from telegram.ext.dispatcher import DispatcherHandlerStop
 
-from fjfnaranjobot.auth import friends, logger, only_friends, only_owner, only_real
+from fjfnaranjobot.auth import (
+    _FriendsProxy,
+    logger,
+    only_friends,
+    only_owner,
+    only_real,
+)
 from fjfnaranjobot.common import SORRY_TEXT, User
 
 from .base import (
@@ -14,7 +19,7 @@ from .base import (
     SECOND_FRIEND_USER,
     UNKNOWN_USER,
     BotHandlerTestCase,
-    BotTestCase,
+    MemoryDbTestCase,
 )
 
 MODULE_PATH = "fjfnaranjobot.auth"
@@ -236,78 +241,77 @@ class AuthTests(BotHandlerTestCase):
             self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
 
-class FriendsTests(TestCase):
+class FriendsTests(MemoryDbTestCase):
     def setUp(self):
         super().setUp()
-        friends.clear()
+        self.patch_sqldb(f"{MODULE_PATH}.sqldb")
+        self.friends_proxy = _FriendsProxy()
 
     @contextmanager
     def friends(self, friends_list):
-        friends.clear()
         for friend in friends_list:
-            friends.add(friend)
+            self.friends_proxy.add(friend)
         yield
-        friends.clear()
 
     def test_le_not_implemented(self):
         with self.assertRaises(NotImplementedError):
-            bool(friends <= 0)
+            bool(self.friends_proxy <= 0)
 
     def test_no_friends(self):
-        assert 0 == len(friends)
+        assert 0 == len(self.friends_proxy)
 
     def test_one_friend(self):
         with self.friends([FIRST_FRIEND_USER]):
-            assert 1 == len(friends)
-            assert FIRST_FRIEND_USER in friends
+            assert 1 == len(self.friends_proxy)
+            assert FIRST_FRIEND_USER in self.friends_proxy
 
     def test_auth_get_friends_many_friends(self):
         with self.friends([FIRST_FRIEND_USER, SECOND_FRIEND_USER]):
-            assert 2 == len(friends)
-            assert FIRST_FRIEND_USER in friends
-            assert SECOND_FRIEND_USER in friends
+            assert 2 == len(self.friends_proxy)
+            assert FIRST_FRIEND_USER in self.friends_proxy
+            assert SECOND_FRIEND_USER in self.friends_proxy
 
     def test_auth_get_friends_many_friends_sorted(self):
         with self.friends([SECOND_FRIEND_USER, FIRST_FRIEND_USER]):
-            first_friend, second_friend = friends.sorted()
+            first_friend, second_friend = self.friends_proxy.sorted()
             assert FIRST_FRIEND_USER.id == first_friend.id
             assert SECOND_FRIEND_USER.id == second_friend.id
 
     def test_auth_add_friend(self):
-        friends.add(FIRST_FRIEND_USER)
-        assert 1 == len(friends)
-        assert FIRST_FRIEND_USER in friends
+        self.friends_proxy.add(FIRST_FRIEND_USER)
+        assert 1 == len(self.friends_proxy)
+        assert FIRST_FRIEND_USER in self.friends_proxy
 
     def test_auth_add_friend_already_friend(self):
         with self.friends([FIRST_FRIEND_USER]):
-            friends.add(User(FIRST_FRIEND_USER.id, "x"))
-            assert 1 == len(friends)
-            assert FIRST_FRIEND_USER in friends
-            for friend in friends:
+            self.friends_proxy.add(User(FIRST_FRIEND_USER.id, "x"))
+            assert 1 == len(self.friends_proxy)
+            assert FIRST_FRIEND_USER in self.friends_proxy
+            for friend in self.friends_proxy:
                 assert "x" == friend.username
 
     def test_auth_add_friend_is_owner(self):
-        friends.add(OWNER_USER)
-        assert 1 == len(friends)
-        assert OWNER_USER in friends
+        self.friends_proxy.add(OWNER_USER)
+        assert 1 == len(self.friends_proxy)
+        assert OWNER_USER in self.friends_proxy
 
     def test_auth_del_friend_not_friends(self):
-        friends.discard(FIRST_FRIEND_USER)
-        assert 0 == len(friends)
+        self.friends_proxy.discard(FIRST_FRIEND_USER)
+        assert 0 == len(self.friends_proxy)
 
     def test_auth_del_friend_not_a_friend(self):
         with self.friends([FIRST_FRIEND_USER]):
-            friends.discard(SECOND_FRIEND_USER)
-            assert 1 == len(friends)
-            assert FIRST_FRIEND_USER in friends
+            self.friends_proxy.discard(SECOND_FRIEND_USER)
+            assert 1 == len(self.friends_proxy)
+            assert FIRST_FRIEND_USER in self.friends_proxy
 
     def test_auth_del_friend_one_friend(self):
         with self.friends([FIRST_FRIEND_USER, SECOND_FRIEND_USER]):
-            friends.discard(FIRST_FRIEND_USER)
-            assert 1 == len(friends)
-            assert SECOND_FRIEND_USER in friends
+            self.friends_proxy.discard(FIRST_FRIEND_USER)
+            assert 1 == len(self.friends_proxy)
+            assert SECOND_FRIEND_USER in self.friends_proxy
 
     def test_auth_del_friend_last_friend(self):
         with self.friends([FIRST_FRIEND_USER]):
-            friends.discard(FIRST_FRIEND_USER)
-            assert 0 == len(friends)
+            self.friends_proxy.discard(FIRST_FRIEND_USER)
+            assert 0 == len(self.friends_proxy)

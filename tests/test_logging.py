@@ -1,18 +1,13 @@
-from os import chmod
-from os.path import isfile, join
-from tempfile import mkdtemp, mkstemp
-from unittest.mock import patch
-
 from fjfnaranjobot.logging import getLogger, reset_logging
 
-from .base import BotTestCase
+from .base import MockedEnvironTestCase
 
 MODULE_PATH = "fjfnaranjobot.logging"
 
 FAKE_LEVEL = 99
 
 
-class LoggingTests(BotTestCase):
+class LoggingTests(MockedEnvironTestCase):
     def test_logger_no_valid_log_level(self):
         with self.mocked_environ(
             f"{MODULE_PATH}.environ", {"BOT_LOGLEVEL": f"{FAKE_LEVEL}"}

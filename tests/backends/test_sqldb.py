@@ -6,7 +6,7 @@ from tempfile import mkdtemp, mkstemp
 from unittest.mock import patch
 
 from fjfnaranjobot.backends import _ensure_sqldb
-from tests.base import BotTestCase
+from tests.base import MockedEnvironTestCase
 
 MODULE_PATH = "fjfnaranjobot.backends"
 
@@ -18,7 +18,7 @@ class SQLite3SQLDatabaseMock:
 
 
 @patch(f"{MODULE_PATH}.SQLite3SQLDatabase", SQLite3SQLDatabaseMock)
-class EnsureDbTests(BotTestCase):
+class EnsureDbTests(MockedEnvironTestCase):
     def setUp(self):
         super().setUp()
         self._db_test_file = mkstemp()[1]
@@ -30,7 +30,7 @@ class EnsureDbTests(BotTestCase):
         if isdir(self._db_test_dir):
             chmod(self._db_test_dir, S_IRWXU)
             rmtree(self._db_test_dir)
-        BotTestCase.tearDown(self)
+        MockedEnvironTestCase.tearDown(self)
 
     def test_path_valid_db_name(self):
         valid_path = join(self._db_test_dir, "valid")

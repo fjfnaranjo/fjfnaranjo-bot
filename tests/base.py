@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, call, patch, sentinel
 from telegram.ext import DispatcherHandlerStop
 
 from fjfnaranjobot.auth import friends
+from fjfnaranjobot.backends.sqldb.sqlite3 import SQLite3SQLDatabase
 from fjfnaranjobot.common import User
 
 BOT_USERNAME = "bu"
@@ -34,7 +35,7 @@ class CallWithMarkup:
         self.call = call(*args, **kwargs)
 
 
-class BotTestCase(TestCase):
+class MockedEnvironTestCase(TestCase):
     @contextmanager
     def mocked_environ(self, path, edit_keys=None, delete_keys=None):
         if edit_keys is None:
@@ -52,7 +53,16 @@ class BotTestCase(TestCase):
             yield
 
 
-class BotHandlerTestCase(BotTestCase):
+class MemoryDbTestCase(TestCase):
+    def patch_sqldb(self, path):
+        sqldb = SQLite3SQLDatabase(":memory:")
+        sqldb_patcher = patch(path, sqldb)
+        sqldb_patcher.start()
+        self.addCleanup(sqldb_patcher.stop)
+        return sqldb
+
+
+class BotHandlerTestCase(MockedEnvironTestCase):
     def setUp(self):
         super().setUp()
 

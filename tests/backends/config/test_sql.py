@@ -1,13 +1,14 @@
 from logging import DEBUG
 from unittest import TestCase
 
-from fjfnaranjobot.backends import sqldb
 from fjfnaranjobot.backends.config.sql import SQLConfiguration, logger
+from fjfnaranjobot.backends.sqldb.sqlite3 import SQLite3SQLDatabase
 
 
 class SQLConfigTests(TestCase):
     def setUp(self):
         super().setUp()
+        sqldb = SQLite3SQLDatabase(":memory:")
         self.sql_config = SQLConfiguration(sqldb)
 
     def tearDown(self):

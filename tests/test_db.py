@@ -1,9 +1,6 @@
-from unittest.mock import patch
-
-from fjfnaranjobot.backends import sqldb
-from fjfnaranjobot.backends.sqldb.sqlite3 import SQLite3SQLDatabase
 from fjfnaranjobot.db import DbField, DbRelation
-from tests.base import BotTestCase
+
+from .base import MemoryDbTestCase
 
 MODULE_PATH = "fjfnaranjobot.db"
 
@@ -28,13 +25,10 @@ class DbRelationEndingUpperMockA(DbRelation):
     ]
 
 
-class DbObjectsTests(BotTestCase):
+class DbObjectsTests(MemoryDbTestCase):
     def setUp(self):
         super().setUp()
-        self.sqldb = SQLite3SQLDatabase(":memory:")
-        sqldb_patcher = patch(f"{MODULE_PATH}.sqldb", self.sqldb)
-        sqldb_patcher.start()
-        self.addCleanup(sqldb_patcher.stop)
+        self.sqldb = self.patch_sqldb(f"{MODULE_PATH}.sqldb")
 
     def test_db_field(self):
         field = DbField("a", "b")
