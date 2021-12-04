@@ -34,6 +34,9 @@ class BotCommandError(Exception):
     pass
 
 
+# TODO: Test (and consider adding _ in lots of members...)
+
+
 # TODO: This probably shoul be removed
 def store_update_context(f):
     @wraps(f)

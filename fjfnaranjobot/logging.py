@@ -40,6 +40,7 @@ def _configure_logging():
     )
 
 
+# TODO: Test
 def reset_logging():
     global _configured
     if not _configured:
