@@ -25,6 +25,7 @@ class User:
         self.username = username
 
 
+# TODO: Remove when old commands are deprecated
 class Command:
     def __init__(self, description, prod_command, dev_command):
         self.description = description
