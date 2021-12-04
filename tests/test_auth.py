@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from unittest import TestCase
-from unittest.mock import patch, sentinel
+from unittest.mock import sentinel
 
 from telegram.ext.dispatcher import DispatcherHandlerStop
 

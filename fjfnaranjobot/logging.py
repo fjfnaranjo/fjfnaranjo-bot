@@ -1,8 +1,7 @@
 from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 from logging import getLogger as loggingGetLogger
 from logging.config import dictConfig
-from os import environ, makedirs, remove
-from os.path import isdir, isfile, join, split
+from os import environ
 
 _BOT_LOGLEVEL_DEFAULT = "INFO"
 
