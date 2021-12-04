@@ -5,7 +5,7 @@ from fjfnaranjobot.backends.sqldb.interface import SQLDatabase
 
 
 class SQLite3SQLDatabase(SQLDatabase):
-    def __init__(self, path):
+    def __init__(self, path: str):
         self.connection = connect(path)
 
     @contextmanager
