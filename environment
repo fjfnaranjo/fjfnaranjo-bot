@@ -6,3 +6,4 @@ CONTAINER_UID=1000
 BOT_TOKEN=
 BOT_OWNER_ID=
 BOT_DB_NAME=
+PYTHONWARNINGS=ignore::UserWarning:telegram.ext.dispatcher:250,ignore::UserWarning:telegram.ext.conversationhandler:287
