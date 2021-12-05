@@ -1,4 +1,4 @@
-# TODO: Review all tests
+# TODO: Tests
 from fjfnaranjobot.backends import config
 from fjfnaranjobot.command import BotCommand, ConversationHandlerMixin
 from fjfnaranjobot.common import quote_value_for_log
@@ -7,13 +7,11 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 #
-# config_handler states
+# Config conversation states
 #
 # cmd --> START --> GET_VAR --> end
 #               --> SET_VAR --> SET_VALUE --> end
 #               --> DEL_VAR --> end
-#
-# * --> end
 #
 
 
@@ -27,31 +25,36 @@ class Config(ConversationHandlerMixin, BotCommand):
         "You can also cancel the config command at any time."
     )
 
-    GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(4)
+    class StatesEnum:
+        GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(1, 5)
 
     def __init__(self):
         super().__init__()
 
-        self.states.add_inline(self.START, "get", "Get")
-        self.states.add_inline(self.START, "set", "Set")
-        self.states.add_inline(self.START, "del", "Del")
+        # TODO: Consider default state for next state (I)
+        # add_inline_default_next()?
 
-        self.states.add_cancel_inline(self.GET_VAR)
-        self.states.add_text(self.GET_VAR, "get_var")
+        self.states.add_cancel_inline(ConversationHandlerMixin.START)
+        self.states.add_inline(ConversationHandlerMixin.START, "get", "Get")
+        self.states.add_inline(ConversationHandlerMixin.START, "set", "Set")
+        self.states.add_inline(ConversationHandlerMixin.START, "del", "Del")
 
-        self.states.add_cancel_inline(self.SET_VAR)
-        self.states.add_text(self.SET_VAR, "set_var")
+        self.states.add_cancel_inline(Config.StatesEnum.GET_VAR)
+        self.states.add_text(Config.StatesEnum.GET_VAR, "get_var")
 
-        self.states.add_cancel_inline(self.DEL_VAR)
-        self.states.add_text(self.DEL_VAR, "del_var")
+        self.states.add_cancel_inline(Config.StatesEnum.SET_VAR)
+        self.states.add_text(Config.StatesEnum.SET_VAR, "set_var")
 
-        self.states.add_cancel_inline(self.SET_VALUE)
-        self.states.add_text(self.SET_VALUE, "set_value")
+        self.states.add_cancel_inline(Config.StatesEnum.DEL_VAR)
+        self.states.add_text(Config.StatesEnum.DEL_VAR, "del_var")
+
+        self.states.add_cancel_inline(Config.StatesEnum.SET_VALUE)
+        self.states.add_text(Config.StatesEnum.SET_VALUE, "set_value")
 
     def get_handler(self):
         logger.debug("Requesting key name to get its value.")
         self.next(
-            self.GET_VAR,
+            Config.StatesEnum.GET_VAR,
             "Tell me what key do you want to get.",
             self.markup.cancel_inline,
         )
@@ -77,7 +80,7 @@ class Config(ConversationHandlerMixin, BotCommand):
     def set_handler(self):
         logger.debug("Requesting key name to set its value.")
         self.next(
-            self.SET_VAR,
+            Config.StatesEnum.SET_VAR,
             "Tell me what key do you want to set.",
             reply_markup=self.markup.cancel_inline,
         )
@@ -96,7 +99,7 @@ class Config(ConversationHandlerMixin, BotCommand):
         self.context_set("key", key)
         logger.debug("Requesting value to set the key.")
         self.next(
-            self.SET_VALUE,
+            Config.StatesEnum.SET_VALUE,
             f"Tell me what value do you want to put in the key '{key}'.",
             reply_markup=self.markup.cancel_inline,
         )
@@ -113,7 +116,7 @@ class Config(ConversationHandlerMixin, BotCommand):
     def del_handler(self):
         logger.debug("Requesting key name to clear its value.")
         self.next(
-            self.DEL_VAR,
+            Config.StatesEnum.DEL_VAR,
             "Tell me what key do you want to clear.",
             reply_markup=self.markup.cancel_inline,
         )

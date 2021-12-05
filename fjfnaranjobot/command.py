@@ -327,20 +327,23 @@ class CommandHandlerMixin(BotCommand):
         return super().handlers + new_handlers
 
 
+# TODO: Auto insert cancel inline as command option (but allow manual insert) (I)
 class ConversationHandlerMixin(BotCommand):
     """Mixin to handle python-telegram-bot conversation."""
 
     START = 0
 
     initial_text = "Conversation"
-    remembered_keys = []
+    clean_keys = []
+
+    _remembered_keys = []
+    _paginators = {}
 
     def __init__(self):
         super().__init__()
         if self.command_name is None:
             raise BotCommandError(f"Conversation command name not defined")
         self.states = StateSet(self)
-        self.states.add_cancel_inline(self.START)
         self.markup = MarkupBuilder()
 
     @property
@@ -365,8 +368,10 @@ class ConversationHandlerMixin(BotCommand):
         logger.info(f"Starting conversation '{self}'...")
         conversation_message = self.reply(
             self.initial_text,
-            reply_markup=self.markup.from_inlines(
-                self.states.inlines_captions(self.START)
+            # TODO: This call should be something like self.states.start_markup()
+            reply_markup=self.markup.from_start(
+                self.states.inlines,
+                self.states.paginators_inline_proxies,
             ),
         )
         self.context_set("chat_id", conversation_message.chat.id)
@@ -396,8 +401,8 @@ class ConversationHandlerMixin(BotCommand):
         old_value = (
             self.context.chat_data.get(key) if key in self.context.chat_data else None
         )
-        if key not in self.remembered_keys:
-            self.remembered_keys.append(key)
+        if key not in self._remembered_keys:
+            self._remembered_keys.append(key)
         self.context.chat_data[key] = value
         return old_value
 
@@ -410,12 +415,12 @@ class ConversationHandlerMixin(BotCommand):
     def context_del(self, key):
         old_value = self.context.chat_data[key]
         del self.context.chat_data[key]
-        if key in self.remembered_keys:
-            self.remembered_keys.remove(key)
+        if key in self._remembered_keys:
+            self._remembered_keys.remove(key)
         return old_value
 
     def _clear_context(self):
-        for key in self.remembered_keys:
+        for key in self._remembered_keys + self.clean_keys:
             if key in self.context.chat_data:
                 del self.context.chat_data[key]
 
@@ -434,6 +439,9 @@ class ConversationHandlerMixin(BotCommand):
         logger.info(f"'{self}' conversation ends.")
         raise DispatcherHandlerStop(ConversationHandler.END)
 
+    # TODO: Consider default state for next state (IIII)
+    # Move state to second position and use as kwarg
+    # TODO: Command users depend on this to create 'next' markups (II)
     def next(self, state, new_message=None, reply_markup=None):
         if new_message is not None:
             self.edit_message(new_message, reply_markup=reply_markup)
@@ -446,111 +454,330 @@ class ConversationHandlerMixin(BotCommand):
         logger.info(f"Cancelling conversation '{self}'...")
         return self.end("Ok.")
 
-    def inline_handler(self, inlines):
-        def inline_handler_function(update, context):
+    def inline_handler(self, handler):
+        def _inline_handler_function(update, context):
+            self.update = update
+            self.context = context
+            query = update.callback_query.data
+            if query != "cancel":
+                logger.info(
+                    f"Continuing conversation {self} after receiving inline selection '{query}'..."
+                )
+            return handler()
+
+        return _inline_handler_function
+
+    def paginator_handler(self):
+        def _paginator_handler_function(update, context):
             self.update = update
             self.context = context
             query = update.callback_query.data
 
-            if query in inlines:
-                if query != "cancel":
-                    logger.info(
-                        f"Continuing conversation {self} after receiving inline selection '{query}'..."
-                    )
-                return inlines[query]()
-            else:
+            # 'pag-0-4' => paginator="0", selection="4"
+            paginator, selection = (
+                query[4 : query.find("-", 4)],
+                query[query.find("-", 4) + 1 :],
+            )
+
+            paginator_items = self.states.paginator_items(int(paginator))
+            (
+                iterable,
+                header,
+                empty_message,
+                id_getter,
+                caption_getter,
+                handler,
+                items_per_page,
+                show_cancel_button,
+            ) = (
+                paginator_items["iterable"],
+                paginator_items["header"],
+                paginator_items["empty_message"],
+                paginator_items["id_getter"],
+                paginator_items["caption_getter"],
+                paginator_items["handler"],
+                paginator_items["items_per_page"],
+                paginator_items["show_cancel_button"],
+            )
+
+            all_items = len(iterable)
+            if all_items == 0:
+                self.end(empty_message)
+
+            offset = self.context_get(f"pag-offset-{paginator}", 0)
+            items_in_current_page = min(items_per_page, all_items - offset)
+
+            if selection != "next" and int(selection) >= items_in_current_page:
                 logger.warning(
-                    f"Invalid selection '{query}' received for conversation {self}."
+                    f"Invalid selection '{query}'"
+                    f" received for paginator '{paginator}'"
+                    f" with offset '{offset}'"
+                    f" in conversation {self}."
                 )
-                raise ValueError(f"No valid handlers for query '{query}'.")
+                raise ValueError(
+                    f"No valid handlers for query '{query}'"
+                    f" received for paginator '{paginator}'"
+                    f" with offset '{offset}'"
+                    f" in conversation {self}."
+                )
 
-        return inline_handler_function
+            else:
+
+                if selection == "next":
+                    logger.info(
+                        f"Handling next page requested for paginator '{paginator}'"
+                        f" in conversation {self}..."
+                    )
+
+                    show_button = None
+                    keyboard = []
+                    if all_items <= items_per_page:
+                        page_items = iterable.sorted()
+                    else:
+                        pending_items = list(iterable.sorted())[offset:]
+                        if len(pending_items) < items_per_page:
+                            show_button = "restart"
+                            offset = 0
+                            page_items = pending_items
+                        else:
+                            show_button = "next"
+                            offset += items_per_page
+                            page_items = pending_items[:items_per_page]
+
+                    for item in enumerate(page_items):
+                        item_selection = offset + item[0]
+                        keyboard.append(
+                            [
+                                InlineKeyboardButton(
+                                    caption_getter(item[1]),
+                                    callback_data=f"pag-{paginator}-{item_selection}",
+                                )
+                            ]
+                        )
+
+                    if show_button == "restart":
+                        keyboard.append(
+                            [
+                                InlineKeyboardButton(
+                                    "Start again", callback_data=f"pag-{paginator}-next"
+                                )
+                            ]
+                        )
+                    elif show_button == "next":
+                        keyboard.append(
+                            [
+                                InlineKeyboardButton(
+                                    "Next page", callback_data=f"pag-{paginator}-next"
+                                )
+                            ]
+                        )
+
+                    if show_cancel_button:
+                        keyboard.append(
+                            [InlineKeyboardButton("Cancel", callback_data="cancel")]
+                        )
+
+                    page_markup = InlineKeyboardMarkup(keyboard)
+                    self.context_set(f"pag-offset-{paginator}", offset)
+
+                    self.next(int(paginator), header, page_markup)
+
+                # if item != "next":
+                else:
+                    logger.info(
+                        f"Handling selection '{selection}'"
+                        f" received for paginator '{paginator}'"
+                        f" in conversation {self}..."
+                    )
+
+                    index_in_page = int(selection)
+
+                    # TODO: Don't impose _handler sufix to the framework user
+                    item = list(iterable)[offset + index_in_page]
+                    return getattr(self, handler + "_handler")(
+                        id_getter(item),
+                        caption_getter(item),
+                    )
+
+        return _paginator_handler_function
 
 
+# TODO: Auto insert cancel inline as command option (but allow manual insert) (II)
+# TODO: Consider default state for next state (III)
+# add_inline_default_next()?
+# TODO: Reserve certain names in inlines: like 'pag-[0-9]+-(([0-9]+)|(next))'
+# or 'paginator_proxy'
+# TODO: NamedTuples or classes for members with dicts
 class StateSet:
     def __init__(self, command):
         self.command = command
-        self.inlines = {}
         self.texts = {}
+        self.inlines = {}
+        self.paginators = {}
+        self.paginators_inline_proxies = {}
+
+    def add_text(self, state, handler):
+        self.texts[state] = handler
 
     def add_inline(self, state, handler, caption):
         if state not in self.inlines:
             self.inlines[state] = {}
         self.inlines[state][handler] = caption
 
+    # TODO: Maybe just add_cancel()
     def add_cancel_inline(self, state, cancel_caption="Cancel"):
         self.add_inline(state, "cancel", cancel_caption)
 
-    def add_text(self, state, handler):
-        if state not in self.texts:
-            self.texts[state] = []
-        self.texts[state].append(handler)
+    def add_paginator(
+        self,
+        state,
+        paginator_state,
+        inline_caption,
+        iterable,
+        header,
+        empty_message,
+        id_getter,
+        caption_getter,
+        handler,
+        items_per_page=5,
+        show_cancel_button=False,
+    ):
+        if paginator_state not in self.paginators:
+            self.paginators[paginator_state] = {}
+        # TODO: Refactor this hack
+        self.add_paginator_inline_proxy(state, paginator_state, inline_caption)
+        self.paginators[paginator_state]["iterable"] = iterable
+        self.paginators[paginator_state]["header"] = header
+        self.paginators[paginator_state]["empty_message"] = empty_message
+        self.paginators[paginator_state]["id_getter"] = id_getter
+        self.paginators[paginator_state]["caption_getter"] = caption_getter
+        self.paginators[paginator_state]["handler"] = handler
+        self.paginators[paginator_state]["items_per_page"] = items_per_page
+        self.paginators[paginator_state]["show_cancel_button"] = show_cancel_button
 
-    def inlines_captions(self, state):
-        return {
-            self.inlines[state][handler]: handler for handler in self.inlines[state]
-        }
+    def add_paginator_inline_proxy(self, state, paginator_state, caption):
+        if state not in self.paginators_inline_proxies:
+            self.paginators_inline_proxies[state] = {}
+        self.paginators_inline_proxies[state][paginator_state] = caption
 
-    def _state_inlines_handlers(self, state):
-        return {
-            handler: getattr(self.command, handler + "_handler")
-            for handler in self.inlines[state]
-        }
+    def paginator_items(self, paginator):
+        return self.paginators[paginator]
 
-    def _state_handlers(self, state):
-        handlers = []
-        if state in self.inlines:
-            handlers.append(
-                CallbackQueryHandler(
-                    self.command.inline_handler(self._state_inlines_handlers(state))
+    # TODO: Don't impose _handler sufix to the framework user
+    @property
+    def graph(self):
+        states = {}
+
+        for _id in self.texts:
+            if _id not in states:
+                states[_id] = []
+            states[_id].append(
+                MessageHandler(
+                    Filters.text,
+                    store_update_context_text_command(
+                        getattr(self.command, self.texts[_id] + "_handler"),
+                        self.command,
+                        self.texts[_id],
+                    ),
                 )
             )
-        if state in self.texts:
-            for text in self.texts[state]:
-                handlers.append(
-                    MessageHandler(
-                        Filters.text,
-                        store_update_context_text_command(
-                            getattr(self.command, text + "_handler"), self.command, text
+
+        for _id in self.inlines:
+            if _id not in states:
+                states[_id] = []
+            for inline in self.inlines[_id]:
+                states[_id].append(
+                    CallbackQueryHandler(
+                        self.command.inline_handler(
+                            getattr(self.command, inline + "_handler")
+                        ),
+                        pattern=fr"^{inline}$",
+                    )
+                )
+
+        for _id in self.paginators:
+            if _id not in states:
+                states[_id] = []
+            states[_id].append(
+                CallbackQueryHandler(
+                    self.command.paginator_handler(),
+                    pattern=(
+                        fr"^pag-{_id}-("
+                        + "|".join(
+                            ["next"]
+                            + [
+                                str(index)
+                                for index in range(
+                                    int(self.paginators[_id]["items_per_page"])
+                                )
+                            ]
+                        )
+                        + r")$"
+                    ),
+                )
+            )
+
+        for _id in self.paginators_inline_proxies:
+            if _id not in states:
+                states[_id] = []
+            for inline_proxy in self.paginators_inline_proxies[_id]:
+                states[_id].append(
+                    CallbackQueryHandler(
+                        self.command.paginator_handler(),
+                        pattern=(
+                            fr"^pag-{inline_proxy}-("
+                            + "|".join(
+                                ["next"]
+                                + [
+                                    str(index)
+                                    for index in range(
+                                        int(
+                                            self.paginators[inline_proxy][
+                                                "items_per_page"
+                                            ]
+                                        )
+                                    )
+                                ]
+                            )
+                            + r")$"
                         ),
                     )
                 )
-        return handlers
-
-    @property
-    def graph(self):
-        states_ids = {}
-        for _id in self.inlines:
-            states_ids[_id] = None
-        for _id in self.texts:
-            states_ids[_id] = None
-        states = {}
-        for _id in states_ids:
-            states[_id] = self._state_handlers(_id)
 
         return states
 
 
 class MarkupBuilder:
+
+    # TODO: Command users depend on this to create 'next' markups (I)
     @property
     def cancel_inline(self):
         return InlineKeyboardMarkup(
             [[InlineKeyboardButton("Cancel", callback_data="cancel")]]
         )
 
-    def from_inlines(self, inlines):
-        cancel_caption = "Cancel"
-        cancel_handler = inlines.get(cancel_caption)
-        if cancel_handler is not None:
-            del inlines[cancel_caption]
+    def from_start(self, all_inlines, all_inline_proxies):
+        inlines = all_inlines[ConversationHandlerMixin.START]
+        inline_proxies = (
+            all_inline_proxies[ConversationHandlerMixin.START]
+            if ConversationHandlerMixin.START in all_inline_proxies
+            else []
+        )
         markup = [
-            [
-                InlineKeyboardButton(caption, callback_data=inlines[caption])
-                for caption in inlines
-            ]
+            list(
+                InlineKeyboardButton(inlines[handler], callback_data=handler)
+                for handler in inlines
+                if handler != "cancel"
+            )
+            + list(
+                InlineKeyboardButton(
+                    inline_proxies[paginator], callback_data=f"pag-{paginator}-next"
+                )
+                for paginator in inline_proxies
+            )
         ]
-        if cancel_handler is not None:
+        if "cancel" in inlines:
             markup.append(
-                [InlineKeyboardButton(cancel_caption, callback_data=cancel_handler)]
+                [InlineKeyboardButton(inlines["cancel"], callback_data="cancel")]
             )
         return InlineKeyboardMarkup(markup)
