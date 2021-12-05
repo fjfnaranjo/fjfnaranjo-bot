@@ -172,7 +172,7 @@ class Bot:
             self.dispatcher.add_handler(handler, group)
 
     def _n_parse_component_info(self, component):
-        component_module = _N_BOT_COMPONENTS_TEMPLATE.format(component)
+        component_module = _N_BOT_COMPONENTS_TEMPLATE.format(component[1:])
         try:
             info = import_module(component_module)
         except ModuleNotFoundError:

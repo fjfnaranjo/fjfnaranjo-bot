@@ -1,7 +1,7 @@
 from os import environ
 
 _BOT_OWNER_NAME_DEFAULT = "fjfnaranjo"
-_BOT_COMPONENTS_DEFAULT = "start,config,friends,commands,terraria,sorry"
+_BOT_COMPONENTS_DEFAULT = "nstart,nconfig,nfriends,ncommands,nsorry"
 
 SORRY_TEXT = "I don't know what to do about that. Sorry :("
 
