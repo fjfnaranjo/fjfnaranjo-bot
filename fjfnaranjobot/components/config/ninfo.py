@@ -19,6 +19,7 @@ logger = getLogger(__name__)
 
 class Config(ConversationHandlerMixin, BotCommand):
     allow_chats = True
+    permissions = BotCommand.PermissionsEnum.ONLY_OWNER
     command_name = "nconfig"
     description = "Edit bot configuration."
     initial_text = (

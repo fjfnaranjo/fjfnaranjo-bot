@@ -27,7 +27,6 @@ from fjfnaranjobot.common import quote_value_for_log
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
-ALL, ONLY_REAL, ONLY_OWNER, ONLY_FRIENDS = range(4)
 
 
 class BotCommandError(Exception):
@@ -73,8 +72,11 @@ class Command:
           - allow_chats: If the command will be allowed in group chats.
     """
 
+    class PermissionsEnum:
+        ALL, ONLY_REAL, ONLY_OWNER, ONLY_FRIENDS = range(4)
+
     dispatcher_group = DEFAULT_GROUP
-    permissions = ONLY_REAL
+    permissions = PermissionsEnum.ONLY_REAL
     allow_chats = False
 
     def __init__(self):
@@ -216,13 +218,16 @@ class Command:
                     and Filters.chat_type.groups(self.update)
                     and not bot_mentioned
                 )
-                or (self.permissions == ONLY_REAL and not self.user_is_real())
                 or (
-                    self.permissions == ONLY_OWNER
+                    self.permissions == Command.PermissionsEnum.ONLY_REAL
+                    and not self.user_is_real()
+                )
+                or (
+                    self.permissions == Command.PermissionsEnum.ONLY_OWNER
                     and (not self.user_is_real() or not self.user_is_owner())
                 )
                 or (
-                    self.permissions == ONLY_FRIENDS
+                    self.permissions == Command.PermissionsEnum.ONLY_FRIENDS
                     and (not self.user_is_real() or not self.user_is_friend())
                 )
             )
