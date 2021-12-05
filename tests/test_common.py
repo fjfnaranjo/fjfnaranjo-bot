@@ -18,7 +18,7 @@ MODULE_PATH = "fjfnaranjobot.common"
 BOT_OWNER_NAME_DEFAULT = "fjfnaranjo"
 BOT_OWNER_NAME_TEST = "owner"
 
-BOT_COMPONENTS_DEFAULT = "start,config,friends,commands,terraria,sorry"
+BOT_COMPONENTS_DEFAULT = "nstart,nconfig,nfriends,ncommands,nsorry"
 BOT_COMPONENTS_TEST = "comp1,comp2"
 
 
