@@ -3,7 +3,7 @@ exec := $(compose) exec bot
 
 .PHONY: all
 all:
-	@echo Default target is empty.	
+	@echo Default target is empty.
 
 .PHONY: up
 up:
