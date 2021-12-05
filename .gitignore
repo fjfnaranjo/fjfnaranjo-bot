@@ -109,3 +109,4 @@ ENV/
 /.dbeaver
 /local
 /.pytest_cache/
+/docs/botdata
