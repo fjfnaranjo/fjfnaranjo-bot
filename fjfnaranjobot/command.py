@@ -375,7 +375,13 @@ class ConversationHandlerMixin(BotCommand):
 
     @store_update_context
     def fallback(self):
-        logger.warning(f"Conversation {self} fallback handler started.")
+        warning_text = f"Conversation {self} fallback handler reached."
+        try:
+            query_data = self.update.callback_query.data
+            warning_text += f" Callback query data was '{query_data}'."
+        except AttributeError:
+            pass
+        logger.warning(warning_text)
         self.end("Ups!")
 
     def edit_message(self, text, reply_markup=None):
