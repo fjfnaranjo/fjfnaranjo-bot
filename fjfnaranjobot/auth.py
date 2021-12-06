@@ -94,6 +94,7 @@ def only_owner(f):
     return wrapper
 
 
+# TODO: Use the micro orm here
 class _FriendsProxy(MutableSet):
     def __init__(self):
         sqldb.execute(
