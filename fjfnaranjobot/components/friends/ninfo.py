@@ -28,10 +28,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
         "Also, you can add or remove Telegram contacts and IDs to the list. "
         "You can also cancel the friends command at any time."
     )
-
-    chat_data_known_keys = [
-        "delete_user",
-    ]
+    clean_keys = ["delete_user"]
 
     class StatesEnum:
         LIST, DEL_FRIEND_CONFIRM, ADD_FRIEND, DEL_FRIEND = range(1, 5)
