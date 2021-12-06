@@ -39,6 +39,7 @@ class BotCommandError(Exception):
 
 
 # TODO: Test (and consider adding _ in lots of members...)
+# TODO: Instead of requiring class+mixin we can create the pairs ourselves
 
 
 # TODO: This probably shoul be removed
@@ -622,6 +623,7 @@ class ConversationHandlerMixin(BotCommand):
 # add_inline_default_next()?
 # TODO: Reserve certain names in inlines: like 'pag-[0-9]+-(([0-9]+)|(next))'
 # or 'paginator_proxy'
+# TODO: In fact, we can create the inlines ourselves
 # TODO: NamedTuples or classes for members with dicts
 class StateSet:
     def __init__(self, command):
@@ -632,9 +634,11 @@ class StateSet:
         self.paginators_inline_proxies = {}
         self.contacts = {}
 
+    # TODO: Maybe we can pass the message text to the handler
     def add_text(self, state, handler):
         self.texts[state] = handler
 
+    # TODO: If we stop enforcing _handler maybe we can create the inline here
     def add_inline(self, state, handler, caption):
         if state not in self.inlines:
             self.inlines[state] = {}
