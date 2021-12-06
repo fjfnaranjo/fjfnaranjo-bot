@@ -60,11 +60,11 @@ class Friends(ConversationHandlerMixin, BotCommand):
         self.states.add_cancel_inline(Friends.StatesEnum.LIST)
 
         self.states.add_cancel_inline(Friends.StatesEnum.ADD_FRIEND)
-        # self.states.add_contact(Friends.StatesEnum.ADD_FRIEND, "add_friend")
+        self.states.add_contact(Friends.StatesEnum.ADD_FRIEND, "add_friend")
         self.states.add_text(Friends.StatesEnum.ADD_FRIEND, "add_friend_id")
 
         self.states.add_cancel_inline(Friends.StatesEnum.DEL_FRIEND)
-        # self.states.add_contact(Friends.StatesEnum.DEL_FRIEND, "del_friend")
+        self.states.add_contact(Friends.StatesEnum.DEL_FRIEND, "del_friend")
         self.states.add_text(Friends.StatesEnum.DEL_FRIEND, "del_friend_id")
 
         # TODO: Consider generic 'confirm' state
@@ -115,12 +115,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
             self.markup.cancel_inline,
         )
 
-    def add_friend_handler(self):
-        contact = self.update.message.contact
-        if contact.user_id is None:
-            logger.info("Received a contact without a Telegram ID.")
-            self.end("That doesn't look like a Telegram user.")
-
+    def add_friend_handler(self, contact):
         contact_first_name = getattr(contact, "first_name", "")
         contact_last_name = getattr(contact, "last_name", "")
         first_name = contact_first_name if contact_first_name is not None else ""
@@ -171,13 +166,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
             self.markup.cancel_inline,
         )
 
-    def del_friend_handler(self):
-        contact = self.update.message.contact
-
-        if contact.user_id is None:
-            logger.info("Received a contact without a Telegram ID.")
-            self.end("That doesn't look like a Telegram user.")
-
+    def del_friend_handler(self, contact):
         contact_first_name = getattr(contact, "first_name", "")
         contact_last_name = getattr(contact, "last_name", "")
         first_name = contact_first_name if contact_first_name is not None else ""

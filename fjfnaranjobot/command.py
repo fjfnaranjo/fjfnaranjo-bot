@@ -601,6 +601,18 @@ class ConversationHandlerMixin(BotCommand):
 
         return _paginator_handler_function
 
+    def contact_handler(self, handler):
+        def _contact_handler_function(update, context):
+            self.update = update
+            self.context = context
+            contact = self.update.message.contact
+            if contact.user_id is None:
+                logger.debug("Received a contact without a Telegram ID.")
+            else:
+                return handler(self.update.message.contact)
+
+        return _contact_handler_function
+
 
 # TODO: Auto insert cancel inline as command option (but allow manual insert) (II)
 # TODO: Consider default state for next state (III)
@@ -615,6 +627,7 @@ class StateSet:
         self.inlines = {}
         self.paginators = {}
         self.paginators_inline_proxies = {}
+        self.contacts = {}
 
     def add_text(self, state, handler):
         self.texts[state] = handler
@@ -662,6 +675,9 @@ class StateSet:
 
     def paginator_items(self, paginator):
         return self.paginators[paginator]
+
+    def add_contact(self, state, handler):
+        self.contacts[state] = handler
 
     # TODO: Don't impose _handler sufix to the framework user
     @property
@@ -743,6 +759,18 @@ class StateSet:
                         ),
                     )
                 )
+
+        for _id in self.contacts:
+            if _id not in states:
+                states[_id] = []
+            states[_id].append(
+                MessageHandler(
+                    Filters.contact,
+                    self.command.contact_handler(
+                        getattr(self.command, self.contacts[_id] + "_handler")
+                    ),
+                )
+            )
 
         return states
 
