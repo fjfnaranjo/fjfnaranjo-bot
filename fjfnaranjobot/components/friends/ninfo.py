@@ -109,7 +109,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
         )
 
     def list_del_confirmed_handler(self):
-        logger.info("Received confirmation for deletion.")
+        logger.debug("Received confirmation for deletion.")
 
         delete_user = User(*self.context.chat_data["delete_user"])
         del self.context.chat_data["delete_user"]
@@ -118,7 +118,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
         self.end("Ok.")
 
     def add_handler(self):
-        logger.info("Requesting contact to add as a friend.")
+        logger.debug("Requesting contact to add as a friend.")
         self.next(
             Friends.StatesEnum.ADD_FRIEND,
             "Send me the contact of the friend you want to add. Or its id.",
@@ -133,7 +133,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
         username = " ".join([first_name, last_name]).strip()
         user = User(contact.user_id, username)
 
-        logger.info(f"Received a contact. Adding {user.username} as a friend.")
+        logger.debug(f"Received a contact. Adding {user.username} as a friend.")
         friends.add(user)
         self.end(f"Added {user.username} as a friend.")
 
@@ -142,7 +142,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
             (user_id,) = self.update.message.text.split()
         except ValueError:
             shown_id = quote_value_for_log(self.update.message.text)
-            logger.info(f"Received and invalid id {shown_id} trying to add a friend.")
+            logger.debug(f"Received and invalid id {shown_id} trying to add a friend.")
             self.end("That's not a contact nor a single valid id.")
 
         else:
@@ -151,7 +151,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
                 if user_id_int < 0:
                     raise ValueError()
             except ValueError:
-                logger.info(
+                logger.debug(
                     f"Received and invalid number in id '{user_id}' trying to add a friend."
                 )
                 self.end("That's not a contact nor a valid id.")
@@ -164,24 +164,24 @@ class Friends(ConversationHandlerMixin, BotCommand):
                 )
 
     def add_friend_id_name_handler(self):
-        logger.info("Received contact username.")
+        logger.debug("Received contact username.")
         try:
             (username,) = self.update.message.text.split()
         except ValueError:
             shown_username = quote_value_for_log(self.update.message.text)
-            logger.info(
+            logger.debug(
                 f"Received and invalid username {shown_username} trying to add a friend by id."
             )
 
         user_id_int = self.context.chat_data["add_user_id_int"]
         del self.context.chat_data["add_user_id_int"]
         user = User(user_id_int, username)
-        logger.info(f"Adding {user.username} as a friend.")
+        logger.debug(f"Adding {user.username} as a friend.")
         friends.add(user)
         self.end(f"Added {user.username} as a friend.")
 
     def del_handler(self):
-        logger.info("Requesting contact to remove as a friend.")
+        logger.debug("Requesting contact to remove as a friend.")
         self.next(
             Friends.StatesEnum.DEL_FRIEND,
             "Send me the contact of the friend you want to remove. Or its id.",
@@ -201,7 +201,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
             for friend in friends:
                 if friend.id == user.id:
                     friend_username = friend.username
-            logger.info(f"Removing {friend_username} as a friend.")
+            logger.debug(f"Removing {friend_username} as a friend.")
 
             friends.discard(user)
 
@@ -209,7 +209,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
 
         else:
 
-            logger.info(f"Not removing {user.username} because its not a friend.")
+            logger.debug(f"Not removing {user.username} because its not a friend.")
 
             self.end(f"{user.username} isn't a friend.")
 
@@ -219,7 +219,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
         except ValueError:
 
             shown_id = quote_value_for_log(self.update.message.text)
-            logger.info(
+            logger.debug(
                 f"Received and invalid id {shown_id} trying to remove a friend."
             )
 
@@ -232,7 +232,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
                     raise ValueError()
             except ValueError:
 
-                logger.info(
+                logger.debug(
                     f"Received and invalid number in id '{user_id}' trying to remove a friend."
                 )
                 self.end("That's not a contact nor a valid id.")
@@ -244,14 +244,14 @@ class Friends(ConversationHandlerMixin, BotCommand):
                     for friend in friends:
                         if friend.id == user.id:
                             friend_username = friend.username
-                    logger.info(f"Removing {friend_username} as a friend.")
+                    logger.debug(f"Removing {friend_username} as a friend.")
 
                     friends.discard(user)
 
                     self.end(f"Removed {friend_username} as a friend.")
 
                 else:
-                    logger.info(
+                    logger.debug(
                         f"Not removing {user.username} because its not a friend."
                     )
 
