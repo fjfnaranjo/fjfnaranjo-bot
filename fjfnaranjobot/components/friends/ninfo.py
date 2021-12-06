@@ -73,9 +73,6 @@ class Friends(ConversationHandlerMixin, BotCommand):
             Friends.StatesEnum.DEL_FRIEND_CONFIRM, "list_del_confirmed", "Confirm"
         )
 
-    # list_del_confirm_inlines = {
-    #     "confirm": Friends.list_del_confirmed_handler,
-    # }
     def list_del_confirm_handler(self, item_id, item_caption):
         logger.debug(
             f"Received in-list friend deletion request for friend {item_caption}"
