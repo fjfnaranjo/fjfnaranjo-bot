@@ -24,10 +24,10 @@ from telegram.ext.dispatcher import DEFAULT_GROUP
 
 from fjfnaranjobot.auth import User, friends, get_owner_id
 from fjfnaranjobot.common import (
-    quote_value_for_log,
+    CANCEL_CAPTION,
     NEXT_PAGE_CAPTION,
     RESTART_PAGINATOR_CAPTION,
-    CANCEL_CAPTION,
+    quote_value_for_log,
 )
 from fjfnaranjobot.logging import getLogger
 
