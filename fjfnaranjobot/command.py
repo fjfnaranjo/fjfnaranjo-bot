@@ -23,7 +23,12 @@ from telegram.ext import DispatcherHandlerStop, Filters, Handler, MessageHandler
 from telegram.ext.dispatcher import DEFAULT_GROUP
 
 from fjfnaranjobot.auth import User, friends, get_owner_id
-from fjfnaranjobot.common import quote_value_for_log
+from fjfnaranjobot.common import (
+    quote_value_for_log,
+    NEXT_PAGE_CAPTION,
+    RESTART_PAGINATOR_CAPTION,
+    CANCEL_CAPTION,
+)
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -473,41 +478,32 @@ class ConversationHandlerMixin(BotCommand):
             self.context = context
             query = update.callback_query.data
 
-            # 'pag-0-4' => paginator="0", selection="4"
+            # 'pag-0-4' => ("0", "4")
             paginator, selection = (
                 query[4 : query.find("-", 4)],
                 query[query.find("-", 4) + 1 :],
             )
-
-            paginator_items = self.states.paginator_items(int(paginator))
-            (
-                iterable,
-                header,
-                empty_message,
-                id_getter,
-                caption_getter,
-                handler,
-                items_per_page,
-                show_cancel_button,
-            ) = (
-                paginator_items["iterable"],
-                paginator_items["header"],
-                paginator_items["empty_message"],
-                paginator_items["id_getter"],
-                paginator_items["caption_getter"],
-                paginator_items["handler"],
-                paginator_items["items_per_page"],
-                paginator_items["show_cancel_button"],
+            paginator_state = int(paginator)
+            next_selected, selected_index = (
+                (True, -999) if selection == "next" else (False, int(selection))
             )
 
-            all_items = len(iterable)
-            if all_items == 0:
-                self.end(empty_message)
+            paginator_settings = self.states.paginator_settings(paginator_state)
+            get_caption_func = paginator_settings["get_caption_func"]
 
-            offset = self.context_get(f"pag-offset-{paginator}", 0)
-            items_in_current_page = min(items_per_page, all_items - offset)
+            page_size = paginator_settings["page_size"]
 
-            if selection != "next" and int(selection) >= items_in_current_page:
+            sorted_items = list(paginator_settings["iterable"].sorted())
+            item_count = len(sorted_items)
+            if item_count == 0:
+                self.end(paginator_settings["empty_message"])
+
+            offset = self.context_get(f"pag-offset-{paginator}")
+            inlines_offset = self.context_get(f"pag-inlines-offset-{paginator}")
+            item_offset = offset if offset is not None else 0
+            item_count_in_page = min(page_size, item_count - item_offset)
+
+            if not next_selected and selected_index >= item_count_in_page:
                 logger.warning(
                     f"Invalid selection '{query}'"
                     f" received for paginator '{paginator}'"
@@ -522,44 +518,44 @@ class ConversationHandlerMixin(BotCommand):
                 )
 
             else:
+                logger.info(
+                    f"Handling page requested for paginator '{paginator}'"
+                    f" in conversation {self} with offset {item_offset}..."
+                )
 
-                if selection == "next":
-                    logger.info(
-                        f"Handling next page requested for paginator '{paginator}'"
-                        f" in conversation {self}..."
-                    )
-
-                    show_button = None
-                    keyboard = []
-                    if all_items <= items_per_page:
-                        page_items = iterable.sorted()
+                show_button = None
+                if item_count <= page_size:
+                    new_offset = 0
+                else:
+                    pending_pages = (item_count - item_offset) // page_size
+                    if pending_pages > 0:
+                        show_button = "next"
+                        new_offset = item_offset + page_size
                     else:
-                        pending_items = list(iterable.sorted())[offset:]
-                        if len(pending_items) < items_per_page:
-                            show_button = "restart"
-                            offset = 0
-                            page_items = pending_items
-                        else:
-                            show_button = "next"
-                            offset += items_per_page
-                            page_items = pending_items[:items_per_page]
+                        show_button = "restart"
+                        new_offset = 0
 
-                    for item in enumerate(page_items):
-                        item_selection = offset + item[0]
+                items_in_page = sorted_items[
+                    item_offset : item_offset + item_count_in_page
+                ]
+
+                if next_selected:
+                    keyboard = []
+                    for item in enumerate(items_in_page):
                         keyboard.append(
                             [
                                 InlineKeyboardButton(
-                                    caption_getter(item[1]),
-                                    callback_data=f"pag-{paginator}-{item_selection}",
+                                    get_caption_func(item[1]),
+                                    callback_data=f"pag-{paginator}-{item[0]}",
                                 )
                             ]
                         )
-
+                    next_query = f"pag-{paginator}-next"
                     if show_button == "restart":
                         keyboard.append(
                             [
                                 InlineKeyboardButton(
-                                    "Start again", callback_data=f"pag-{paginator}-next"
+                                    RESTART_PAGINATOR_CAPTION, callback_data=next_query
                                 )
                             ]
                         )
@@ -567,36 +563,43 @@ class ConversationHandlerMixin(BotCommand):
                         keyboard.append(
                             [
                                 InlineKeyboardButton(
-                                    "Next page", callback_data=f"pag-{paginator}-next"
+                                    NEXT_PAGE_CAPTION, callback_data=next_query
                                 )
                             ]
                         )
 
-                    if show_cancel_button:
+                    if paginator_settings["show_cancel_button"]:
                         keyboard.append(
-                            [InlineKeyboardButton("Cancel", callback_data="cancel")]
+                            [
+                                InlineKeyboardButton(
+                                    CANCEL_CAPTION, callback_data="cancel"
+                                )
+                            ]
                         )
 
-                    page_markup = InlineKeyboardMarkup(keyboard)
-                    self.context_set(f"pag-offset-{paginator}", offset)
+                    self.context_set(f"pag-offset-{paginator}", new_offset)
+                    self.context_set(f"pag-inlines-offset-{paginator}", item_offset)
+                    self.next(
+                        paginator_state,
+                        paginator_settings["header"],
+                        InlineKeyboardMarkup(keyboard),
+                    )
 
-                    self.next(int(paginator), header, page_markup)
-
-                # if item != "next":
+                # if not next_selected:
                 else:
                     logger.info(
                         f"Handling selection '{selection}'"
                         f" received for paginator '{paginator}'"
-                        f" in conversation {self}..."
+                        f" in conversation {self} with offset {offset}..."
                     )
 
-                    index_in_page = int(selection)
+                    self.context_del(f"pag-offset-{paginator}")
+                    self.context_del(f"pag-inlines-offset-{paginator}")
 
                     # TODO: Don't impose _handler sufix to the framework user
-                    item = list(iterable)[offset + index_in_page]
-                    return getattr(self, handler + "_handler")(
-                        id_getter(item),
-                        caption_getter(item),
+                    selected_item = sorted_items[inlines_offset + selected_index]
+                    return getattr(self, paginator_settings["handler"] + "_handler")(
+                        selected_item
                     )
 
         return _paginator_handler_function
@@ -638,7 +641,7 @@ class StateSet:
         self.inlines[state][handler] = caption
 
     # TODO: Maybe just add_cancel()
-    def add_cancel_inline(self, state, cancel_caption="Cancel"):
+    def add_cancel_inline(self, state, cancel_caption=CANCEL_CAPTION):
         self.add_inline(state, "cancel", cancel_caption)
 
     def add_paginator(
@@ -649,10 +652,9 @@ class StateSet:
         iterable,
         header,
         empty_message,
-        id_getter,
-        caption_getter,
+        get_caption_func,
         handler,
-        items_per_page=5,
+        page_size=5,
         show_cancel_button=False,
     ):
         if paginator_state not in self.paginators:
@@ -662,10 +664,9 @@ class StateSet:
         self.paginators[paginator_state]["iterable"] = iterable
         self.paginators[paginator_state]["header"] = header
         self.paginators[paginator_state]["empty_message"] = empty_message
-        self.paginators[paginator_state]["id_getter"] = id_getter
-        self.paginators[paginator_state]["caption_getter"] = caption_getter
+        self.paginators[paginator_state]["get_caption_func"] = get_caption_func
         self.paginators[paginator_state]["handler"] = handler
-        self.paginators[paginator_state]["items_per_page"] = items_per_page
+        self.paginators[paginator_state]["page_size"] = page_size
         self.paginators[paginator_state]["show_cancel_button"] = show_cancel_button
 
     def add_paginator_inline_proxy(self, state, paginator_state, caption):
@@ -673,7 +674,7 @@ class StateSet:
             self.paginators_inline_proxies[state] = {}
         self.paginators_inline_proxies[state][paginator_state] = caption
 
-    def paginator_items(self, paginator):
+    def paginator_settings(self, paginator):
         return self.paginators[paginator]
 
     def add_contact(self, state, handler):
@@ -724,7 +725,7 @@ class StateSet:
                             + [
                                 str(index)
                                 for index in range(
-                                    int(self.paginators[_id]["items_per_page"])
+                                    int(self.paginators[_id]["page_size"])
                                 )
                             ]
                         )
@@ -747,11 +748,7 @@ class StateSet:
                                 + [
                                     str(index)
                                     for index in range(
-                                        int(
-                                            self.paginators[inline_proxy][
-                                                "items_per_page"
-                                            ]
-                                        )
+                                        int(self.paginators[inline_proxy]["page_size"])
                                     )
                                 ]
                             )
@@ -776,12 +773,11 @@ class StateSet:
 
 
 class MarkupBuilder:
-
     # TODO: Command users depend on this to create 'next' markups (I)
     @property
     def cancel_inline(self):
         return InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Cancel", callback_data="cancel")]]
+            [[InlineKeyboardButton(CANCEL_CAPTION, callback_data="cancel")]]
         )
 
     def from_start(self, all_inlines, all_inline_proxies):

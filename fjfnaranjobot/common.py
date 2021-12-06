@@ -3,7 +3,11 @@ from os import environ
 _BOT_OWNER_NAME_DEFAULT = "fjfnaranjo"
 _BOT_COMPONENTS_DEFAULT = "nstart,nconfig,nfriends,ncommands,nsorry"
 
+# TODO: This can be a class or another single import definition
 SORRY_TEXT = "I don't know what to do about that. Sorry :("
+NEXT_PAGE_CAPTION = "Next page"
+RESTART_PAGINATOR_CAPTION = "Start again"
+CANCEL_CAPTION = "Cancel"
 
 LOG_VALUE_MAX_LENGHT = 16
 

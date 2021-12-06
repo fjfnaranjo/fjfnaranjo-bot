@@ -49,7 +49,6 @@ class Friends(ConversationHandlerMixin, BotCommand):
             "You can request the next page (if apply) or "
             "select a friend if you want to remove it.",
             "You have no friends.",
-            lambda item: item.id,
             lambda item: item.username,
             "list_del_confirm",
             show_cancel_button=True,
@@ -73,7 +72,10 @@ class Friends(ConversationHandlerMixin, BotCommand):
             Friends.StatesEnum.DEL_FRIEND_CONFIRM, "list_del_confirmed", "Confirm"
         )
 
-    def list_del_confirm_handler(self, item_id, item_caption):
+    def list_del_confirm_handler(self, item):
+        item_id = item.id
+        item_caption = item.username
+
         logger.debug(
             f"Received in-list friend deletion request for friend {item_caption}"
             f" with id {item_id}. Asking to confirm."
