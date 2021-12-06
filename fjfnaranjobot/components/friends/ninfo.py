@@ -15,6 +15,7 @@ logger = getLogger(__name__)
 #                              --> DEL_FRIEND_CONFIRM --> end
 #                              --> end
 #               --> ADD_FRIEND --> end
+#                              --> ADD_FRIEND_ID_NAME --> end
 #               --> DEL_FRIEND --> end
 #
 
@@ -31,7 +32,9 @@ class Friends(ConversationHandlerMixin, BotCommand):
     clean_keys = ["delete_user"]
 
     class StatesEnum:
-        LIST, DEL_FRIEND_CONFIRM, ADD_FRIEND, DEL_FRIEND = range(1, 5)
+        LIST, DEL_FRIEND_CONFIRM, ADD_FRIEND, DEL_FRIEND, ADD_FRIEND_ID_NAME = range(
+            1, 6
+        )
 
     def __init__(self):
         super().__init__()
@@ -61,6 +64,11 @@ class Friends(ConversationHandlerMixin, BotCommand):
         self.states.add_cancel_inline(Friends.StatesEnum.ADD_FRIEND)
         self.states.add_contact(Friends.StatesEnum.ADD_FRIEND, "add_friend")
         self.states.add_text(Friends.StatesEnum.ADD_FRIEND, "add_friend_id")
+
+        self.states.add_cancel_inline(Friends.StatesEnum.ADD_FRIEND_ID_NAME)
+        self.states.add_text(
+            Friends.StatesEnum.ADD_FRIEND_ID_NAME, "add_friend_id_name"
+        )
 
         self.states.add_cancel_inline(Friends.StatesEnum.DEL_FRIEND)
         self.states.add_contact(Friends.StatesEnum.DEL_FRIEND, "del_friend")
@@ -133,10 +141,8 @@ class Friends(ConversationHandlerMixin, BotCommand):
         try:
             (user_id,) = self.update.message.text.split()
         except ValueError:
-
             shown_id = quote_value_for_log(self.update.message.text)
             logger.info(f"Received and invalid id {shown_id} trying to add a friend.")
-
             self.end("That's not a contact nor a single valid id.")
 
         else:
@@ -145,20 +151,34 @@ class Friends(ConversationHandlerMixin, BotCommand):
                 if user_id_int < 0:
                     raise ValueError()
             except ValueError:
-
                 logger.info(
                     f"Received and invalid number in id '{user_id}' trying to add a friend."
                 )
                 self.end("That's not a contact nor a valid id.")
-
             else:
+                self.context.chat_data["add_user_id_int"] = user_id_int
+                self.next(
+                    Friends.StatesEnum.ADD_FRIEND_ID_NAME,
+                    f"Send me a name for the contact.",
+                    self.markup.cancel_inline,
+                )
 
-                user = User(user_id_int, f"ID {user_id_int}")
-                logger.info(f"Adding {user.username} as a friend.")
+    def add_friend_id_name_handler(self):
+        logger.info("Received contact username.")
+        try:
+            (username,) = self.update.message.text.split()
+        except ValueError:
+            shown_username = quote_value_for_log(self.update.message.text)
+            logger.info(
+                f"Received and invalid username {shown_username} trying to add a friend by id."
+            )
 
-                friends.add(user)
-
-                self.end(f"Added {user.username} as a friend.")
+        user_id_int = self.context.chat_data["add_user_id_int"]
+        del self.context.chat_data["add_user_id_int"]
+        user = User(user_id_int, username)
+        logger.info(f"Adding {user.username} as a friend.")
+        friends.add(user)
+        self.end(f"Added {user.username} as a friend.")
 
     def del_handler(self):
         logger.info("Requesting contact to remove as a friend.")
