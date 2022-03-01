@@ -1,4 +1,4 @@
-python-telegram-bot~=13.10
+python-telegram-bot~=13.11
 boto3~=1.21
 celery~=5.2
 redis~=4.1
