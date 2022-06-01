@@ -1,5 +1,5 @@
 python-telegram-bot~=13.12
-boto3~=1.22
+boto3~=1.24
 celery~=5.2
 redis~=4.3
 requests~=2.27
