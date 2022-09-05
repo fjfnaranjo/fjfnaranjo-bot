@@ -1,0 +1,31 @@
+version: "3"
+services:
+  nginx:
+    volumes:
+      - .:/bot
+  bot:
+    build:
+      context: .
+      dockerfile: Containerfile.dev
+    image: localhost/fjfnaranjo-bot:dev
+    volumes:
+      - .:/bot
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Containerfile.dev
+    image: localhost/fjfnaranjo-bot:dev
+    volumes:
+      - .:/bot
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Containerfile.dev
+    image: localhost/fjfnaranjo-bot:dev
+    volumes:
+      - .:/bot
+  redis:
+    volumes:
+      - redis-data-dev:/data
+volumes:
+  redis-data-dev:

@@ -1,4 +1,4 @@
-compose := docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml
+compose := podman-compose -f podman-compose.yml -f podman-compose.override.dev.yml
 exec := $(compose) exec bot
 
 .PHONY: all
