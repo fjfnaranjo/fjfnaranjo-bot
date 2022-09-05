@@ -6,27 +6,24 @@ services:
   bot:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    image: fjfnaranjo/fjfnaranjo-bot:dev
+      dockerfile: Containerfile.dev
+    image: localhost/fjfnaranjo-bot:dev
     volumes:
       - .:/bot
-    user: "${CONTAINER_UID}:${CONTAINER_UID}"
   celery-worker:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    image: fjfnaranjo/fjfnaranjo-bot:dev
+      dockerfile: Containerfile.dev
+    image: localhost/fjfnaranjo-bot:dev
     volumes:
       - .:/bot
-    user: "${CONTAINER_UID}:${CONTAINER_UID}"
   celery-beat:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    image: fjfnaranjo/fjfnaranjo-bot:dev
+      dockerfile: Containerfile.dev
+    image: localhost/fjfnaranjo-bot:dev
     volumes:
       - .:/bot
-    user: "${CONTAINER_UID}:${CONTAINER_UID}"
   redis:
     volumes:
       - redis-data-dev:/data

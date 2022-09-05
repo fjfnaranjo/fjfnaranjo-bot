@@ -1,9 +1,9 @@
-compose := docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml
+compose := podman-compose -f docker-compose.yml -f docker-compose.override.dev.yml
 exec := $(compose) exec bot
 
 .PHONY: all
 all:
-	@echo Default target is empty.	
+	@echo Default target is empty.
 
 .PHONY: up
 up:
