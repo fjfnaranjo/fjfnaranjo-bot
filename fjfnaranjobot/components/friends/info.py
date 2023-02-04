@@ -5,9 +5,9 @@ from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
     ConversationHandler,
-    Filters,
     MessageHandler,
 )
+from telegram.ext.filters import CONTACT as ContactFilter, Text as TextFilter
 
 from fjfnaranjobot.auth import friends, only_owner
 from fjfnaranjobot.common import Command, User, inline_handler, quote_value_for_log
@@ -474,13 +474,13 @@ handlers = (
             ],
             ADD_FRIEND: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.contact, add_friend_handler),
-                MessageHandler(Filters.text, add_friend_id_handler),
+                MessageHandler(ContactFilter, add_friend_handler),
+                MessageHandler(TextFilter, add_friend_id_handler),
             ],
             DEL_FRIEND: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.contact, del_friend_handler),
-                MessageHandler(Filters.text, del_friend_id_handler),
+                MessageHandler(ContactFilter, del_friend_handler),
+                MessageHandler(TextFilter, del_friend_id_handler),
             ],
         },
         fallbacks=[],

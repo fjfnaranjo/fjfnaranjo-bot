@@ -5,9 +5,9 @@ from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
     ConversationHandler,
-    Filters,
     MessageHandler,
 )
+from telegram.ext.filters import Text as TextFilter
 
 from fjfnaranjobot.auth import only_owner
 from fjfnaranjobot.common import inline_handler, quote_value_for_log
@@ -575,7 +575,7 @@ terraria_admin_conversation = ConversationHandler(
         ],
         NEW_NAME: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(Filters.text, new_name_handler),
+            MessageHandler(TextFilter, new_name_handler),
         ],
         CONFIG_SELECT: [
             CallbackQueryHandler(inline_handler(list_pos_next_inlines, logger)),
@@ -585,31 +585,31 @@ terraria_admin_conversation = ConversationHandler(
         ],
         CONFIG_EDIT_AWS_DEFAULT_REGION: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(Filters.text, config_edit_aws_default_region_handler),
+            MessageHandler(TextFilter, config_edit_aws_default_region_handler),
         ],
         CONFIG_EDIT_AWS_ACCESS_KEY_ID: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(Filters.text, config_edit_aws_access_key_id_handler),
+            MessageHandler(TextFilter, config_edit_aws_access_key_id_handler),
         ],
         CONFIG_EDIT_AWS_SECRET_ACCESS_KEY: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(Filters.text, config_edit_aws_secret_access_key_handler),
+            MessageHandler(TextFilter, config_edit_aws_secret_access_key_handler),
         ],
         CONFIG_EDIT_MICROAPI_TOKEN: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(Filters.text, config_edit_microapi_token_handler),
+            MessageHandler(TextFilter, config_edit_microapi_token_handler),
         ],
         CONFIG_EDIT_TSHOCK_REST_API_TOKEN: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(Filters.text, config_edit_tshock_rest_api_token_handler),
+            MessageHandler(TextFilter, config_edit_tshock_rest_api_token_handler),
         ],
         CONFIG_EDIT_DOMAIN_NAME: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(Filters.text, config_edit_domain_name_handler),
+            MessageHandler(TextFilter, config_edit_domain_name_handler),
         ],
         CONFIG_RENAME: [
             CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-            MessageHandler(Filters.text, config_edit_rename_name_handler),
+            MessageHandler(TextFilter, config_edit_rename_name_handler),
         ],
         CONFIG_DELETE: [
             CallbackQueryHandler(inline_handler(config_del_confirm_inlines, logger)),

@@ -1,4 +1,4 @@
-from telegram.messageentity import MessageEntity
+from telegram import MessageEntity
 
 from fjfnaranjobot.components.sorry.info import (
     logger,

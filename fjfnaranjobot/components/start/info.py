@@ -1,4 +1,4 @@
-from telegram.ext import CommandHandler, DispatcherHandlerStop
+from telegram.ext import ApplicationHandlerStop, CommandHandler
 
 from fjfnaranjobot.common import get_bot_owner_name
 from fjfnaranjobot.logging import getLogger
@@ -11,7 +11,7 @@ def start_handler(update, _context):
 
     owner_name = get_bot_owner_name()
     update.message.reply_text(f"Welcome. I'm {owner_name}'s bot. How can I help you?")
-    raise DispatcherHandlerStop()
+    raise ApplicationHandlerStop()
 
 
 handlers = (CommandHandler("start", start_handler),)

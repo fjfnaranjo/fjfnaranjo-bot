@@ -5,9 +5,9 @@ from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
     ConversationHandler,
-    Filters,
     MessageHandler,
 )
+from telegram.ext.filters import Text as TextFilter
 
 from fjfnaranjobot.auth import only_owner
 from fjfnaranjobot.common import Command, inline_handler, quote_value_for_log
@@ -271,19 +271,19 @@ handlers = (
             ],
             GET_VAR: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.text, get_var_handler),
+                MessageHandler(TextFilter, get_var_handler),
             ],
             SET_VAR: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.text, set_var_handler),
+                MessageHandler(TextFilter, set_var_handler),
             ],
             SET_VALUE: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.text, set_value_handler),
+                MessageHandler(TextFilter, set_value_handler),
             ],
             DEL_VAR: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(Filters.text, del_var_handler),
+                MessageHandler(TextFilter, del_var_handler),
             ],
         },
         fallbacks=[],

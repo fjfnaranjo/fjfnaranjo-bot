@@ -1,4 +1,4 @@
-from telegram.ext import CommandHandler, DispatcherHandlerStop
+from telegram.ext import ApplicationHandlerStop, CommandHandler
 
 from fjfnaranjobot.auth import only_owner
 from fjfnaranjobot.common import Command, command_list
@@ -27,7 +27,7 @@ def commands_handler(update, _context):
     update.message.reply_text(
         "\n".join(dev_commands) if len(dev_commands) > 1 else "no commands",
     )
-    raise DispatcherHandlerStop()
+    raise ApplicationHandlerStop()
 
 
 handlers = (CommandHandler("commands", commands_handler),)

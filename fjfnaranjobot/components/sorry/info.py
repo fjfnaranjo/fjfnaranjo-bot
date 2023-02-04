@@ -1,5 +1,8 @@
 from telegram import MessageEntity
-from telegram.ext import DispatcherHandlerStop, Filters, MessageHandler
+from telegram.ext import ApplicationHandlerStop, MessageHandler
+from telegram.ext.filters import ChatType as ChatTypeFilter
+from telegram.ext.filters import Entity as EntityFilter
+from telegram.ext.filters import Text as TextFilter
 
 from fjfnaranjobot.common import SORRY_TEXT
 from fjfnaranjobot.logging import getLogger
@@ -11,7 +14,7 @@ def sorry_handler(update, _context):
     logger.info("Sending 'sorry' back to the user.")
 
     update.message.reply_text(SORRY_TEXT)
-    raise DispatcherHandlerStop()
+    raise ApplicationHandlerStop()
 
 
 def sorry_group_handler(update, context):
@@ -28,9 +31,9 @@ def sorry_group_handler(update, context):
 
 
 handlers = (
-    MessageHandler(Filters.private & Filters.text, sorry_handler),
+    MessageHandler(ChatTypeFilter.PRIVATE & TextFilter, sorry_handler),
     MessageHandler(
-        Filters.group & Filters.text & Filters.entity(MessageEntity.MENTION),
+        ChatTypeFilter.GROUP & TextFilter & EntityFilter(MessageEntity.MENTION),
         sorry_group_handler,
     ),
 )

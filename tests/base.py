@@ -5,7 +5,7 @@ from os import environ
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, sentinel
 
-from telegram.ext import DispatcherHandlerStop
+from telegram.ext import ApplicationHandlerStop
 
 from fjfnaranjobot.auth import friends
 from fjfnaranjobot.common import User
@@ -242,5 +242,5 @@ class BotHandlerTestCase(BotTestCase):
     @contextmanager
     def assert_log_dispatch(self, log_text, logger, min_log_level=None):
         with self.assert_log(log_text, logger, min_log_level):
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 yield

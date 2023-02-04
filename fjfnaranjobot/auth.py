@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from functools import wraps
 from os import environ
 
-from telegram.ext import DispatcherHandlerStop
+from telegram.ext import ApplicationHandlerStop
 
 from fjfnaranjobot.common import SORRY_TEXT, User
 from fjfnaranjobot.db import cursor
@@ -68,11 +68,11 @@ def only_real(f):
         if user is None:
             _reply_unauthorized(update, context)
             _report_no_user(update, "only_real")
-            raise DispatcherHandlerStop()
+            raise ApplicationHandlerStop()
         if user.is_bot:
             _reply_unauthorized(update, context)
             _report_bot(update, user, "only_real")
-            raise DispatcherHandlerStop()
+            raise ApplicationHandlerStop()
         return f(update, context, *args, **kwargs)
 
     return wrapper
@@ -87,7 +87,7 @@ def only_owner(f):
         if owner_id is None or user.id != owner_id:
             _reply_unauthorized(update, context)
             _report_user(update, user, "only_owner")
-            raise DispatcherHandlerStop()
+            raise ApplicationHandlerStop()
         return f(update, context, *args, **kwargs)
 
     return wrapper
@@ -180,7 +180,7 @@ def only_friends(f):
         if (owner_id is not None and user.id == owner_id) or friend not in friends:
             _reply_unauthorized(update, context)
             _report_user(update, user, "only_friends")
-            raise DispatcherHandlerStop()
+            raise ApplicationHandlerStop()
         return f(update, context, *args, **kwargs)
 
     return wrapper

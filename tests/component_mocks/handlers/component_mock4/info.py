@@ -1,7 +1,12 @@
-from telegram.ext import CommandHandler, Handler, MessageHandler, StringCommandHandler
+from telegram.ext import (
+    BaseHandler,
+    CommandHandler,
+    MessageHandler,
+    StringCommandHandler,
+)
 
 
-class FakeHandler(Handler):
+class FakeHandler(BaseHandler):
     check_update = lambda: None
 
 

@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from unittest import TestCase
 from unittest.mock import patch, sentinel
 
-from telegram.ext.dispatcher import DispatcherHandlerStop
+from telegram.ext import ApplicationHandlerStop
 
 from fjfnaranjobot.auth import friends, logger, only_friends, only_owner, only_real
 from fjfnaranjobot.common import SORRY_TEXT, User
@@ -25,7 +25,7 @@ class AuthTests(BotHandlerTestCase):
         noop = only_real(lambda _update, _context: True)
         self.user_is_none(remove_message=True)
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 noop(*self.update_and_context)
         assert (
             "Message received with no user "
@@ -37,7 +37,7 @@ class AuthTests(BotHandlerTestCase):
         noop = only_real(lambda _update, _context: True)
         self.user_is_none(remove_text=True)
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 noop(*self.update_and_context)
         assert (
             "Message received with no user "
@@ -51,7 +51,7 @@ class AuthTests(BotHandlerTestCase):
         self.user_is_none()
         self.set_string_command("cmd")
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 noop(*self.update_and_context)
         assert (
             "Message received with no user "
@@ -64,7 +64,7 @@ class AuthTests(BotHandlerTestCase):
         noop = only_real(lambda _update, _context: True)
         self.user_is_bot(remove_message=True)
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 noop(*self.update_and_context)
         assert (
             f"Bot with username {BOT_USER.username} and id {BOT_USER.id} "
@@ -76,7 +76,7 @@ class AuthTests(BotHandlerTestCase):
         noop = only_real(lambda _update, _context: True)
         self.user_is_bot(remove_text=True)
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 noop(*self.update_and_context)
         assert (
             f"Bot with username {BOT_USER.username} and id {BOT_USER.id} "
@@ -90,7 +90,7 @@ class AuthTests(BotHandlerTestCase):
         self.user_is_bot()
         self.set_string_command("cmd")
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 noop(*self.update_and_context)
         assert (
             f"Bot with username {BOT_USER.username} and id {BOT_USER.id} "
@@ -107,7 +107,7 @@ class AuthTests(BotHandlerTestCase):
         noop = only_owner(lambda _update, _context: True)
         self.user_is_unknown(remove_message=True)
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 noop(*self.update_and_context)
         assert (
             f"User u with id {UNKNOWN_USER.id} "
@@ -119,7 +119,7 @@ class AuthTests(BotHandlerTestCase):
         noop = only_owner(lambda _update, _context: True)
         self.user_is_unknown(remove_text=True)
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 noop(*self.update_and_context)
         assert (
             f"User u with id {UNKNOWN_USER.id} "
@@ -132,7 +132,7 @@ class AuthTests(BotHandlerTestCase):
         noop = only_owner(lambda _update, _context: True)
         self.set_string_command("cmd")
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 assert noop(*self.update_and_context) is None
         assert (
             f"User u with id {UNKNOWN_USER.id} "
@@ -151,7 +151,7 @@ class AuthTests(BotHandlerTestCase):
         noop = only_friends(lambda _update, _context: True)
         self.user_is_unknown(remove_message=True)
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 noop(*self.update_and_context)
         assert (
             f"User u with id {UNKNOWN_USER.id} "
@@ -163,7 +163,7 @@ class AuthTests(BotHandlerTestCase):
         noop = only_friends(lambda _update, _context: True)
         self.user_is_unknown(remove_text=True)
         with self.assertLogs(logger) as logs:
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 noop(*self.update_and_context)
         assert (
             f"User u with id {UNKNOWN_USER.id} "
@@ -177,7 +177,7 @@ class AuthTests(BotHandlerTestCase):
         self.set_string_command("cmd")
         with self.set_friends([FIRST_FRIEND_USER]):
             with self.assertLogs(logger) as logs:
-                with self.assertRaises(DispatcherHandlerStop):
+                with self.assertRaises(ApplicationHandlerStop):
                     noop(*self.update_and_context)
             assert (
                 f"User u with id {UNKNOWN_USER.id} "
@@ -198,7 +198,7 @@ class AuthTests(BotHandlerTestCase):
             noop = only_owner(lambda _update, _context: True)
             self.user_is_owner(remove_message=True)
             with self.assertLogs(logger) as logs:
-                with self.assertRaises(DispatcherHandlerStop):
+                with self.assertRaises(ApplicationHandlerStop):
                     assert noop(*self.update_and_context) is None
             assert (
                 f"User o with id {OWNER_USER.id} "
@@ -211,7 +211,7 @@ class AuthTests(BotHandlerTestCase):
             noop = only_owner(lambda _update, _context: True)
             self.user_is_owner(remove_text=True)
             with self.assertLogs(logger) as logs:
-                with self.assertRaises(DispatcherHandlerStop):
+                with self.assertRaises(ApplicationHandlerStop):
                     assert noop(*self.update_and_context) is None
             assert (
                 f"User o with id {OWNER_USER.id} "
@@ -226,7 +226,7 @@ class AuthTests(BotHandlerTestCase):
             self.user_is_owner()
             self.set_string_command("cmd")
             with self.assertLogs(logger) as logs:
-                with self.assertRaises(DispatcherHandlerStop):
+                with self.assertRaises(ApplicationHandlerStop):
                     assert noop(*self.update_and_context) is None
             assert (
                 f"User o with id {OWNER_USER.id} "
