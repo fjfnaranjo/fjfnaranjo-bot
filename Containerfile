@@ -1,25 +1,7 @@
-FROM docker.io/python:3.8.6-alpine
+FROM docker.io/python:3.11-slim
 
 COPY requirements.txt /requirements.txt
 
-RUN apk add --no-cache \
-		gcc \
-		python3-dev \
-		musl \
-		musl-dev \
-		libffi \
-		libffi-dev \
-		openssl \
-		openssl-dev \
-		libev \
-		libev-dev \
-	&& pip3 install --no-cache-dir -r /requirements.txt \
-	&& apk del \
-		python3-dev \
-		musl-dev \
-		libffi-dev \
-		openssl-dev \
-		libev-dev \
-	&& rm /requirements.txt
+RUN pip install --no-cache-dir -r /requirements.txt
 
 COPY . /bot

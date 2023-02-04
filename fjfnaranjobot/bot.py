@@ -156,8 +156,7 @@ class Bot:
             self._parse_component_handlers(component, info, group)
             self._parse_component_commands(component, info)
 
-    def process_request(self, url_path, update):
-
+    async def process_request(self, url_path, update):
         # Root URL
         if url_path == "" or url_path == "/":
             logger.info("Reply with salute.")
@@ -170,13 +169,13 @@ class Bot:
 
         # Register webhook request URL
         elif url_path == ("/" + "/".join((BOT_WEBHOOK_TOKEN, "register_webhook"))):
-            self.bot.set_webhook(url=self.webhook_url, drop_pending_updates=True)
+            await self.bot.set_webhook(url=self.webhook_url, drop_pending_updates=True)
             logger.info("Reply with ok to register_webhook.")
             return "ok"
 
         # Register webhook request URL (using self signed cert)
         elif url_path == ("/" + "/".join((BOT_WEBHOOK_TOKEN, "register_webhook_self"))):
-            self.bot.set_webhook(
+            await self.bot.set_webhook(
                 url=self.webhook_url,
                 certificate=open(BOT_WEBHOOK_CERT, "rb"),
                 drop_pending_updates=True,
@@ -203,7 +202,7 @@ class Bot:
 
         # Delegate response to bot library
         logger.debug("Dispatch update to library.")
-        self.application.update_queue.put(Update.de_json(update_json, self.bot))
+        await self.application.update_queue.put(Update.de_json(update_json, self.bot))
         return "ok"
 
 

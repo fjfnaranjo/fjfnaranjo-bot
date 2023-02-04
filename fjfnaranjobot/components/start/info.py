@@ -6,7 +6,7 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 
-def start_handler(update, _context):
+async def start_handler(update, _context):
     logger.info(f"Greeting a new user with id {update.effective_user.id}.")
 
     owner_name = get_bot_owner_name()

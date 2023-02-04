@@ -7,7 +7,7 @@ from telegram.ext import (
     ConversationHandler,
     MessageHandler,
 )
-from telegram.ext.filters import Text as TextFilter
+from telegram.ext.filters import TEXT
 
 from fjfnaranjobot.auth import only_owner
 from fjfnaranjobot.common import Command, inline_handler, quote_value_for_log
@@ -42,7 +42,7 @@ _cancel_markup = InlineKeyboardMarkup(
 
 
 @only_owner
-def config_handler(update, context):
+async def config_handler(update, context):
     logger.info("Entering 'config' conversation.")
 
     keyboard = [
@@ -85,7 +85,6 @@ def get_var_handler(update, context):
     try:
         result = config[key]
     except (ValueError, KeyError) as e:
-
         context.bot.delete_message(
             context.chat_data["chat_id"], context.chat_data["message_id"]
         )
@@ -105,7 +104,6 @@ def get_var_handler(update, context):
         return ConversationHandler.END
 
     else:
-
         shown_result = quote_value_for_log(result)
         logger.info(f"Replying with result {shown_result}.")
 
@@ -139,7 +137,6 @@ def set_var_handler(update, context):
     try:
         config[key]
     except ValueError:
-
         logger.info("Can't set invalid config key 'invalid-key'.")
 
         context.bot.delete_message(
@@ -208,7 +205,6 @@ def del_var_handler(update, context):
     try:
         del config[key]
     except (ValueError, KeyError) as e:
-
         context.bot.delete_message(
             context.chat_data["chat_id"], context.chat_data["message_id"]
         )
@@ -228,7 +224,6 @@ def del_var_handler(update, context):
         return ConversationHandler.END
 
     else:
-
         logger.info(f"Deleting config with key '{key}'.")
 
         context.bot.delete_message(
@@ -271,19 +266,19 @@ handlers = (
             ],
             GET_VAR: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(TextFilter, get_var_handler),
+                MessageHandler(TEXT, get_var_handler),
             ],
             SET_VAR: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(TextFilter, set_var_handler),
+                MessageHandler(TEXT, set_var_handler),
             ],
             SET_VALUE: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(TextFilter, set_value_handler),
+                MessageHandler(TEXT, set_value_handler),
             ],
             DEL_VAR: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(TextFilter, del_var_handler),
+                MessageHandler(TEXT, del_var_handler),
             ],
         },
         fallbacks=[],

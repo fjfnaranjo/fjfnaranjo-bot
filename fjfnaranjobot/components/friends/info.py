@@ -7,7 +7,7 @@ from telegram.ext import (
     ConversationHandler,
     MessageHandler,
 )
-from telegram.ext.filters import CONTACT as ContactFilter, Text as TextFilter
+from telegram.ext.filters import CONTACT, TEXT
 
 from fjfnaranjobot.auth import friends, only_owner
 from fjfnaranjobot.common import Command, User, inline_handler, quote_value_for_log
@@ -51,7 +51,7 @@ _cancel_markup = InlineKeyboardMarkup(
 
 
 @only_owner
-def friends_handler(update, context):
+async def friends_handler(update, context):
     logger.info("Entering 'friends' conversation.")
 
     keyboard = [
@@ -74,7 +74,7 @@ def friends_handler(update, context):
 
 
 # TODO: Generalize paginator
-def list_handler(_update, context):
+async def list_handler(_update, context):
     offset = context.chat_data.get("offset", 0)
     logger.info(f"List of friends requested. Offset: {offset}.")
 
@@ -130,7 +130,7 @@ def list_handler(_update, context):
     return LIST
 
 
-def list_del_confirm_handler(update, context):
+async def list_del_confirm_handler(update, context):
     query = update.callback_query.data
     logger.info(
         f"Received in-list friend deletion request for position {query}. "
@@ -156,7 +156,7 @@ def list_del_confirm_handler(update, context):
     return DEL_FRIEND_CONFIRM
 
 
-def list_del_confirmed_handler(_update, context):
+async def list_del_confirmed_handler(_update, context):
     logger.info("Received confirmation for deletion.")
 
     delete_user = User(*context.chat_data["delete_user"])
@@ -172,7 +172,7 @@ def list_del_confirmed_handler(_update, context):
     return ConversationHandler.END
 
 
-def add_handler(_update, context):
+async def add_handler(_update, context):
     logger.info("Requesting contact to add as a friend.")
 
     context.bot.edit_message_text(
@@ -184,7 +184,7 @@ def add_handler(_update, context):
     return ADD_FRIEND
 
 
-def add_friend_handler(update, context):
+async def add_friend_handler(update, context):
     contact = update.message.contact
     if contact.user_id is None:
         logger.info("Received a contact without a Telegram ID.")
@@ -219,11 +219,10 @@ def add_friend_handler(update, context):
     return ConversationHandler.END
 
 
-def add_friend_id_handler(update, context):
+async def add_friend_id_handler(update, context):
     try:
         (user_id,) = update.message.text.split()
     except ValueError:
-
         shown_id = quote_value_for_log(update.message.text)
         logger.info(f"Received and invalid id {shown_id} trying to add a friend.")
 
@@ -244,7 +243,6 @@ def add_friend_id_handler(update, context):
             if user_id_int < 0:
                 raise ValueError()
         except ValueError:
-
             logger.info(
                 f"Received and invalid number in id '{user_id}' trying to add a friend."
             )
@@ -260,7 +258,6 @@ def add_friend_id_handler(update, context):
             return ConversationHandler.END
 
         else:
-
             user = User(user_id_int, f"ID {user_id_int}")
             logger.info(f"Adding {user.username} as a friend.")
 
@@ -277,7 +274,7 @@ def add_friend_id_handler(update, context):
             return ConversationHandler.END
 
 
-def del_handler(_update, context):
+async def del_handler(_update, context):
     logger.info("Requesting contact to remove as a friend.")
 
     context.bot.edit_message_text(
@@ -289,7 +286,7 @@ def del_handler(_update, context):
     return DEL_FRIEND
 
 
-def del_friend_handler(update, context):
+async def del_friend_handler(update, context):
     contact = update.message.contact
 
     if contact.user_id is None:
@@ -313,7 +310,6 @@ def del_friend_handler(update, context):
     user = User(contact.user_id, username)
 
     if user in friends:
-
         for friend in friends:
             if friend.id == user.id:
                 friend_username = friend.username
@@ -332,7 +328,6 @@ def del_friend_handler(update, context):
         return ConversationHandler.END
 
     else:
-
         logger.info(f"Not removing {user.username} because its not a friend.")
 
         context.bot.delete_message(
@@ -346,11 +341,10 @@ def del_friend_handler(update, context):
         return ConversationHandler.END
 
 
-def del_friend_id_handler(update, context):
+async def del_friend_id_handler(update, context):
     try:
         (user_id,) = update.message.text.split()
     except ValueError:
-
         shown_id = quote_value_for_log(update.message.text)
         logger.info(f"Received and invalid id {shown_id} trying to remove a friend.")
 
@@ -371,7 +365,6 @@ def del_friend_id_handler(update, context):
             if user_id_int < 0:
                 raise ValueError()
         except ValueError:
-
             logger.info(
                 f"Received and invalid number in id '{user_id}' trying to remove a friend."
             )
@@ -389,7 +382,6 @@ def del_friend_id_handler(update, context):
         else:
             user = User(user_id_int, f"ID {user_id_int}")
             if user in friends:
-
                 for friend in friends:
                     if friend.id == user.id:
                         friend_username = friend.username
@@ -422,7 +414,7 @@ def del_friend_id_handler(update, context):
                 return ConversationHandler.END
 
 
-def cancel_handler(_update, context):
+async def cancel_handler(_update, context):
     logger.info("Aborting 'friends' conversation.")
 
     if "message_id" in context.chat_data:
@@ -474,13 +466,13 @@ handlers = (
             ],
             ADD_FRIEND: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(ContactFilter, add_friend_handler),
-                MessageHandler(TextFilter, add_friend_id_handler),
+                MessageHandler(CONTACT, add_friend_handler),
+                MessageHandler(TEXT, add_friend_id_handler),
             ],
             DEL_FRIEND: [
                 CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-                MessageHandler(ContactFilter, del_friend_handler),
-                MessageHandler(TextFilter, del_friend_id_handler),
+                MessageHandler(CONTACT, del_friend_handler),
+                MessageHandler(TEXT, del_friend_id_handler),
             ],
         },
         fallbacks=[],

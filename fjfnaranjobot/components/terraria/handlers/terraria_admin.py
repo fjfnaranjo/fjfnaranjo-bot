@@ -111,7 +111,7 @@ _cancel_markup = InlineKeyboardMarkup(
 
 
 @only_owner
-def terraria_admin_handler(update, context):
+async def terraria_admin_handler(update, context):
     logger.info("Entering 'terraria_admin' conversation.")
 
     keyboard = [
@@ -133,7 +133,7 @@ def terraria_admin_handler(update, context):
     return NEW_OR_CONFIG
 
 
-def new_handler(_update, context):
+async def new_handler(_update, context):
     logger.info("Requesting new profile name.")
 
     context.bot.edit_message_text(
@@ -145,7 +145,7 @@ def new_handler(_update, context):
     return NEW_NAME
 
 
-def new_name_handler(update, context):
+async def new_name_handler(update, context):
     # TODO: Validation
     name = update.message.text
     shown_name = quote_value_for_log(name)
@@ -164,7 +164,7 @@ def new_name_handler(update, context):
 
 
 # TODO: Generalize paginator
-def config_select_handler(_update, context):
+async def config_select_handler(_update, context):
     profiles = [profile for profile in TerrariaProfile.all()]
     if len(profiles) == 0:
         logger.info("Not showing any profile because there are no profiles.")
@@ -225,7 +225,7 @@ def config_select_handler(_update, context):
         return CONFIG_SELECT
 
 
-def config_select_name_handler(update, context):
+async def config_select_name_handler(update, context):
     query = update.callback_query.data
     profile = TerrariaProfile(context.chat_data["keyboard_profiles"][int(query)][0])
     logger.info(
@@ -271,7 +271,7 @@ def config_select_name_handler(update, context):
     return SELECT_ACTION
 
 
-def config_edit_handler(_update, context):
+async def config_edit_handler(_update, context):
     logger.info("Editing profile. Requesting AWS_DEFAULT_REGION.")
 
     context.bot.edit_message_text(
@@ -283,7 +283,7 @@ def config_edit_handler(_update, context):
     return CONFIG_EDIT_AWS_DEFAULT_REGION
 
 
-def config_edit_aws_default_region_handler(update, context):
+async def config_edit_aws_default_region_handler(update, context):
     # TODO: Validation
     logger.info("Received value. Requesting AWS_ACCESS_KEY_ID.")
 
@@ -299,7 +299,7 @@ def config_edit_aws_default_region_handler(update, context):
     return CONFIG_EDIT_AWS_ACCESS_KEY_ID
 
 
-def config_edit_aws_access_key_id_handler(update, context):
+async def config_edit_aws_access_key_id_handler(update, context):
     # TODO: Validation
     logger.info("Received value. Requesting AWS_SECRET_ACCESS_KEY.")
 
@@ -315,7 +315,7 @@ def config_edit_aws_access_key_id_handler(update, context):
     return CONFIG_EDIT_AWS_SECRET_ACCESS_KEY
 
 
-def config_edit_aws_secret_access_key_handler(update, context):
+async def config_edit_aws_secret_access_key_handler(update, context):
     # TODO: Validation
     logger.info("Received value. Requesting microapi token.")
 
@@ -331,7 +331,7 @@ def config_edit_aws_secret_access_key_handler(update, context):
     return CONFIG_EDIT_MICROAPI_TOKEN
 
 
-def config_edit_microapi_token_handler(update, context):
+async def config_edit_microapi_token_handler(update, context):
     # TODO: Validation
     logger.info("Received value. Requesting tShock REST API token.")
 
@@ -347,7 +347,7 @@ def config_edit_microapi_token_handler(update, context):
     return CONFIG_EDIT_TSHOCK_REST_API_TOKEN
 
 
-def config_edit_tshock_rest_api_token_handler(update, context):
+async def config_edit_tshock_rest_api_token_handler(update, context):
     # TODO: Validation
     logger.info("Received value. Requesting domain name.")
 
@@ -363,7 +363,7 @@ def config_edit_tshock_rest_api_token_handler(update, context):
     return CONFIG_EDIT_DOMAIN_NAME
 
 
-def config_edit_domain_name_handler(update, context):
+async def config_edit_domain_name_handler(update, context):
     # TODO: Validation
     logger.info("Received value. Saving changes.")
 
@@ -385,7 +385,7 @@ def config_edit_domain_name_handler(update, context):
     return ConversationHandler.END
 
 
-def config_edit_rename_handler(_update, context):
+async def config_edit_rename_handler(_update, context):
     profile = TerrariaProfile(context.user_data["selected_profile"])
     logger.info(f"Requesting new name for profile '{profile.name}'.")
 
@@ -398,7 +398,7 @@ def config_edit_rename_handler(_update, context):
     return CONFIG_RENAME
 
 
-def config_edit_rename_name_handler(update, context):
+async def config_edit_rename_name_handler(update, context):
     # TODO: Validation
     new_name = update.message.text
     logger.info(f"Received new name '{new_name}'. Saving changes.")
@@ -418,7 +418,7 @@ def config_edit_rename_name_handler(update, context):
     return ConversationHandler.END
 
 
-def config_edit_delete_handler(_update, context):
+async def config_edit_delete_handler(_update, context):
     profile = TerrariaProfile(context.user_data["selected_profile"])
     logger.info(
         f"Received deletion request for profile {profile.name}. Asking to confirm."
@@ -439,7 +439,7 @@ def config_edit_delete_handler(_update, context):
     return CONFIG_DELETE
 
 
-def config_edit_delete_confirm_handler(_update, context):
+async def config_edit_delete_confirm_handler(_update, context):
     profile = TerrariaProfile(context.user_data["selected_profile"])
     logger.info(f"Deleted profile {profile.name}.")
 
@@ -455,7 +455,7 @@ def config_edit_delete_confirm_handler(_update, context):
     return ConversationHandler.END
 
 
-def config_edit_toggle_handler(_update, context):
+async def config_edit_toggle_handler(_update, context):
     profile = TerrariaProfile(context.user_data["selected_profile"])
     logger.info(
         f"Requested status toggle for profile '{profile.name}'. Saving changes."
@@ -475,7 +475,7 @@ def config_edit_toggle_handler(_update, context):
     return ConversationHandler.END
 
 
-def config_edit_status_handler(_update, context):
+async def config_edit_status_handler(_update, context):
     profile = TerrariaProfile(context.user_data["selected_profile"])
     logger.info(
         f"Requested server status for profile '{profile.name}'. Calling async task."
@@ -491,7 +491,7 @@ def config_edit_status_handler(_update, context):
     return ConversationHandler.END
 
 
-def config_edit_start_handler(_update, context):
+async def config_edit_start_handler(_update, context):
     profile = TerrariaProfile(context.user_data["selected_profile"])
     logger.info(
         f"Requested server start for profile '{profile.name}'. Calling async task."
@@ -507,7 +507,7 @@ def config_edit_start_handler(_update, context):
     return ConversationHandler.END
 
 
-def config_edit_stop_handler(_update, context):
+async def config_edit_stop_handler(_update, context):
     profile = TerrariaProfile(context.user_data["selected_profile"])
     logger.info(
         f"Requested server stop for profile '{profile.name}'. Calling async task."
@@ -523,7 +523,7 @@ def config_edit_stop_handler(_update, context):
     return ConversationHandler.END
 
 
-def cancel_handler(_update, context):
+async def cancel_handler(_update, context):
     logger.info("Aborting 'terraria_admin' conversation.")
 
     if "message_id" in context.chat_data:
