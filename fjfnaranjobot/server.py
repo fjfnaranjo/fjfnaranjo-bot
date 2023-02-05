@@ -1,7 +1,10 @@
+from asyncio import run
 from collections import namedtuple
+from os import environ
 from warnings import filterwarnings
 
 from telegram.warnings import PTBUserWarning
+from uvicorn import Config, Server
 
 from fjfnaranjobot.bot import BotJSONError, BotTokenError, ensure_bot
 from fjfnaranjobot.logging import getLogger
@@ -60,3 +63,21 @@ async def application(scope, receive, send):
     except Exception as e:
         logger.exception("Error from bot framework or library.", exc_info=e)
         await send_text_response(str(e), status=500)
+
+
+async def main():
+    uvicorn_config = {
+        "app": "fjfnaranjobot.server:application",
+        "host": "0.0.0.0",
+    }
+    config = Config(**uvicorn_config)
+    server = Server(config)
+
+    async with bot.application:
+        await bot.application.start()
+        await server.serve()
+        await bot.application.stop()
+
+
+if __name__ == "__main__":
+    run(main())

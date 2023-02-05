@@ -1,12 +1,8 @@
 FROM docker.io/python:3.11-slim
 
-COPY requirements.txt /requirements.txt
-COPY requirements.dev.txt /requirements.dev.txt
-COPY requirements.ci.txt /requirements.ci.txt
+COPY requirements.txt /bot/requirements.txt
+COPY requirements.dev.txt /bot/requirements.dev.txt
 
 RUN pip install \
-	-r requirements.txt \
-	-r requirements.ci.txt \
-	-r requirements.dev.txt
-
-COPY . /bot
+	-r /bot/requirements.txt \
+	-r /bot/requirements.dev.txt

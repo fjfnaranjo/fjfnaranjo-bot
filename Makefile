@@ -52,10 +52,6 @@ test-cov: bot-up
 test-cov-full: bot-up
 	@$(exec) pytest --cov=fjfnaranjobot --cov=tests --cov-report html tests/
 
-.PHONY: docs
-docs: bot-up
-	@$(exec) $(MAKE) -C docs html
-
 .PHONY: sh
 sh: bot-up
 	@$(exec) sh
@@ -83,9 +79,3 @@ print-compose:
 .PHONY: print-exec
 print-exec:
 	@echo $(exec)
-
-.PHONY: clean
-clean:
-	@$(exec) $(MAKE) -C docs clean
-	rm -rf docs/_build
-	rm -rf docs/botdata

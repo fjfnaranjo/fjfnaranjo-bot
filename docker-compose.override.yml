@@ -4,7 +4,6 @@ services:
     image: localhost/fjfnaranjo-bot:latest
     volumes:
       - bot-data:/bot/botdata
-    command: uvicorn fjfnaranjobot.server:application
   celery-worker:
     image: localhost/fjfnaranjo-bot:latest
     volumes:

@@ -11,7 +11,7 @@ services:
   bot:
     working_dir: /bot
     env_file: .env
-    command: uvicorn fjfnaranjobot.server:application --reload --reload-dir /bot/fjfnaranjobot
+    command: python -m fjfnaranjobot.server
     links:
       - redis
   celery-worker:

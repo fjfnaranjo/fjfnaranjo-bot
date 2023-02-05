@@ -1,22 +1,23 @@
 from logging import DEBUG
-from unittest import TestCase
-from unittest.mock import MagicMock, patch, sentinel
-
-from telegram.error import TelegramError
+from unittest import IsolatedAsyncioTestCase
+from unittest.mock import AsyncMock, MagicMock, patch, sentinel
 
 from fjfnaranjobot.bot import Bot, BotJSONError, BotTokenError, logger
 
 MODULE_PATH = "fjfnaranjobot.bot"
 
 
-class BaseBotTestCase(TestCase):
+class BaseBotTestCase(IsolatedAsyncioTestCase):
     def setUp(self):
         super().setUp()
         self.application_patcher = patch(f"{MODULE_PATH}.Application")
         self.patched_application = self.application_patcher.start()
         self.builder = MagicMock()
         self.application = MagicMock()
+        self.application.update_queue.put = AsyncMock()
         self.bot = MagicMock()
+        self.bot.process_request = AsyncMock()
+        self.bot.set_webhook = AsyncMock()
         self.application.bot = self.bot
         self.builder.build.return_value = self.application
         self.patched_application.builder.return_value = self.builder
@@ -32,6 +33,7 @@ class BotTests(BaseBotTestCase):
         with self.assertLogs(logger, DEBUG) as logs:
             bot = Bot()
         self.builder.token.assert_called_once_with("123456:btbtbt")
+        self.builder.updater.assert_called_once_with(None)
         assert bot.application == self.application
         assert bot.bot == self.bot
         assert "Bot init done." in logs.output[-2]
@@ -52,30 +54,30 @@ class BotTests(BaseBotTestCase):
             exc_info=sentinel.error,
         )
 
-    def test_process_request_salute(self, _get_bot_components):
+    async def test_process_request_salute(self, _get_bot_components):
         bot = Bot()
         with self.assertLogs(logger) as logs:
-            assert "I'm fjfnaranjo's bot." == bot.process_request("", None)
+            assert "I'm fjfnaranjo's bot." == await bot.process_request("", None)
         assert "Reply with salute." in logs.output[-1]
 
-    def test_process_request_salute_root(self, _get_bot_components):
+    async def test_process_request_salute_root(self, _get_bot_components):
         bot = Bot()
         with self.assertLogs(logger) as logs:
-            assert "I'm fjfnaranjo's bot." == bot.process_request("/", None)
+            assert "I'm fjfnaranjo's bot." == await bot.process_request("/", None)
         assert "Reply with salute." in logs.output[-1]
 
-    def test_process_request_ping(self, _get_bot_components):
+    async def test_process_request_ping(self, _get_bot_components):
         bot = Bot()
         with self.assertLogs(logger) as logs:
-            assert "pong" == bot.process_request("/ping", None)
+            assert "pong" == await bot.process_request("/ping", None)
         assert "Reply with pong." in logs.output[-1]
 
     @patch(f"{MODULE_PATH}.BOT_WEBHOOK_URL", "bwu")
     @patch(f"{MODULE_PATH}.BOT_WEBHOOK_TOKEN", "bwt")
-    def test_process_request_register_webhook(self, _get_bot_components):
+    async def test_process_request_register_webhook(self, _get_bot_components):
         bot = Bot()
         with self.assertLogs(logger) as logs:
-            assert "ok" == bot.process_request("/bwt/register_webhook", None)
+            assert "ok" == await bot.process_request("/bwt/register_webhook", None)
         self.bot.set_webhook.assert_called_once_with(
             url="bwu/bwt", drop_pending_updates=True
         )
@@ -85,12 +87,14 @@ class BotTests(BaseBotTestCase):
     @patch(f"{MODULE_PATH}.BOT_WEBHOOK_URL", "bwu")
     @patch(f"{MODULE_PATH}.BOT_WEBHOOK_TOKEN", "bwt")
     @patch(f"{MODULE_PATH}.BOT_WEBHOOK_CERT", "cert")
-    def test_process_request_register_webhook_self(self, open_, _get_bot_components):
+    async def test_process_request_register_webhook_self(
+        self, open_, _get_bot_components
+    ):
         opened_file = MagicMock()
         open_.return_value = opened_file
         bot = Bot()
         with self.assertLogs(logger) as logs:
-            assert "ok (self)" == bot.process_request(
+            assert "ok (self)" == await bot.process_request(
                 "/bwt/register_webhook_self", None
             )
         open_.assert_called_once_with("cert", "rb")
@@ -100,30 +104,30 @@ class BotTests(BaseBotTestCase):
         assert "Reply with ok to register_webhook_self." in logs.output[-1]
 
     @patch(f"{MODULE_PATH}.BOT_WEBHOOK_TOKEN", "bwt")
-    def test_process_request_invalid_json(self, _get_bot_components):
+    async def test_process_request_invalid_json(self, _get_bot_components):
         bot = Bot()
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotJSONError) as e:
-                bot.process_request("/bwt", "---")
+                await bot.process_request("/bwt", "---")
         assert "Sent content isn't JSON." == e.exception.args[0]
         assert "Received non-JSON request." in logs.output[-1]
 
     @patch(f"{MODULE_PATH}.Update")
     @patch(f"{MODULE_PATH}.BOT_WEBHOOK_TOKEN", "bwt")
-    def test_process_request_dispatched_ok(self, update, _get_bot_components):
+    async def test_process_request_dispatched_ok(self, update, _get_bot_components):
         bot = Bot()
         parsed_update = MagicMock()
         update.de_json.return_value = parsed_update
         with self.assertLogs(logger, DEBUG) as logs:
-            bot.process_request("/bwt", "{}")
-        self.application.process_update.assert_called_once_with(parsed_update)
+            await bot.process_request("/bwt", "{}")
+        self.application.update_queue.put.assert_called_once_with(parsed_update)
         assert "Dispatch update to library." in logs.output[-1]
 
-    def test_other_urls(self, _get_bot_components):
+    async def test_other_urls(self, _get_bot_components):
         bot = Bot()
         with self.assertLogs(logger) as logs:
             with self.assertRaises(BotTokenError) as e:
-                bot.process_request("/other", None)
+                await bot.process_request("/other", None)
         assert (
             "Path '/other' (cropped to 10 chars) not preceded by token and not handled by bot."
             in e.exception.args[0]

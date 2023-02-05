@@ -53,6 +53,7 @@ class Bot:
     def __init__(self):
         builder = Application.builder()
         builder.token(BOT_TOKEN)
+        builder.updater(None)
         self.application = builder.build()
         self.bot = self.application.bot
         self.webhook_url = "/".join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))

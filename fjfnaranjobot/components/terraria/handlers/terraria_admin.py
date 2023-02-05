@@ -123,7 +123,7 @@ async def terraria_admin_handler(update, context):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    reply = update.message.reply_text(
+    reply = await update.message.reply_text(
         "You can create a new Terraria profile or configure an existing one. "
         "You can also cancel the terraria_admin command at any time.",
         reply_markup=reply_markup,
@@ -136,7 +136,7 @@ async def terraria_admin_handler(update, context):
 async def new_handler(_update, context):
     logger.info("Requesting new profile name.")
 
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         "Tell me the name for the new profile.",
         context.chat_data["chat_id"],
         context.chat_data["message_id"],
@@ -155,10 +155,10 @@ async def new_name_handler(update, context):
     new_profile.name = name
     new_profile.commit()
 
-    context.bot.delete_message(
+    await context.bot.delete_message(
         context.chat_data["chat_id"], context.chat_data["message_id"]
     )
-    context.bot.send_message(context.chat_data["chat_id"], "Ok.")
+    await context.bot.send_message(context.chat_data["chat_id"], "Ok.")
     _clear_context_data(context)
     return ConversationHandler.END
 
@@ -169,11 +169,11 @@ async def config_select_handler(_update, context):
     if len(profiles) == 0:
         logger.info("Not showing any profile because there are no profiles.")
 
-        context.bot.delete_message(
+        await context.bot.delete_message(
             context.chat_data["chat_id"],
             context.chat_data["message_id"],
         )
-        context.bot.send_message(
+        await context.bot.send_message(
             context.chat_data["chat_id"],
             "You don't have any profiles yet.",
         )
@@ -216,7 +216,7 @@ async def config_select_handler(_update, context):
         context.chat_data["offset"] = offset
         context.chat_data["keyboard_profiles"] = keyboard_profiles
 
-        context.bot.edit_message_text(
+        await context.bot.edit_message_text(
             "Pick a profile from the next list or request the next page (if apply)",
             context.chat_data["chat_id"],
             context.chat_data["message_id"],
@@ -262,7 +262,7 @@ async def config_select_name_handler(update, context):
         [InlineKeyboardButton("Cancel", callback_data="cancel")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         f"What do you want to do about profile '{profile.name}'.",
         context.chat_data["chat_id"],
         context.chat_data["message_id"],
@@ -274,7 +274,7 @@ async def config_select_name_handler(update, context):
 async def config_edit_handler(_update, context):
     logger.info("Editing profile. Requesting AWS_DEFAULT_REGION.")
 
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         "Tell me the value for AWS_DEFAULT_REGION.",
         context.chat_data["chat_id"],
         context.chat_data["message_id"],
@@ -290,7 +290,7 @@ async def config_edit_aws_default_region_handler(update, context):
     value = update.message.text
     context.user_data["aws_default_region"] = value
 
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         "Tell me the value for AWS_ACCESS_KEY_ID.",
         context.chat_data["chat_id"],
         context.chat_data["message_id"],
@@ -306,7 +306,7 @@ async def config_edit_aws_access_key_id_handler(update, context):
     value = update.message.text
     context.user_data["aws_access_key_id"] = value
 
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         "Tell me the value for AWS_SECRET_ACCESS_KEY.",
         context.chat_data["chat_id"],
         context.chat_data["message_id"],
@@ -322,7 +322,7 @@ async def config_edit_aws_secret_access_key_handler(update, context):
     value = update.message.text
     context.user_data["aws_secret_access_key"] = value
 
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         "Tell me the value for microapi token.",
         context.chat_data["chat_id"],
         context.chat_data["message_id"],
@@ -338,7 +338,7 @@ async def config_edit_microapi_token_handler(update, context):
     value = update.message.text
     context.user_data["microapi_token"] = value
 
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         "Tell me the value for tShock REST API token.",
         context.chat_data["chat_id"],
         context.chat_data["message_id"],
@@ -354,7 +354,7 @@ async def config_edit_tshock_rest_api_token_handler(update, context):
     value = update.message.text
     context.user_data["tshock_token"] = value
 
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         "Tell me the value for domain name.",
         context.chat_data["chat_id"],
         context.chat_data["message_id"],
@@ -377,11 +377,11 @@ async def config_edit_domain_name_handler(update, context):
     profile.dns_name = value
     profile.commit()
 
-    context.bot.delete_message(
+    await context.bot.delete_message(
         context.chat_data["chat_id"], context.chat_data["message_id"]
     )
     _clear_context_data(context)
-    context.bot.send_message(context.chat_data["chat_id"], "Ok.")
+    await context.bot.send_message(context.chat_data["chat_id"], "Ok.")
     return ConversationHandler.END
 
 
@@ -389,7 +389,7 @@ async def config_edit_rename_handler(_update, context):
     profile = TerrariaProfile(context.user_data["selected_profile"])
     logger.info(f"Requesting new name for profile '{profile.name}'.")
 
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         "Tell me the new name.",
         context.chat_data["chat_id"],
         context.chat_data["message_id"],
@@ -408,11 +408,11 @@ async def config_edit_rename_name_handler(update, context):
     profile.name = new_name
     profile.commit()
 
-    context.bot.delete_message(
+    await context.bot.delete_message(
         context.chat_data["chat_id"], context.chat_data["message_id"]
     )
     _clear_context_data(context)
-    context.bot.send_message(
+    await context.bot.send_message(
         context.chat_data["chat_id"], f"Renamed profile '{old_name}' to '{new_name}'."
     )
     return ConversationHandler.END
@@ -430,7 +430,7 @@ async def config_edit_delete_handler(_update, context):
             [InlineKeyboardButton("Cancel", callback_data="cancel")],
         ]
     )
-    context.bot.edit_message_text(
+    await context.bot.edit_message_text(
         f"Are you sure that you want to delete the profile '{profile.name}'.",
         context.chat_data["chat_id"],
         context.chat_data["message_id"],
@@ -445,11 +445,11 @@ async def config_edit_delete_confirm_handler(_update, context):
 
     profile.delete()
 
-    context.bot.delete_message(
+    await context.bot.delete_message(
         context.chat_data["chat_id"], context.chat_data["message_id"]
     )
     _clear_context_data(context)
-    context.bot.send_message(
+    await context.bot.send_message(
         context.chat_data["chat_id"], f"The profile '{profile.name}' was deleted."
     )
     return ConversationHandler.END
@@ -465,11 +465,11 @@ async def config_edit_toggle_handler(_update, context):
     new_status = "enabled" if profile.status else "disabled"
     profile.commit()
 
-    context.bot.delete_message(
+    await context.bot.delete_message(
         context.chat_data["chat_id"], context.chat_data["message_id"]
     )
     _clear_context_data(context)
-    context.bot.send_message(
+    await context.bot.send_message(
         context.chat_data["chat_id"], f"Profile '{profile.name}' {new_status}."
     )
     return ConversationHandler.END
@@ -483,11 +483,13 @@ async def config_edit_status_handler(_update, context):
 
     server_status_chain(profile.id, context.chat_data["chat_id"])
 
-    context.bot.delete_message(
+    await context.bot.delete_message(
         context.chat_data["chat_id"], context.chat_data["message_id"]
     )
     _clear_context_data(context)
-    context.bot.send_message(context.chat_data["chat_id"], "Let me get back to you.")
+    await context.bot.send_message(
+        context.chat_data["chat_id"], "Let me get back to you."
+    )
     return ConversationHandler.END
 
 
@@ -499,11 +501,13 @@ async def config_edit_start_handler(_update, context):
 
     start_server_chain(profile.id, context.chat_data["chat_id"])
 
-    context.bot.delete_message(
+    await context.bot.delete_message(
         context.chat_data["chat_id"], context.chat_data["message_id"]
     )
     _clear_context_data(context)
-    context.bot.send_message(context.chat_data["chat_id"], "Let me get back to you.")
+    await context.bot.send_message(
+        context.chat_data["chat_id"], "Let me get back to you."
+    )
     return ConversationHandler.END
 
 
@@ -515,11 +519,13 @@ async def config_edit_stop_handler(_update, context):
 
     stop_server_chain(profile.id, context.chat_data["chat_id"])
 
-    context.bot.delete_message(
+    await context.bot.delete_message(
         context.chat_data["chat_id"], context.chat_data["message_id"]
     )
     _clear_context_data(context)
-    context.bot.send_message(context.chat_data["chat_id"], "Let me get back to you.")
+    await context.bot.send_message(
+        context.chat_data["chat_id"], "Let me get back to you."
+    )
     return ConversationHandler.END
 
 
@@ -527,10 +533,10 @@ async def cancel_handler(_update, context):
     logger.info("Aborting 'terraria_admin' conversation.")
 
     if "message_id" in context.chat_data:
-        context.bot.delete_message(
+        await context.bot.delete_message(
             context.chat_data["chat_id"], context.chat_data["message_id"]
         )
-    context.bot.send_message(context.chat_data["chat_id"], "Ok.")
+    await context.bot.send_message(context.chat_data["chat_id"], "Ok.")
     _clear_context_data(context)
     return ConversationHandler.END
 

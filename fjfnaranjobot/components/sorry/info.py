@@ -11,7 +11,7 @@ logger = getLogger(__name__)
 async def sorry_handler(update, _context):
     logger.info("Sending 'sorry' back to the user.")
 
-    update.message.reply_text(SORRY_TEXT)
+    await update.message.reply_text(SORRY_TEXT)
     raise ApplicationHandlerStop()
 
 
@@ -25,7 +25,7 @@ async def sorry_group_handler(update, context):
         and update.message.text.find(bot_mention) == 0
     ):
         update.message.text = update.message.text.replace(bot_mention, "").strip()
-        return sorry_handler(update, context)
+        return await sorry_handler(update, context)
 
 
 handlers = (
