@@ -17,28 +17,28 @@ MODULE_PATH = "fjfnaranjobot.components.commands.info"
 
 
 class CommandsHandlersTests(BotHandlerTestCase):
-    def test_commands_handler_user_is_none(self):
+    async def test_commands_handler_user_is_none(self):
         self.user_is_none()
         with self.assert_log_dispatch(LOG_NO_USER_HEAD, auth_logger):
-            commands_handler(*self.update_and_context)
+            await commands_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_commands_handler_unknown_unauthorized(self):
+    async def test_commands_handler_unknown_unauthorized(self):
         self.user_is_unknown()
         with self.assert_log_dispatch(LOG_USER_UNAUTHORIZED_HEAD, auth_logger):
-            commands_handler(*self.update_and_context)
+            await commands_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_commands_handler_bot_unauthorized(self):
+    async def test_commands_handler_bot_unauthorized(self):
         self.user_is_bot()
         with self.assert_log_dispatch(LOG_BOT_UNAUTHORIZED_HEAD, auth_logger):
-            commands_handler(*self.update_and_context)
+            await commands_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_commands_handler_friend_unauthorized(self):
+    async def test_commands_handler_friend_unauthorized(self):
         self.user_is_friend()
         with self.assert_log_dispatch(LOG_FRIEND_UNAUTHORIZED_HEAD, auth_logger):
-            commands_handler(*self.update_and_context)
+            await commands_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
     @patch(
@@ -50,10 +50,10 @@ class CommandsHandlersTests(BotHandlerTestCase):
             Command("d desc", None, "d"),
         ],
     )
-    def test_commands_handler(self):
+    async def test_commands_handler(self):
         self.user_is_owner()
         with self.assert_log_dispatch("Sending list of commands.", logger):
-            commands_handler(*self.update_and_context)
+            await commands_handler(*self.update_and_context)
         self.assert_reply_calls(
             [
                 CallWithMarkup("a - a desc\nb - b desc"),
@@ -68,10 +68,10 @@ class CommandsHandlersTests(BotHandlerTestCase):
             Command("b desc", "b", None),
         ],
     )
-    def test_commands_handler_only_prod(self):
+    async def test_commands_handler_only_prod(self):
         self.user_is_owner()
         with self.assert_log_dispatch("Sending list of commands.", logger):
-            commands_handler(*self.update_and_context)
+            await commands_handler(*self.update_and_context)
         self.assert_reply_calls(
             [
                 CallWithMarkup("a - a desc\nb - b desc"),
@@ -86,10 +86,10 @@ class CommandsHandlersTests(BotHandlerTestCase):
             Command("d desc", None, "d"),
         ],
     )
-    def test_commands_handler_only_dev(self):
+    async def test_commands_handler_only_dev(self):
         self.user_is_owner()
         with self.assert_log_dispatch("Sending list of commands.", logger):
-            commands_handler(*self.update_and_context)
+            await commands_handler(*self.update_and_context)
         self.assert_reply_calls(
             [
                 CallWithMarkup("no commands"),

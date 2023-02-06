@@ -1,5 +1,5 @@
 from logging import DEBUG
-from os import chmod, remove
+from os import chmod, mkdir, remove
 from os.path import isdir, isfile, join
 from shutil import rmtree
 from sqlite3 import OperationalError
@@ -75,7 +75,7 @@ class DbPathTests(BotTestCase):
         with self.mocked_environ(
             f"{MODULE_PATH}.environ", {"BOT_DB_NAME": invalid_path}
         ):
-            chmod(self._db_test_dir, 0)
+            mkdir(invalid_path)
             with self.assertRaises(ValueError) as e:
                 reset_connection()
                 cursor().__enter__()

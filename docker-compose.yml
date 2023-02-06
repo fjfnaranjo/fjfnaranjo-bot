@@ -11,7 +11,7 @@ services:
   bot:
     working_dir: /bot
     env_file: .env
-    command: python3 -m fjfnaranjobot.server
+    command: python -m fjfnaranjobot.server
     links:
       - redis
   celery-worker:

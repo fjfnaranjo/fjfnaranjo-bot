@@ -1,4 +1,4 @@
-from telegram.ext import DispatcherHandlerStop
+from telegram.ext import ApplicationHandlerStop
 
 from fjfnaranjobot.auth import only_real
 from fjfnaranjobot.logging import getLogger
@@ -25,7 +25,7 @@ logger = getLogger(__name__)
 
 
 @only_real
-def terraria_handler(_update, _context):
+async def terraria_handler(_update, _context):
     logger.warning("The 'terraria' command is not implemented.")
 
-    raise DispatcherHandlerStop()
+    raise ApplicationHandlerStop()

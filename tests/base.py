@@ -2,10 +2,10 @@
 from contextlib import contextmanager
 from logging import INFO
 from os import environ
-from unittest import TestCase
-from unittest.mock import MagicMock, call, patch, sentinel
+from unittest import IsolatedAsyncioTestCase, TestCase
+from unittest.mock import AsyncMock, MagicMock, call, patch, sentinel
 
-from telegram.ext import DispatcherHandlerStop
+from telegram.ext import ApplicationHandlerStop
 
 from fjfnaranjobot.auth import friends
 from fjfnaranjobot.common import User
@@ -52,7 +52,7 @@ class BotTestCase(TestCase):
             yield
 
 
-class BotHandlerTestCase(BotTestCase):
+class BotHandlerTestCase(BotTestCase, IsolatedAsyncioTestCase):
     def setUp(self):
         super().setUp()
 
@@ -65,9 +65,6 @@ class BotHandlerTestCase(BotTestCase):
         self._message_from_update_reply_text_mock.message_id = (
             sentinel.message_id_from_reply_text
         )
-        self._message_from_update_mock.reply_text.return_value = (
-            self._message_from_update_reply_text_mock
-        )
         self._update_mock.message = self._message_from_update_mock
 
         self._context_mock = MagicMock()
@@ -77,10 +74,16 @@ class BotHandlerTestCase(BotTestCase):
         self._message_from_context_mock.message_id = (
             sentinel.message_id_from_send_message
         )
-        self._context_mock.bot.send_message.return_value = (
-            self._message_from_context_mock
-        )
         self._context_mock.chat_data = None
+
+        self._message_from_update_mock.reply_text = AsyncMock(
+            return_value=self._message_from_update_reply_text_mock
+        )
+        self._context_mock.bot.delete_message = AsyncMock()
+        self._context_mock.bot.edit_message_text = AsyncMock()
+        self._context_mock.bot.send_message = AsyncMock(
+            return_value=self._message_from_update_mock
+        )
 
         self.user_is_unknown()
 
@@ -242,5 +245,5 @@ class BotHandlerTestCase(BotTestCase):
     @contextmanager
     def assert_log_dispatch(self, log_text, logger, min_log_level=None):
         with self.assert_log(log_text, logger, min_log_level):
-            with self.assertRaises(DispatcherHandlerStop):
+            with self.assertRaises(ApplicationHandlerStop):
                 yield

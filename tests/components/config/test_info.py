@@ -56,34 +56,34 @@ class ConfigHandlersTests(BotHandlerTestCase):
             ]
         ).to_dict()
 
-    def test_config_handler_user_is_none(self):
+    async def test_config_handler_user_is_none(self):
         self.user_is_none()
         with self.assert_log_dispatch(LOG_NO_USER_HEAD, auth_logger):
-            config_handler(*self.update_and_context)
+            await config_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_config_handler_unknown_unauthorized(self):
+    async def test_config_handler_unknown_unauthorized(self):
         self.user_is_unknown()
         with self.assert_log_dispatch(LOG_USER_UNAUTHORIZED_HEAD, auth_logger):
-            config_handler(*self.update_and_context)
+            await config_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_config_handler_bot_unauthorized(self):
+    async def test_config_handler_bot_unauthorized(self):
         self.user_is_bot()
         with self.assert_log_dispatch(LOG_BOT_UNAUTHORIZED_HEAD, auth_logger):
-            config_handler(*self.update_and_context)
+            await config_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_config_handler_friend_unauthorized(self):
+    async def test_config_handler_friend_unauthorized(self):
         self.user_is_friend()
         with self.assert_log_dispatch(LOG_FRIEND_UNAUTHORIZED_HEAD, auth_logger):
-            config_handler(*self.update_and_context)
+            await config_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_config_handler(self):
+    async def test_config_handler(self):
         self.chat_data = {}
         with self.assert_log("Entering 'config' conversation.", logger):
-            assert GET_SET_OR_DEL == config_handler(*self.update_and_context)
+            assert GET_SET_OR_DEL == await config_handler(*self.update_and_context)
         self.assert_reply_call(
             CallWithMarkup(
                 (
@@ -99,12 +99,12 @@ class ConfigHandlersTests(BotHandlerTestCase):
             "message_id": sentinel.message_id_from_reply_text,
         } == self.chat_data
 
-    def test_get_handler(self):
+    async def test_get_handler(self):
         with self.assert_log(
             "Requesting key name to get its value.",
             logger,
         ):
-            assert GET_VAR == get_handler(*self.update_and_context)
+            assert GET_VAR == await get_handler(*self.update_and_context)
         self.assert_edit_call(
             CallWithMarkup(
                 "Tell me what key do you want to get.",
@@ -115,38 +115,44 @@ class ConfigHandlersTests(BotHandlerTestCase):
         )
 
     @patch.dict(f"{MODULE_PATH}.config", {}, True)
-    def test_get_var_handler_missing(self):
+    async def test_get_var_handler_missing(self):
         self.set_string_command("key")
         with self.assert_log("Key doesn't exists.", logger):
-            assert ConversationHandler.END == get_var_handler(*self.update_and_context)
+            assert ConversationHandler.END == await get_var_handler(
+                *self.update_and_context
+            )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "The key 'key' doesn't exists.")
         assert {} == self.chat_data
 
     @patch.dict(f"{MODULE_PATH}.config", {"key": "result"}, True)
-    def test_get_var_handler_exists(self):
+    async def test_get_var_handler_exists(self):
         self.set_string_command("key")
         with self.assert_log("Replying with result 'result'.", logger):
-            assert ConversationHandler.END == get_var_handler(*self.update_and_context)
+            assert ConversationHandler.END == await get_var_handler(
+                *self.update_and_context
+            )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "The value for key 'key' is 'result'.")
         assert {} == self.chat_data
 
     @patch(f"{MODULE_PATH}.config.__setitem__", side_effect=ValueError)
-    def test_get_var_handler_invalid_key(self, _config):
+    async def test_get_var_handler_invalid_key(self, _config):
         self.set_string_command("invalid-key")
         with self.assert_log("Key was invalid.", logger):
-            assert ConversationHandler.END == get_var_handler(*self.update_and_context)
+            assert ConversationHandler.END == await get_var_handler(
+                *self.update_and_context
+            )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "The key 'invalid-key' is not a valid key.")
         assert {} == self.chat_data
 
-    def test_set_handler(self):
+    async def test_set_handler(self):
         with self.assert_log(
             "Requesting key name to set its value.",
             logger,
         ):
-            assert SET_VAR == set_handler(*self.update_and_context)
+            assert SET_VAR == await set_handler(*self.update_and_context)
         self.assert_edit_call(
             CallWithMarkup(
                 "Tell me what key do you want to set.",
@@ -156,7 +162,7 @@ class ConfigHandlersTests(BotHandlerTestCase):
             )
         )
 
-    def test_set_var_handler_missing(self):
+    async def test_set_var_handler_missing(self):
         fake_config = {}
         patcher = patch(f"{MODULE_PATH}.config", fake_config)
         patcher.start()
@@ -166,7 +172,7 @@ class ConfigHandlersTests(BotHandlerTestCase):
             "Requesting value to set the key.",
             logger,
         ):
-            assert SET_VALUE == set_var_handler(*self.update_and_context)
+            assert SET_VALUE == await set_var_handler(*self.update_and_context)
         self.assert_edit_call(
             CallWithMarkup(
                 "Tell me what value do you want to put in the key 'key'.",
@@ -177,7 +183,7 @@ class ConfigHandlersTests(BotHandlerTestCase):
         )
         assert {"chat_id": 1, "message_id": 2, "key": "key"} == self.chat_data
 
-    def test_set_var_handler_exists(self):
+    async def test_set_var_handler_exists(self):
         fake_config = {"key": "val"}
         patcher = patch(f"{MODULE_PATH}.config", fake_config)
         patcher.start()
@@ -187,7 +193,7 @@ class ConfigHandlersTests(BotHandlerTestCase):
             "Requesting value to set the key.",
             logger,
         ):
-            assert SET_VALUE == set_var_handler(*self.update_and_context)
+            assert SET_VALUE == await set_var_handler(*self.update_and_context)
         self.assert_edit_call(
             CallWithMarkup(
                 "Tell me what value do you want to put in the key 'key'.",
@@ -199,15 +205,17 @@ class ConfigHandlersTests(BotHandlerTestCase):
         assert {"chat_id": 1, "message_id": 2, "key": "key"} == self.chat_data
 
     @patch(f"{MODULE_PATH}.config.__setitem__", side_effect=ValueError)
-    def test_set_var_handler_invalid_key(self, _config):
+    async def test_set_var_handler_invalid_key(self, _config):
         self.set_string_command("invalid-key")
         with self.assert_log("Can't set invalid config key 'invalid-key'.", logger):
-            assert ConversationHandler.END == set_var_handler(*self.update_and_context)
+            assert ConversationHandler.END == await set_var_handler(
+                *self.update_and_context
+            )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "The key 'invalid-key' is not a valid key.")
         assert {} == self.chat_data
 
-    def test_set_value_handler_set(self):
+    async def test_set_value_handler_set(self):
         fake_config = {}
         patcher = patch(f"{MODULE_PATH}.config", fake_config)
         patcher.start()
@@ -218,7 +226,7 @@ class ConfigHandlersTests(BotHandlerTestCase):
             "Stored 'val' in key 'key'.",
             logger,
         ):
-            assert ConversationHandler.END == set_value_handler(
+            assert ConversationHandler.END == await set_value_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
@@ -226,12 +234,12 @@ class ConfigHandlersTests(BotHandlerTestCase):
         assert {"key": "val"} == fake_config
         assert {} == self.chat_data
 
-    def test_del_handler(self):
+    async def test_del_handler(self):
         with self.assert_log(
             "Requesting key name to clear its value.",
             logger,
         ):
-            assert DEL_VAR == del_handler(*self.update_and_context)
+            assert DEL_VAR == await del_handler(*self.update_and_context)
         self.assert_edit_call(
             CallWithMarkup(
                 "Tell me what key do you want to clear.",
@@ -241,19 +249,21 @@ class ConfigHandlersTests(BotHandlerTestCase):
             )
         )
 
-    def test_del_var_handler_missing(self):
+    async def test_del_var_handler_missing(self):
         fake_config = {}
         patcher = patch(f"{MODULE_PATH}.config", fake_config)
         patcher.start()
         self.addCleanup(patcher.stop)
         self.set_string_command("key")
         with self.assert_log("Key doesn't exists.", logger):
-            assert ConversationHandler.END == del_var_handler(*self.update_and_context)
+            assert ConversationHandler.END == await del_var_handler(
+                *self.update_and_context
+            )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "The key 'key' doesn't exists.")
         assert {} == fake_config
 
-    def test_del_var_handler_exists(self):
+    async def test_del_var_handler_exists(self):
         fake_config = {"key": "val"}
         patcher = patch(f"{MODULE_PATH}.config", fake_config)
         patcher.start()
@@ -263,21 +273,25 @@ class ConfigHandlersTests(BotHandlerTestCase):
             "Deleting config with key 'key'.",
             logger,
         ):
-            assert ConversationHandler.END == del_var_handler(*self.update_and_context)
+            assert ConversationHandler.END == await del_var_handler(
+                *self.update_and_context
+            )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "I'll forget that.")
         assert {} == fake_config
 
     @patch(f"{MODULE_PATH}.config.__setitem__", side_effect=ValueError)
-    def test_del_var_handler_invalid_key(self, _config):
+    async def test_del_var_handler_invalid_key(self, _config):
         self.set_string_command("invalid-key")
         with self.assert_log("Key was invalid.", logger):
-            assert ConversationHandler.END == del_var_handler(*self.update_and_context)
+            assert ConversationHandler.END == await del_var_handler(
+                *self.update_and_context
+            )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "The key 'invalid-key' is not a valid key.")
         assert {} == self.chat_data
 
-    def test_cancel_handler(self):
+    async def test_cancel_handler(self):
         self.chat_data.update(
             {"chat_id": 1, "message_id": 2, "key": "key", "some": "content"}
         )
@@ -285,7 +299,9 @@ class ConfigHandlersTests(BotHandlerTestCase):
             "Aborting 'config' conversation.",
             logger,
         ):
-            assert ConversationHandler.END == cancel_handler(*self.update_and_context)
+            assert ConversationHandler.END == await cancel_handler(
+                *self.update_and_context
+            )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "Ok.")
         assert {"some": "content"} == self.chat_data

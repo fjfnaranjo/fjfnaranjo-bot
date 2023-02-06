@@ -1,4 +1,4 @@
-from telegram.messageentity import MessageEntity
+from telegram import MessageEntity
 
 from fjfnaranjobot.components.sorry.info import (
     logger,
@@ -24,14 +24,14 @@ class SorryHandlersTests(BotHandlerTestCase):
             }
         )
 
-    def test_sorry_handler_processor(self):
+    async def test_sorry_handler_processor(self):
         with self.assert_log_dispatch("Sending 'sorry' back to the user.", logger):
-            sorry_handler(*self.update_and_context)
+            await sorry_handler(*self.update_and_context)
         self.assert_reply_text(
             "I don't know what to do about that. Sorry :(",
         )
 
-    def test_sorry_group_handler_processor_bot(self):
+    async def test_sorry_group_handler_processor_bot(self):
         bot_mention = f"@{BOT_USERNAME}"
         bot_messages = [
             f"{bot_mention}",
@@ -43,7 +43,7 @@ class SorryHandlersTests(BotHandlerTestCase):
                 with self.assert_log_dispatch(
                     "Sending 'sorry' back to the user.", logger
                 ):
-                    sorry_group_handler(*self.update_and_context)
+                    await sorry_group_handler(*self.update_and_context)
         self.assert_reply_calls(
             [
                 CallWithMarkup("I don't know what to do about that. Sorry :("),
@@ -51,7 +51,7 @@ class SorryHandlersTests(BotHandlerTestCase):
             ]
         )
 
-    def test_sorry_group_handler_processor_not_bot(self):
+    async def test_sorry_group_handler_processor_not_bot(self):
         bot_mention = f"@{BOT_USERNAME}"
         not_bot_messages = [
             f"some header {bot_mention}",
@@ -60,4 +60,4 @@ class SorryHandlersTests(BotHandlerTestCase):
         for message in not_bot_messages:
             with self.subTest(message=message):
                 self._fake_user_mention(message, bot_mention, message.find(bot_mention))
-                assert None == sorry_group_handler(*self.update_and_context)
+                assert None == await sorry_group_handler(*self.update_and_context)
