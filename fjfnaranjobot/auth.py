@@ -17,13 +17,13 @@ def get_owner_id():
     return int(owner_id) if owner_id is not None else None
 
 
-def _reply_unauthorized(update, context):
+async def _reply_unauthorized(update, context):
     try:
         chat_id = update.message.chat.id
     except AttributeError:
         pass
     else:
-        context.bot.send_message(chat_id, SORRY_TEXT)
+        await context.bot.send_message(chat_id, SORRY_TEXT)
 
 
 def _parse_command(update):
@@ -63,17 +63,17 @@ def _report_user(update, user, permission):
 
 def only_real(f):
     @wraps(f)
-    def wrapper(update, context, *args, **kwargs):
+    async def wrapper(update, context, *args, **kwargs):
         user = update.effective_user
         if user is None:
-            _reply_unauthorized(update, context)
+            await _reply_unauthorized(update, context)
             _report_no_user(update, "only_real")
             raise ApplicationHandlerStop()
         if user.is_bot:
-            _reply_unauthorized(update, context)
+            await _reply_unauthorized(update, context)
             _report_bot(update, user, "only_real")
             raise ApplicationHandlerStop()
-        return f(update, context, *args, **kwargs)
+        return await f(update, context, *args, **kwargs)
 
     return wrapper
 
@@ -81,14 +81,14 @@ def only_real(f):
 def only_owner(f):
     @only_real
     @wraps(f)
-    def wrapper(update, context, *args, **kwargs):
+    async def wrapper(update, context, *args, **kwargs):
         owner_id = get_owner_id()
         user = update.effective_user
         if owner_id is None or user.id != owner_id:
-            _reply_unauthorized(update, context)
+            await _reply_unauthorized(update, context)
             _report_user(update, user, "only_owner")
             raise ApplicationHandlerStop()
-        return f(update, context, *args, **kwargs)
+        return await f(update, context, *args, **kwargs)
 
     return wrapper
 
@@ -173,14 +173,14 @@ friends = _FriendsProxy()
 def only_friends(f):
     @only_real
     @wraps(f)
-    def wrapper(update, context, *args, **kwargs):
+    async def wrapper(update, context, *args, **kwargs):
         owner_id = get_owner_id()
         user = update.effective_user
         friend = User(user.id, user.username)
         if (owner_id is not None and user.id == owner_id) or friend not in friends:
-            _reply_unauthorized(update, context)
+            await _reply_unauthorized(update, context)
             _report_user(update, user, "only_friends")
             raise ApplicationHandlerStop()
-        return f(update, context, *args, **kwargs)
+        return await f(update, context, *args, **kwargs)
 
     return wrapper
