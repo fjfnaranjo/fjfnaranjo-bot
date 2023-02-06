@@ -75,34 +75,34 @@ class FriendsHandlersTests(BotHandlerTestCase):
         self._message_contact_mock.last_name = last_name
         self._update_mock.message.contact = self._message_contact_mock
 
-    def test_friends_handler_user_is_none(self):
+    async def test_friends_handler_user_is_none(self):
         self.user_is_none()
         with self.assert_log_dispatch(LOG_NO_USER_HEAD, auth_logger):
-            friends_handler(*self.update_and_context)
+            await friends_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_friends_handler_unknown_unauthorized(self):
+    async def test_friends_handler_unknown_unauthorized(self):
         self.user_is_unknown()
         with self.assert_log_dispatch(LOG_USER_UNAUTHORIZED_HEAD, auth_logger):
-            friends_handler(*self.update_and_context)
+            await friends_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_friends_handler_bot_unauthorized(self):
+    async def test_friends_handler_bot_unauthorized(self):
         self.user_is_bot()
         with self.assert_log_dispatch(LOG_BOT_UNAUTHORIZED_HEAD, auth_logger):
-            friends_handler(*self.update_and_context)
+            await friends_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_friends_handler_friend_unauthorized(self):
+    async def test_friends_handler_friend_unauthorized(self):
         self.user_is_friend()
         with self.assert_log_dispatch(LOG_FRIEND_UNAUTHORIZED_HEAD, auth_logger):
-            friends_handler(*self.update_and_context)
+            await friends_handler(*self.update_and_context)
         self.assert_message_chat_text(sentinel.chat_id_from_update, SORRY_TEXT)
 
-    def test_friends_handler(self):
+    async def test_friends_handler(self):
         self.chat_data = {}
         with self.assert_log("Entering 'friends' conversation.", logger):
-            assert GET_ADD_OR_DEL == friends_handler(*self.update_and_context)
+            assert GET_ADD_OR_DEL == await friends_handler(*self.update_and_context)
         self.assert_reply_call(
             CallWithMarkup(
                 (
@@ -118,12 +118,12 @@ class FriendsHandlersTests(BotHandlerTestCase):
             "message_id": sentinel.message_id_from_reply_text,
         } == self.chat_data
 
-    def test_add_handler(self):
+    async def test_add_handler(self):
         with self.assert_log(
             "Requesting contact to add as a friend.",
             logger,
         ):
-            assert ADD_FRIEND == add_handler(*self.update_and_context)
+            assert ADD_FRIEND == await add_handler(*self.update_and_context)
         self.assert_edit_call(
             CallWithMarkup(
                 "Send me the contact of the friend you want to add. Or its id.",
@@ -133,10 +133,10 @@ class FriendsHandlersTests(BotHandlerTestCase):
             )
         )
 
-    def test_add_friend_handler(self):
+    async def test_add_friend_handler(self):
         self.set_contact(9, "9fn", "9ln")
         with self.assert_log("Received a contact. Adding 9fn 9ln as a friend.", logger):
-            assert ConversationHandler.END == add_friend_handler(
+            assert ConversationHandler.END == await add_friend_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
@@ -144,20 +144,20 @@ class FriendsHandlersTests(BotHandlerTestCase):
         assert {} == self.chat_data
         assert User(9, None) in friends
 
-    def test_add_friend_handler_no_id(self):
+    async def test_add_friend_handler_no_id(self):
         self.set_contact(None, "nfn", "nln")
         with self.assert_log("Received a contact without a Telegram ID.", logger):
-            assert ConversationHandler.END == add_friend_handler(
+            assert ConversationHandler.END == await add_friend_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "That doesn't look like a Telegram user.")
         assert {} == self.chat_data
 
-    def test_add_friend_handler_no_first_name(self):
+    async def test_add_friend_handler_no_first_name(self):
         self.set_contact(9, None, "9ln")
         with self.assert_log("Adding 9ln as a friend.", logger):
-            assert ConversationHandler.END == add_friend_handler(
+            assert ConversationHandler.END == await add_friend_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
@@ -165,10 +165,10 @@ class FriendsHandlersTests(BotHandlerTestCase):
         assert {} == self.chat_data
         assert User(9, None) in friends
 
-    def test_add_friend_handler_no_last_name(self):
+    async def test_add_friend_handler_no_last_name(self):
         self.set_contact(9, "9fn", None)
         with self.assert_log("Adding 9fn as a friend.", logger):
-            assert ConversationHandler.END == add_friend_handler(
+            assert ConversationHandler.END == await add_friend_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
@@ -176,10 +176,10 @@ class FriendsHandlersTests(BotHandlerTestCase):
         assert {} == self.chat_data
         assert User(9, None) in friends
 
-    def test_add_friend_handler_existing(self):
+    async def test_add_friend_handler_existing(self):
         self.set_contact(1, "1fna", "1lna")
         with self.assert_log("Adding 1fna 1lna as a friend.", logger):
-            assert ConversationHandler.END == add_friend_handler(
+            assert ConversationHandler.END == await add_friend_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
@@ -192,10 +192,10 @@ class FriendsHandlersTests(BotHandlerTestCase):
                 assert "1fna 1lna" == friend.username
         assert found
 
-    def test_add_friend_id_handler_number_ok(self):
+    async def test_add_friend_id_handler_number_ok(self):
         self.set_string_command("9")
         with self.assert_log("Adding ID 9 as a friend.", logger):
-            assert ConversationHandler.END == add_friend_id_handler(
+            assert ConversationHandler.END == await add_friend_id_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
@@ -203,34 +203,34 @@ class FriendsHandlersTests(BotHandlerTestCase):
         assert {} == self.chat_data
         assert User(9, None) in friends
 
-    def test_add_friend_id_handler_number_multiple_str(self):
+    async def test_add_friend_id_handler_number_multiple_str(self):
         self.set_string_command("9 9")
         with self.assert_log(
             "Received and invalid id '9 9' trying to add a friend.", logger
         ):
-            assert ConversationHandler.END == add_friend_id_handler(
+            assert ConversationHandler.END == await add_friend_id_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "That's not a contact nor a single valid id.")
 
-    def test_add_friend_id_handler_number_less_zero(self):
+    async def test_add_friend_id_handler_number_less_zero(self):
         self.set_string_command("-3")
         with self.assert_log(
             "Received and invalid number in id '-3' trying to add a friend.", logger
         ):
-            assert ConversationHandler.END == add_friend_id_handler(
+            assert ConversationHandler.END == await add_friend_id_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "That's not a contact nor a valid id.")
 
-    def test_del_handler(self):
+    async def test_del_handler(self):
         with self.assert_log(
             "Requesting contact to remove as a friend.",
             logger,
         ):
-            assert DEL_FRIEND == del_handler(*self.update_and_context)
+            assert DEL_FRIEND == await del_handler(*self.update_and_context)
         self.assert_edit_call(
             CallWithMarkup(
                 "Send me the contact of the friend you want to remove. Or its id.",
@@ -240,13 +240,13 @@ class FriendsHandlersTests(BotHandlerTestCase):
             )
         )
 
-    def test_del_friend_handler(self):
+    async def test_del_friend_handler(self):
         self.set_contact(1, "1fn", "1ln")
         with self.assert_log(
             "Removing 1un as a friend.",
             logger,
         ):
-            assert ConversationHandler.END == del_friend_handler(
+            assert ConversationHandler.END == await del_friend_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
@@ -254,22 +254,22 @@ class FriendsHandlersTests(BotHandlerTestCase):
         assert {} == self.chat_data
         assert User(1, None) not in friends
 
-    def test_del_friend_handler_no_id(self):
+    async def test_del_friend_handler_no_id(self):
         self.set_contact(None, "nfn", "nln")
         with self.assert_log("Received a contact without a Telegram ID.", logger):
-            assert ConversationHandler.END == del_friend_handler(
+            assert ConversationHandler.END == await del_friend_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "That doesn't look like a Telegram user.")
 
-    def test_del_friend_handler_no_first_name(self):
+    async def test_del_friend_handler_no_first_name(self):
         self.set_contact(1, None, "1ln")
         with self.assert_log(
             "Removing 1un as a friend.",
             logger,
         ):
-            assert ConversationHandler.END == del_friend_handler(
+            assert ConversationHandler.END == await del_friend_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
@@ -277,13 +277,13 @@ class FriendsHandlersTests(BotHandlerTestCase):
         assert {} == self.chat_data
         assert User(1, None) not in friends
 
-    def test_del_friend_handler_no_last_name(self):
+    async def test_del_friend_handler_no_last_name(self):
         self.set_contact(1, "1fn", None)
         with self.assert_log(
             "Removing 1un as a friend.",
             logger,
         ):
-            assert ConversationHandler.END == del_friend_handler(
+            assert ConversationHandler.END == await del_friend_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
@@ -291,26 +291,26 @@ class FriendsHandlersTests(BotHandlerTestCase):
         assert {} == self.chat_data
         assert User(1, None) not in friends
 
-    def test_del_friend_handler_dont_exists(self):
+    async def test_del_friend_handler_dont_exists(self):
         self.set_contact(9, "9fn", "9ln")
         with self.assert_log(
             "Not removing 9fn 9ln because its not a friend.",
             logger,
         ):
-            assert ConversationHandler.END == del_friend_handler(
+            assert ConversationHandler.END == await del_friend_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "9fn 9ln isn't a friend.")
         assert {} == self.chat_data
 
-    def test_del_friend_id_handler_number_ok(self):
+    async def test_del_friend_id_handler_number_ok(self):
         self.set_string_command("1")
         with self.assert_log(
             "Removing 1un as a friend.",
             logger,
         ):
-            assert ConversationHandler.END == del_friend_id_handler(
+            assert ConversationHandler.END == await del_friend_id_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
@@ -318,30 +318,30 @@ class FriendsHandlersTests(BotHandlerTestCase):
         assert {} == self.chat_data
         assert User(1, None) not in friends
 
-    def test_del_friend_id_handler_number_multiple_str(self):
+    async def test_del_friend_id_handler_number_multiple_str(self):
         self.set_string_command("9 9")
         with self.assert_log(
             "Received and invalid id '9 9' trying to remove a friend.", logger
         ):
-            assert ConversationHandler.END == del_friend_id_handler(
+            assert ConversationHandler.END == await del_friend_id_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "That's not a contact nor a single valid id.")
 
-    def test_del_friend_id_handler_number_less_zero(self):
+    async def test_del_friend_id_handler_number_less_zero(self):
         self.set_string_command("-3")
         with self.assert_log(
             "Received and invalid number in id '-3' trying to remove a friend.",
             logger,
         ):
-            assert ConversationHandler.END == del_friend_id_handler(
+            assert ConversationHandler.END == await del_friend_id_handler(
                 *self.update_and_context
             )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "That's not a contact nor a valid id.")
 
-    def test_cancel_handler(self):
+    async def test_cancel_handler(self):
         self.chat_data.update(
             {
                 "chat_id": 1,
@@ -356,7 +356,9 @@ class FriendsHandlersTests(BotHandlerTestCase):
             "Aborting 'friends' conversation.",
             logger,
         ):
-            assert ConversationHandler.END == cancel_handler(*self.update_and_context)
+            assert ConversationHandler.END == await cancel_handler(
+                *self.update_and_context
+            )
         self.assert_delete(1, 2)
         self.assert_message_chat_text(1, "Ok.")
         assert {"some": "content"} == self.chat_data

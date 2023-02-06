@@ -197,7 +197,6 @@ class Friends(ConversationHandlerMixin, BotCommand):
         user = User(contact.user_id, username)
 
         if user in friends:
-
             for friend in friends:
                 if friend.id == user.id:
                     friend_username = friend.username
@@ -208,7 +207,6 @@ class Friends(ConversationHandlerMixin, BotCommand):
             self.end(f"Removed {friend_username} as a friend.")
 
         else:
-
             logger.debug(f"Not removing {user.username} because its not a friend.")
 
             self.end(f"{user.username} isn't a friend.")
@@ -217,7 +215,6 @@ class Friends(ConversationHandlerMixin, BotCommand):
         try:
             (user_id,) = self.update.message.text.split()
         except ValueError:
-
             shown_id = quote_value_for_log(self.update.message.text)
             logger.debug(
                 f"Received and invalid id {shown_id} trying to remove a friend."
@@ -231,7 +228,6 @@ class Friends(ConversationHandlerMixin, BotCommand):
                 if user_id_int < 0:
                     raise ValueError()
             except ValueError:
-
                 logger.debug(
                     f"Received and invalid number in id '{user_id}' trying to remove a friend."
                 )
@@ -240,7 +236,6 @@ class Friends(ConversationHandlerMixin, BotCommand):
             else:
                 user = User(user_id_int, f"ID {user_id_int}")
                 if user in friends:
-
                     for friend in friends:
                         if friend.id == user.id:
                             friend_username = friend.username

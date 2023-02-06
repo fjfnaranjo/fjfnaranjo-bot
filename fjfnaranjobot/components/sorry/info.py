@@ -1,5 +1,6 @@
 from telegram import MessageEntity
-from telegram.ext import DispatcherHandlerStop, Filters, MessageHandler
+from telegram.ext import ApplicationHandlerStop, MessageHandler
+from telegram.ext.filters import TEXT, ChatType, Entity
 
 from fjfnaranjobot.common import SORRY_TEXT
 from fjfnaranjobot.logging import getLogger
@@ -7,14 +8,14 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 
-def sorry_handler(update, _context):
+async def sorry_handler(update, _context):
     logger.info("Sending 'sorry' back to the user.")
 
-    update.message.reply_text(SORRY_TEXT)
-    raise DispatcherHandlerStop()
+    await update.message.reply_text(SORRY_TEXT)
+    raise ApplicationHandlerStop()
 
 
-def sorry_group_handler(update, context):
+async def sorry_group_handler(update, context):
     bot_mention = "@" + context.bot.username
     mentions = update.message.parse_entities(MessageEntity.MENTION)
     mentions_keys = list(mentions.keys())
@@ -24,14 +25,14 @@ def sorry_group_handler(update, context):
         and update.message.text.find(bot_mention) == 0
     ):
         update.message.text = update.message.text.replace(bot_mention, "").strip()
-        return sorry_handler(update, context)
+        return await sorry_handler(update, context)
 
 
 # TODO: Debug
 handlers = tuple()  # (
-#    MessageHandler(Filters.private & Filters.text, sorry_handler),
+#    MessageHandler(ChatType.PRIVATE & TEXT, sorry_handler),
 #    MessageHandler(
-#        Filters.group & Filters.text & Filters.entity(MessageEntity.MENTION),
+#        ChatType.GROUP & TEXT & Entity(MessageEntity.MENTION),
 #        sorry_group_handler,
 #    ),
 # )

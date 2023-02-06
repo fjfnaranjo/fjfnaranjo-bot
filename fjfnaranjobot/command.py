@@ -712,7 +712,7 @@ class StateSet:
                         self.command.inline_handler(
                             getattr(self.command, inline + "_handler")
                         ),
-                        pattern=fr"^{inline}$",
+                        pattern=rf"^{inline}$",
                     )
                 )
 
@@ -723,7 +723,7 @@ class StateSet:
                 CallbackQueryHandler(
                     self.command.paginator_handler(),
                     pattern=(
-                        fr"^pag-{_id}-("
+                        rf"^pag-{_id}-("
                         + "|".join(
                             ["next"]
                             + [
@@ -746,7 +746,7 @@ class StateSet:
                     CallbackQueryHandler(
                         self.command.paginator_handler(),
                         pattern=(
-                            fr"^pag-{inline_proxy}-("
+                            rf"^pag-{inline_proxy}-("
                             + "|".join(
                                 ["next"]
                                 + [

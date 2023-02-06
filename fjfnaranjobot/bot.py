@@ -4,17 +4,18 @@ from inspect import getmembers, isclass
 from json import JSONDecodeError, loads
 from os import environ
 
-from telegram import Bot as TBot
 from telegram import Update
 from telegram.ext import (
+    Application,
+    BaseHandler,
     CommandHandler,
     ConversationHandler,
-    Dispatcher,
-    Handler,
     MessageHandler,
     StringCommandHandler,
 )
-from telegram.ext.dispatcher import DEFAULT_GROUP
+
+# TODO: Find a different way to allow a default group in commands
+from telegram.ext._application import DEFAULT_GROUP
 
 from fjfnaranjobot.command import BotCommand, BotCommandError, Command
 from fjfnaranjobot.common import Command as OldCommand
@@ -55,11 +56,14 @@ def _get_handler_callback_name(handler):
 # TODO: Check and test BOT_TOKEN not defined
 class Bot:
     def __init__(self):
-        self.bot = TBot(BOT_TOKEN)
-        self.dispatcher = Dispatcher(self.bot, None, workers=0, use_context=True)
-        self.dispatcher.add_error_handler(self._log_error_from_context)
+        builder = Application.builder()
+        builder.token(BOT_TOKEN)
+        builder.updater(None)
+        self.application = builder.build()
+        self.bot = self.application.bot
         self.webhook_url = "/".join((BOT_WEBHOOK_URL, BOT_WEBHOOK_TOKEN))
         logger.debug("Bot init done.")
+        self.application.add_error_handler(self._log_error_from_context)
         for component in get_bot_components().split(","):
             if component.startswith("n"):
                 logger.debug(f"Parsing component {component} with new parser.")
@@ -72,7 +76,7 @@ class Bot:
 
     def _log_error_from_context(self, _update, context):
         logger.exception(
-            "Error inside the framework raised by the dispatcher.",
+            "Error inside the framework raised by the application.",
             exc_info=context.error,
         )
 
@@ -85,7 +89,7 @@ class Bot:
         else:
             callback_name = _get_handler_callback_name(handler)
             if isinstance(handler, CommandHandler):
-                for command in handler.command:
+                for command in handler.commands:
                     names_callbacks.append(
                         (
                             command,
@@ -127,10 +131,10 @@ class Bot:
             )
         else:
             for handler in handlers:
-                if not isinstance(handler, Handler):
+                if not isinstance(handler, BaseHandler):
                     raise ValueError(f"Invalid handler for component '{component}'.")
                 else:
-                    self.dispatcher.add_handler(handler, group)
+                    self.application.add_handler(handler, group)
                     callback_names = self._get_names_callbacks(handler)
                     for command, callback in callback_names:
                         logger.debug(
@@ -200,8 +204,7 @@ class Bot:
                             f"'{component}' component handlers."
                         )
 
-    def process_request(self, url_path, update):
-
+    async def process_request(self, url_path, update):
         # Root URL
         if url_path == "" or url_path == "/":
             logger.info("Reply with salute.")
@@ -214,13 +217,13 @@ class Bot:
 
         # Register webhook request URL
         elif url_path == ("/" + "/".join((BOT_WEBHOOK_TOKEN, "register_webhook"))):
-            self.bot.set_webhook(url=self.webhook_url, drop_pending_updates=True)
+            await self.bot.set_webhook(url=self.webhook_url, drop_pending_updates=True)
             logger.info("Reply with ok to register_webhook.")
             return "ok"
 
         # Register webhook request URL (using self signed cert)
         elif url_path == ("/" + "/".join((BOT_WEBHOOK_TOKEN, "register_webhook_self"))):
-            self.bot.set_webhook(
+            await self.bot.set_webhook(
                 url=self.webhook_url,
                 certificate=open(BOT_WEBHOOK_CERT, "rb"),
                 drop_pending_updates=True,
@@ -247,8 +250,7 @@ class Bot:
 
         # Delegate response to bot library
         logger.debug("Dispatch update to library.")
-        self.dispatcher.process_update(Update.de_json(update_json, self.bot))
-
+        await self.application.update_queue.put(Update.de_json(update_json, self.bot))
         return "ok"
 
 
