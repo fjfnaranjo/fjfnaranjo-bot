@@ -1,4 +1,4 @@
-from os import chmod, remove
+from os import chmod, mkdir, remove
 from os.path import isdir, isfile, join
 from shutil import rmtree
 from stat import S_IRWXU
@@ -58,7 +58,7 @@ class EnsureDbTests(MockedEnvironTestCase):
         with self.mocked_environ(
             f"{MODULE_PATH}.environ", {"BOT_DB_NAME": invalid_path}
         ):
-            chmod(self._db_test_dir, 0)
+            mkdir(invalid_path)
             with self.assertRaises(ValueError) as e:
                 _ensure_sqldb()
         assert "Invalid file name in BOT_DB_NAME var." == e.exception.args[0]

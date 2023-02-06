@@ -62,7 +62,7 @@ class MemoryDbTestCase(TestCase):
         return sqldb
 
 
-class BotHandlerTestCase(BotTestCase, IsolatedAsyncioTestCase):
+class BotHandlerTestCase(MockedEnvironTestCase, IsolatedAsyncioTestCase):
     def setUp(self):
         super().setUp()
 

@@ -51,15 +51,15 @@ class Config(ConversationHandlerMixin, BotCommand):
         self.states.add_cancel_inline(Config.StatesEnum.SET_VALUE)
         self.states.add_text(Config.StatesEnum.SET_VALUE, "set_value")
 
-    def get_handler(self):
+    async def get_handler(self):
         logger.debug("Requesting key name to get its value.")
-        self.next(
+        await self.next(
             Config.StatesEnum.GET_VAR,
             "Tell me what key do you want to get.",
             self.markup.cancel_inline,
         )
 
-    def get_var_handler(self):
+    async def get_var_handler(self):
         key = self.update.message.text
         shown_key = quote_value_for_log(key)
         logger.debug(f"Received key name {shown_key}.")
@@ -68,24 +68,24 @@ class Config(ConversationHandlerMixin, BotCommand):
         except (ValueError, KeyError) as e:
             if isinstance(e, ValueError):
                 logger.debug("Key was invalid.")
-                self.end(f"The key '{key}' is not a valid key.")
+                await self.end(f"The key '{key}' is not a valid key.")
             else:
                 logger.debug("Key doesn't exists.")
-                self.end(f"The key '{key}' doesn't exists.")
+                await self.end(f"The key '{key}' doesn't exists.")
         else:
             shown_result = quote_value_for_log(result)
             logger.debug(f"Replying with result {shown_result}.")
-            self.end(f"The value for key '{key}' is '{result}'.")
+            await self.end(f"The value for key '{key}' is '{result}'.")
 
-    def set_handler(self):
+    async def set_handler(self):
         logger.debug("Requesting key name to set its value.")
-        self.next(
+        await self.next(
             Config.StatesEnum.SET_VAR,
             "Tell me what key do you want to set.",
             reply_markup=self.markup.cancel_inline,
         )
 
-    def set_var_handler(self):
+    async def set_var_handler(self):
         key = self.update.message.text
         shown_key = quote_value_for_log(key)
         logger.debug(f"Received key name {shown_key}.")
@@ -93,35 +93,35 @@ class Config(ConversationHandlerMixin, BotCommand):
             config[key]
         except ValueError:
             logger.debug("Can't set invalid config key 'invalid-key'.")
-            self.end(f"The key '{key}' is not a valid key.")
+            await self.end(f"The key '{key}' is not a valid key.")
         except KeyError:
             pass
         self.context_set("key", key)
         logger.debug("Requesting value to set the key.")
-        self.next(
+        await self.next(
             Config.StatesEnum.SET_VALUE,
             f"Tell me what value do you want to put in the key '{key}'.",
             reply_markup=self.markup.cancel_inline,
         )
 
-    def set_value_handler(self):
+    async def set_value_handler(self):
         value = self.update.message.text
         shown_value = quote_value_for_log(value)
         logger.debug(f"Received value {shown_value}.")
         key = self.context_del("key")
         config[key] = value
         logger.debug(f"Stored {shown_value} in key '{key}'.")
-        self.end("I'll remember that.")
+        await self.end("I'll remember that.")
 
-    def del_handler(self):
+    async def del_handler(self):
         logger.debug("Requesting key name to clear its value.")
-        self.next(
+        await self.next(
             Config.StatesEnum.DEL_VAR,
             "Tell me what key do you want to clear.",
             reply_markup=self.markup.cancel_inline,
         )
 
-    def del_var_handler(self):
+    async def del_var_handler(self):
         key = self.update.message.text
         shown_key = quote_value_for_log(key)
         logger.debug(f"Received key name {shown_key}.")
@@ -130,10 +130,10 @@ class Config(ConversationHandlerMixin, BotCommand):
         except (ValueError, KeyError) as e:
             if isinstance(e, ValueError):
                 logger.debug("Key was invalid.")
-                self.end(f"The key '{key}' is not a valid key.")
+                await self.end(f"The key '{key}' is not a valid key.")
             else:
                 logger.debug("Key doesn't exists.")
-                self.end(f"The key '{key}' doesn't exists.")
+                await self.end(f"The key '{key}' doesn't exists.")
         else:
             logger.debug(f"Deleting config with key '{key}'.")
-            self.end("I'll forget that.")
+            await self.end("I'll forget that.")

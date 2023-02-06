@@ -36,11 +36,11 @@ class BotTests(BaseBotTestCase):
         self.builder.updater.assert_called_once_with(None)
         assert bot.application == self.application
         assert bot.bot == self.bot
-        assert "Bot init done." in logs.output[-2]
+        assert "DEBUG:app.fjfnaranjobot.bot:Bot init done." in logs.output
         bot.application.add_error_handler.assert_called_once_with(
             bot._log_error_from_context
         )
-        assert "Bot handlers registered." in logs.output[-1]
+        assert "DEBUG:app.fjfnaranjobot.bot:Bot handlers registered." in logs.output
 
     @patch(f"{MODULE_PATH}.Update")
     @patch(f"{MODULE_PATH}.logger")

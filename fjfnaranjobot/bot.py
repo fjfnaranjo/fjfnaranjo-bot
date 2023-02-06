@@ -173,7 +173,7 @@ class Bot:
             command.log_handler(group, handler)
             # TODO: Remove this log and 3rd component in handlers (not used anymore)
             logger.debug(f"Adding handler {class_name}.")
-            self.dispatcher.add_handler(handler, group)
+            self.application.add_handler(handler, group)
 
     def _n_parse_component_info(self, component):
         component_module = _N_BOT_COMPONENTS_TEMPLATE.format(component[1:])

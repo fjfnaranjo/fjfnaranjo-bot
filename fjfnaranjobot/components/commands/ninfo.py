@@ -11,7 +11,7 @@ class Commands(CommandHandlerMixin, BotCommand):
     description = "Print the list of bot commands."
     is_dev_command = True
 
-    def entrypoint(self):
+    async def entrypoint(self):
         logger.debug("Sending list of commands.")
 
         # TODO: When old commands removed, remove double parser
@@ -20,8 +20,10 @@ class Commands(CommandHandlerMixin, BotCommand):
             for command in command_list
             if hasattr(command, "dev_command") and command.dev_command is not None
         ]
-        self.reply("Old style dev commands:")
-        self.reply("\n".join(dev_commands) if len(dev_commands) > 1 else "no commands")
+        await self.reply("Old style dev commands:")
+        await self.reply(
+            "\n".join(dev_commands) if len(dev_commands) > 1 else "no commands"
+        )
 
         n_dev_commands = [
             command.command_name + " - " + command.description
@@ -30,8 +32,8 @@ class Commands(CommandHandlerMixin, BotCommand):
             and command.is_dev_command
             and command.command_name is not None
         ]
-        self.reply("New style dev commands:")
-        self.reply(
+        await self.reply("New style dev commands:")
+        await self.reply(
             "\n".join(n_dev_commands) if len(n_dev_commands) > 1 else "no commands"
         )
 
@@ -40,8 +42,8 @@ class Commands(CommandHandlerMixin, BotCommand):
             for command in command_list
             if hasattr(command, "prod_command") and command.prod_command is not None
         ]
-        self.reply("Old style production commands:")
-        self.reply(
+        await self.reply("Old style production commands:")
+        await self.reply(
             "\n".join(prod_commands) if len(prod_commands) > 1 else "no commands"
         )
 
@@ -52,7 +54,7 @@ class Commands(CommandHandlerMixin, BotCommand):
             and command.is_prod_command
             and command.command_name is not None
         ]
-        self.reply("New style production commands:")
-        self.reply(
+        await self.reply("New style production commands:")
+        await self.reply(
             "\n".join(n_prod_commands) if len(n_prod_commands) > 1 else "no commands"
         )

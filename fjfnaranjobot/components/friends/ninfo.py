@@ -80,7 +80,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
             Friends.StatesEnum.DEL_FRIEND_CONFIRM, "list_del_confirmed", "Confirm"
         )
 
-    def list_del_confirm_handler(self, item):
+    async def list_del_confirm_handler(self, item):
         item_id = item.id
         item_caption = item.username
 
@@ -102,30 +102,30 @@ class Friends(ConversationHandlerMixin, BotCommand):
             ]
         )
 
-        self.next(
+        await self.next(
             Friends.StatesEnum.DEL_FRIEND_CONFIRM,
             f"Are you sure that you want to remove '{user_to_delete.username}' as a friend.",
             confirm_markup,
         )
 
-    def list_del_confirmed_handler(self):
+    async def list_del_confirmed_handler(self):
         logger.debug("Received confirmation for deletion.")
 
         delete_user = User(*self.context.chat_data["delete_user"])
         del self.context.chat_data["delete_user"]
         friends.discard(delete_user)
 
-        self.end("Ok.")
+        await self.end("Ok.")
 
-    def add_handler(self):
+    async def add_handler(self):
         logger.debug("Requesting contact to add as a friend.")
-        self.next(
+        await self.next(
             Friends.StatesEnum.ADD_FRIEND,
             "Send me the contact of the friend you want to add. Or its id.",
             self.markup.cancel_inline,
         )
 
-    def add_friend_handler(self, contact):
+    async def add_friend_handler(self, contact):
         contact_first_name = getattr(contact, "first_name", "")
         contact_last_name = getattr(contact, "last_name", "")
         first_name = contact_first_name if contact_first_name is not None else ""
@@ -135,15 +135,15 @@ class Friends(ConversationHandlerMixin, BotCommand):
 
         logger.debug(f"Received a contact. Adding {user.username} as a friend.")
         friends.add(user)
-        self.end(f"Added {user.username} as a friend.")
+        await self.end(f"Added {user.username} as a friend.")
 
-    def add_friend_id_handler(self):
+    async def add_friend_id_handler(self):
         try:
             (user_id,) = self.update.message.text.split()
         except ValueError:
             shown_id = quote_value_for_log(self.update.message.text)
             logger.debug(f"Received and invalid id {shown_id} trying to add a friend.")
-            self.end("That's not a contact nor a single valid id.")
+            await self.end("That's not a contact nor a single valid id.")
 
         else:
             try:
@@ -154,16 +154,16 @@ class Friends(ConversationHandlerMixin, BotCommand):
                 logger.debug(
                     f"Received and invalid number in id '{user_id}' trying to add a friend."
                 )
-                self.end("That's not a contact nor a valid id.")
+                await self.end("That's not a contact nor a valid id.")
             else:
                 self.context.chat_data["add_user_id_int"] = user_id_int
-                self.next(
+                await self.next(
                     Friends.StatesEnum.ADD_FRIEND_ID_NAME,
                     f"Send me a name for the contact.",
                     self.markup.cancel_inline,
                 )
 
-    def add_friend_id_name_handler(self):
+    async def add_friend_id_name_handler(self):
         logger.debug("Received contact username.")
         try:
             (username,) = self.update.message.text.split()
@@ -172,23 +172,24 @@ class Friends(ConversationHandlerMixin, BotCommand):
             logger.debug(
                 f"Received and invalid username {shown_username} trying to add a friend by id."
             )
+            await self.end("That's not a valid contact username.")
 
         user_id_int = self.context.chat_data["add_user_id_int"]
         del self.context.chat_data["add_user_id_int"]
         user = User(user_id_int, username)
         logger.debug(f"Adding {user.username} as a friend.")
         friends.add(user)
-        self.end(f"Added {user.username} as a friend.")
+        await self.end(f"Added {user.username} as a friend.")
 
-    def del_handler(self):
+    async def del_handler(self):
         logger.debug("Requesting contact to remove as a friend.")
-        self.next(
+        await self.next(
             Friends.StatesEnum.DEL_FRIEND,
             "Send me the contact of the friend you want to remove. Or its id.",
             self.markup.cancel_inline,
         )
 
-    def del_friend_handler(self, contact):
+    async def del_friend_handler(self, contact):
         contact_first_name = getattr(contact, "first_name", "")
         contact_last_name = getattr(contact, "last_name", "")
         first_name = contact_first_name if contact_first_name is not None else ""
@@ -204,14 +205,14 @@ class Friends(ConversationHandlerMixin, BotCommand):
 
             friends.discard(user)
 
-            self.end(f"Removed {friend_username} as a friend.")
+            await self.end(f"Removed {friend_username} as a friend.")
 
         else:
             logger.debug(f"Not removing {user.username} because its not a friend.")
 
-            self.end(f"{user.username} isn't a friend.")
+            await self.end(f"{user.username} isn't a friend.")
 
-    def del_friend_id_handler(self):
+    async def del_friend_id_handler(self):
         try:
             (user_id,) = self.update.message.text.split()
         except ValueError:
@@ -220,7 +221,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
                 f"Received and invalid id {shown_id} trying to remove a friend."
             )
 
-            self.end("That's not a contact nor a single valid id.")
+            await self.end("That's not a contact nor a single valid id.")
 
         else:
             try:
@@ -231,7 +232,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
                 logger.debug(
                     f"Received and invalid number in id '{user_id}' trying to remove a friend."
                 )
-                self.end("That's not a contact nor a valid id.")
+                await self.end("That's not a contact nor a valid id.")
 
             else:
                 user = User(user_id_int, f"ID {user_id_int}")
@@ -243,11 +244,11 @@ class Friends(ConversationHandlerMixin, BotCommand):
 
                     friends.discard(user)
 
-                    self.end(f"Removed {friend_username} as a friend.")
+                    await self.end(f"Removed {friend_username} as a friend.")
 
                 else:
                     logger.debug(
                         f"Not removing {user.username} because its not a friend."
                     )
 
-                    self.end(f"{user.username} isn't a friend.")
+                    await self.end(f"{user.username} isn't a friend.")

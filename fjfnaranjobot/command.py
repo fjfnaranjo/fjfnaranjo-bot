@@ -17,10 +17,18 @@ to the updates handlers in python-telegram-bot . See each *Mixin docstring.
 from functools import wraps
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
-from telegram.ext import CallbackQueryHandler, CommandHandler
+from telegram.ext import (
+    ApplicationHandlerStop,
+    BaseHandler,
+    CallbackQueryHandler,
+    CommandHandler,
+)
 from telegram.ext import ConversationHandler as ConversationHandler
-from telegram.ext import DispatcherHandlerStop, Filters, Handler, MessageHandler
-from telegram.ext.dispatcher import DEFAULT_GROUP
+from telegram.ext import MessageHandler
+
+# TODO: Find a different way to allow a default group in commands
+from telegram.ext._application import DEFAULT_GROUP
+from telegram.ext.filters import COMMAND, CONTACT, TEXT, ChatType, Entity
 
 from fjfnaranjobot.auth import User, friends, get_owner_id
 from fjfnaranjobot.common import (
@@ -101,7 +109,7 @@ class Command:
                     commands.append(command)
         else:
             if isinstance(handler, CommandHandler):
-                for command in handler.command:
+                for command in handler.commands:
                     commands.append(command)
             elif isinstance(handler, AnyHandler):
                 commands.append("<any>")
@@ -218,10 +226,10 @@ class Command:
         return (
             False
             if (
-                (not self.allow_chats and Filters.chat_type.groups(self.update))
+                (not self.allow_chats and ChatType.GROUPS.check_update(self.update))
                 or (
                     self.allow_chats
-                    and Filters.chat_type.groups(self.update)
+                    and ChatType.GROUPS.check_update(self.update)
                     and not bot_mentioned
                 )
                 or (
@@ -240,38 +248,38 @@ class Command:
             else True
         )
 
-    def entrypoint(self):
+    async def entrypoint(self):
         raise NotImplementedError()
 
     @store_update_context
-    def handle_command(self):
+    async def handle_command(self):
         if not self.filter_command():
             return
         logger.info(f"Calling command entrypoint in {self}...")
-        self.entrypoint()
-        raise DispatcherHandlerStop()
+        await self.entrypoint()
+        raise ApplicationHandlerStop()
 
-    def reply(self, *args, **kwargs):
+    async def reply(self, *args, **kwargs):
         if hasattr(self.update, "message") and self.update.message is not None:
-            return self.update.message.reply_text(*args, **kwargs)
+            return await self.update.message.reply_text(*args, **kwargs)
         else:
-            return self.context.bot.send_message(
+            return await self.context.bot.send_message(
                 self.update.effective_chat.id, *args, **kwargs
             )
 
 
-class AnyHandler(Handler):
+class AnyHandler(BaseHandler):
     """Extra python-telegram-bot handler to select any update."""
 
     def check_update(self, update):
         if (
-            Filters.chat_type.groups(update)
+            ChatType.GROUPS.check_update(update)
             and hasattr(update, "message")
             and update.message is not None
-            and Filters.entity(MessageEntity.MENTION).filter(update.message)
+            and Entity(MessageEntity.MENTION).filter(update.message)
         ):
             return update
-        if Filters.chat_type.private(update):
+        if ChatType.PRIVATE.check_update(update):
             return update
         return None
 
@@ -325,7 +333,7 @@ class CommandHandlerMixin(BotCommand):
                 CommandHandler(
                     self.command_name,
                     self.handle_command,
-                    filters=Filters.command,
+                    filters=COMMAND,
                 ),
                 self.__class__.__name__,
             )
@@ -368,11 +376,11 @@ class ConversationHandlerMixin(BotCommand):
         return super().handlers + new_handlers
 
     @store_update_context
-    def start_conversation(self):
+    async def start_conversation(self):
         if not self.filter_command():
             return
         logger.info(f"Starting conversation '{self}'...")
-        conversation_message = self.reply(
+        conversation_message = await self.reply(
             self.initial_text,
             # TODO: This call should be something like self.states.start_markup()
             reply_markup=self.markup.from_start(
@@ -382,10 +390,10 @@ class ConversationHandlerMixin(BotCommand):
         )
         self.context_set("chat_id", conversation_message.chat.id)
         self.context_set("message_id", conversation_message.message_id)
-        self.next(self.START)
+        await self.next(self.START)
 
     @store_update_context
-    def fallback(self):
+    async def fallback(self):
         warning_text = f"Conversation {self} fallback handler reached."
         try:
             query_data = self.update.callback_query.data
@@ -393,10 +401,10 @@ class ConversationHandlerMixin(BotCommand):
         except AttributeError:
             pass
         logger.warning(warning_text)
-        self.end("Ups!")
+        await self.end("Ups!")
 
-    def edit_message(self, text, reply_markup=None):
-        self.context.bot.edit_message_text(
+    async def edit_message(self, text, reply_markup=None):
+        await self.context.bot.edit_message_text(
             text,
             self.context_get("chat_id"),
             self.context_get("message_id"),
@@ -430,38 +438,38 @@ class ConversationHandlerMixin(BotCommand):
             if key in self.context.chat_data:
                 del self.context.chat_data[key]
 
-    def _clean(self):
+    async def _clean(self):
         if self.context_exists("chat_id"):
-            self.context.bot.delete_message(
+            await self.context.bot.delete_message(
                 self.context_get("chat_id"),
                 self.context_get("message_id"),
             )
         self._clear_context()
 
-    def end(self, end_message=None):
+    async def end(self, end_message=None):
         if end_message is not None:
-            self.reply(end_message)
-        self._clean()
+            await self.reply(end_message)
+        await self._clean()
         logger.info(f"'{self}' conversation ends.")
-        raise DispatcherHandlerStop(ConversationHandler.END)
+        raise ApplicationHandlerStop(ConversationHandler.END)
 
     # TODO: Consider default state for next state (IIII)
     # Move state to second position and use as kwarg
     # TODO: Command users depend on this to create 'next' markups (II)
-    def next(self, state, new_message=None, reply_markup=None):
+    async def next(self, state, new_message=None, reply_markup=None):
         if new_message is not None:
-            self.edit_message(new_message, reply_markup=reply_markup)
+            await self.edit_message(new_message, reply_markup=reply_markup)
         logger.debug(
             f"'{self}' conversation changes state to {state} and stops the dispatcher."
         )
-        raise DispatcherHandlerStop(state)
+        raise ApplicationHandlerStop(state)
 
-    def cancel_handler(self):
+    async def cancel_handler(self):
         logger.info(f"Cancelling conversation '{self}'...")
-        return self.end("Ok.")
+        return await self.end("Ok.")
 
     def inline_handler(self, handler):
-        def _inline_handler_function(update, context):
+        async def _inline_handler_function(update, context):
             self.update = update
             self.context = context
             query = update.callback_query.data
@@ -469,12 +477,12 @@ class ConversationHandlerMixin(BotCommand):
                 logger.info(
                     f"Continuing conversation {self} after receiving inline selection '{query}'..."
                 )
-            return handler()
+            return await handler()
 
         return _inline_handler_function
 
     def paginator_handler(self):
-        def _paginator_handler_function(update, context):
+        async def _paginator_handler_function(update, context):
             self.update = update
             self.context = context
             query = update.callback_query.data
@@ -497,7 +505,7 @@ class ConversationHandlerMixin(BotCommand):
             sorted_items = list(paginator_settings["iterable"].sorted())
             item_count = len(sorted_items)
             if item_count == 0:
-                self.end(paginator_settings["empty_message"])
+                await self.end(paginator_settings["empty_message"])
 
             offset = self.context_get(f"pag-offset-{paginator}")
             inlines_offset = self.context_get(f"pag-inlines-offset-{paginator}")
@@ -511,7 +519,7 @@ class ConversationHandlerMixin(BotCommand):
                     f" with offset '{offset}'"
                     f" in conversation {self}."
                 )
-                raise ValueError(
+                await self.end(
                     f"No valid handlers for query '{query}'"
                     f" received for paginator '{paginator}'"
                     f" with offset '{offset}'"
@@ -580,7 +588,7 @@ class ConversationHandlerMixin(BotCommand):
 
                     self.context_set(f"pag-offset-{paginator}", new_offset)
                     self.context_set(f"pag-inlines-offset-{paginator}", item_offset)
-                    self.next(
+                    await self.next(
                         paginator_state,
                         paginator_settings["header"],
                         InlineKeyboardMarkup(keyboard),
@@ -606,14 +614,14 @@ class ConversationHandlerMixin(BotCommand):
         return _paginator_handler_function
 
     def contact_handler(self, handler):
-        def _contact_handler_function(update, context):
+        async def _contact_handler_function(update, context):
             self.update = update
             self.context = context
             contact = self.update.message.contact
             if contact.user_id is None:
                 logger.debug("Received a contact without a Telegram ID.")
             else:
-                return handler(self.update.message.contact)
+                return await handler(self.update.message.contact)
 
         return _contact_handler_function
 
@@ -694,7 +702,7 @@ class StateSet:
                 states[_id] = []
             states[_id].append(
                 MessageHandler(
-                    Filters.text,
+                    TEXT,
                     store_update_context_text_command(
                         getattr(self.command, self.texts[_id] + "_handler"),
                         self.command,
@@ -766,7 +774,7 @@ class StateSet:
                 states[_id] = []
             states[_id].append(
                 MessageHandler(
-                    Filters.contact,
+                    CONTACT,
                     self.command.contact_handler(
                         getattr(self.command, self.contacts[_id] + "_handler")
                     ),
