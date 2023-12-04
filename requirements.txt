@@ -1,5 +1,5 @@
 python-telegram-bot[rate-limiter,webhooks]~=20.6
-boto3~=1.28
+boto3~=1.33
 celery~=5.3
 redis~=5.0
 requests~=2.31
