@@ -3,4 +3,4 @@ boto3~=1.33
 celery~=5.3
 redis~=5.0
 requests~=2.31
-uvicorn[standard]~=0.24.0
+uvicorn[standard]~=0.25.0
