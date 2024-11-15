@@ -1,4 +1,4 @@
-FROM python:3.8.3-alpine
+FROM python:3.8.16-alpine3.17
 
 COPY requirements.txt /requirements.txt
 
@@ -13,6 +13,7 @@ RUN apk add --no-cache \
 		openssl-dev \
 		libev \
 		libev-dev \
+		rust \
 	&& pip3 install --no-cache-dir -r /requirements.txt \
 	&& apk del \
 		python3-dev \
