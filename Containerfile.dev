@@ -1,8 +1,3 @@
-FROM docker.io/python:3.11-slim
-
-COPY requirements.txt /bot/requirements.txt
+FROM localhost/fjfnaranjo-bot
 COPY requirements.dev.txt /bot/requirements.dev.txt
-
-RUN pip install \
-	-r /bot/requirements.txt \
-	-r /bot/requirements.dev.txt
+RUN pip install --no-cache-dir -r /bot/requirements.dev.txt

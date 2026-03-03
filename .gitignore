@@ -101,8 +101,5 @@ ENV/
 .mypy_cache/
 
 # fjfnaranjo-bot
-/nginx.conf
-/botdata
-/local
 /.pytest_cache/
 /docs/botdata
