@@ -10,11 +10,11 @@ build-dev:
 
 .PHONY: isort
 isort:
-	@$(run) isort fjfnaranjobot tests
+	@$(run) isort fjfnaranjobot tests tests_new
 
 .PHONY: black
 black:
-	@$(run) black fjfnaranjobot tests
+	@$(run) black fjfnaranjobot tests tests_new
 
 .PHONY: checks
 checks: isort black
@@ -22,14 +22,17 @@ checks: isort black
 .PHONY: test
 test:
 	@$(run) pytest tests/
+	@$(run) pytest tests_new/
 
 .PHONY: test-cov
 test-cov:
 	@$(run) pytest --cov=fjfnaranjobot --cov-report html tests/
+	@$(run) pytest --cov=fjfnaranjobot --cov-report html tests_new/
 
 .PHONY: test-cov-full
 test-cov-full:
 	@$(run) pytest --cov=fjfnaranjobot --cov=tests --cov-report html tests/
+	@$(run) pytest --cov=fjfnaranjobot --cov=tests_new --cov-report html tests_new/
 
 .PHONY: debug-bot
 debug-bot: bot-stop
