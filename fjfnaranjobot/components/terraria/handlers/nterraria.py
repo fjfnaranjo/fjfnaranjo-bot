@@ -1,3 +1,4 @@
+# TODO: Tests
 from fjfnaranjobot.command import BotCommand, CommandHandlerMixin
 from fjfnaranjobot.logging import getLogger
 
@@ -23,7 +24,6 @@ logger = getLogger(__name__)
 
 
 class Terraria(CommandHandlerMixin, BotCommand):
-    permissions = BotCommand.PermissionsEnum.ONLY_REAL
     command_name = "nterraria"
     description = "Manage Terraria servers."
     allow_chats = True
