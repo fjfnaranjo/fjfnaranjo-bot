@@ -455,6 +455,7 @@ class ConversationHandlerMixin(BotCommand):
         raise ApplicationHandlerStop(ConversationHandler.END)
 
     # TODO: Consider default state for next state (IIII)
+    # TODO: Also, consider the state inlines for next states and markup
     # Move state to second position and use as kwarg
     # TODO: Command users depend on this to create 'next' markups (II)
     async def next(self, state, new_message=None, reply_markup=None):
