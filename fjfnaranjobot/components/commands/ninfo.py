@@ -1,3 +1,4 @@
+# TODO: Tests
 from fjfnaranjobot.bot import command_list
 from fjfnaranjobot.command import BotCommand, CommandHandlerMixin
 from fjfnaranjobot.logging import getLogger

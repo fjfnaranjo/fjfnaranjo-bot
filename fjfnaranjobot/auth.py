@@ -139,6 +139,14 @@ class _FriendsProxy(MutableSet):
                 (user.id, user.username),
             )
 
+    def get_by_id(self, id_):
+        logger.debug(f"Getting user with id {id_} as a friend.")
+        friend = sqldb.execute_and_fetch_one(
+            "SELECT id, username FROM friends WHERE id=?",
+            (id_,),
+        )
+        return User(friend[0], friend[1]) if friend else None
+
     def discard(self, user):
         logger.debug(
             f"Removing user with id {user.id} and username {user.username} as a friend."

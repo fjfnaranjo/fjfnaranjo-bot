@@ -6,63 +6,49 @@ from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
-#
-# Config conversation states
-#
-# START --> GET_VAR --> end
-#       --> SET_VAR --> SET_VALUE --> end
-#       --> DEL_VAR --> end
-#
-
 
 class Config(ConversationHandlerMixin, BotCommand):
     permissions = BotCommand.PermissionsEnum.ONLY_OWNER
     command_name = "nconfig"
     description = "Edit bot configuration."
-    initial_text = (
-        "You can get the value for a configuration key, "
-        "set it of change it if exists, or clear the key. "
-        "You can also cancel the config command at any time."
-    )
+    clean_chat_data_keys = ("config_del_key",)
 
-    class StatesEnum:
-        GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(1, 5)
+    GET_VAR, SET_VAR, SET_VALUE, DEL_VAR = range(1, 5)
 
-    def __init__(self):
-        super().__init__()
+    def build_states(self, builder):
+        """
+        START --> GET_VAR --> end(show)
+              --> SET_VAR --> SET_VALUE --> end(set)
+              --> DEL_VAR --> end(delete)
+        """
+        with builder(self.START) as state:
+            state.message = (
+                "You can get the value for a configuration key, "
+                "set it of change it if exists, or clear the key. "
+                "You can also cancel the config command at any time."
+            )
+            state.add_jump("Get", self.GET_VAR)
+            state.add_jump("Set", self.SET_VAR)
+            state.add_jump("Del", self.DEL_VAR)
 
-        # TODO: Consider default state for next state (I)
-        # add_inline_default_next()?
+        with builder(self.GET_VAR) as state:
+            state.message = "Tell me what key do you want to get."
+            state.text_handler = "get_var"
 
-        self.states.add_cancel_inline(ConversationHandlerMixin.START)
-        self.states.add_inline(ConversationHandlerMixin.START, "get", "Get")
-        self.states.add_inline(ConversationHandlerMixin.START, "set", "Set")
-        self.states.add_inline(ConversationHandlerMixin.START, "del", "Del")
+        with builder(self.SET_VAR) as state:
+            state.message = "Tell me what key do you want to set."
+            state.text_handler = "set_var"
 
-        self.states.add_cancel_inline(Config.StatesEnum.GET_VAR)
-        self.states.add_text(Config.StatesEnum.GET_VAR, "get_var")
+        with builder(self.SET_VALUE) as state:
+            state.text_handler = "set_value"
 
-        self.states.add_cancel_inline(Config.StatesEnum.SET_VAR)
-        self.states.add_text(Config.StatesEnum.SET_VAR, "set_var")
+        with builder(self.DEL_VAR) as state:
+            state.message = "Tell me what key do you want to clear."
+            state.text_handler = "del_var"
 
-        self.states.add_cancel_inline(Config.StatesEnum.DEL_VAR)
-        self.states.add_text(Config.StatesEnum.DEL_VAR, "del_var")
-
-        self.states.add_cancel_inline(Config.StatesEnum.SET_VALUE)
-        self.states.add_text(Config.StatesEnum.SET_VALUE, "set_value")
-
-    async def get_handler(self):
-        logger.debug("Requesting key name to get its value.")
-        await self.next(
-            Config.StatesEnum.GET_VAR,
-            "Tell me what key do you want to get.",
-            self.markup.cancel_inline,
-        )
-
-    async def get_var_handler(self):
-        key = self.update.message.text
-        shown_key = quote_value_for_log(key)
-        logger.debug(f"Received key name {shown_key}.")
+    async def get_var_handler(self, key):
+        log_key = quote_value_for_log(key)
+        logger.debug(f"Received key name {log_key}.")
         try:
             result = config[key]
         except (ValueError, KeyError) as e:
@@ -73,22 +59,13 @@ class Config(ConversationHandlerMixin, BotCommand):
                 logger.debug("Key doesn't exists.")
                 await self.end(f"The key '{key}' doesn't exists.")
         else:
-            shown_result = quote_value_for_log(result)
-            logger.debug(f"Replying with result {shown_result}.")
+            log_result = quote_value_for_log(result)
+            logger.debug(f"Replying with result {log_result}.")
             await self.end(f"The value for key '{key}' is '{result}'.")
 
-    async def set_handler(self):
-        logger.debug("Requesting key name to set its value.")
-        await self.next(
-            Config.StatesEnum.SET_VAR,
-            "Tell me what key do you want to set.",
-            reply_markup=self.markup.cancel_inline,
-        )
-
-    async def set_var_handler(self):
-        key = self.update.message.text
-        shown_key = quote_value_for_log(key)
-        logger.debug(f"Received key name {shown_key}.")
+    async def set_var_handler(self, key):
+        log_key = quote_value_for_log(key)
+        logger.debug(f"Received key name {log_key}.")
         try:
             config[key]
         except ValueError:
@@ -96,35 +73,25 @@ class Config(ConversationHandlerMixin, BotCommand):
             await self.end(f"The key '{key}' is not a valid key.")
         except KeyError:
             pass
-        self.context_set("key", key)
+        self.context.chat_data["config_del_key"] = key
         logger.debug("Requesting value to set the key.")
         await self.next(
-            Config.StatesEnum.SET_VALUE,
+            self.SET_VALUE,
             f"Tell me what value do you want to put in the key '{key}'.",
-            reply_markup=self.markup.cancel_inline,
         )
 
-    async def set_value_handler(self):
-        value = self.update.message.text
-        shown_value = quote_value_for_log(value)
-        logger.debug(f"Received value {shown_value}.")
-        key = self.context_del("key")
+    async def set_value_handler(self, value):
+        log_value = quote_value_for_log(value)
+        logger.debug(f"Received value {log_value}.")
+        key = self.context.chat_data.pop("config_del_key")
+        log_key = quote_value_for_log(key)
         config[key] = value
-        logger.debug(f"Stored {shown_value} in key '{key}'.")
+        logger.debug(f"Stored {log_value} in key {log_key}.")
         await self.end("I'll remember that.")
 
-    async def del_handler(self):
-        logger.debug("Requesting key name to clear its value.")
-        await self.next(
-            Config.StatesEnum.DEL_VAR,
-            "Tell me what key do you want to clear.",
-            reply_markup=self.markup.cancel_inline,
-        )
-
-    async def del_var_handler(self):
-        key = self.update.message.text
-        shown_key = quote_value_for_log(key)
-        logger.debug(f"Received key name {shown_key}.")
+    async def del_var_handler(self, key):
+        log_key = quote_value_for_log(key)
+        logger.debug(f"Received key name {log_key}.")
         try:
             del config[key]
         except (ValueError, KeyError) as e:
@@ -135,5 +102,5 @@ class Config(ConversationHandlerMixin, BotCommand):
                 logger.debug("Key doesn't exists.")
                 await self.end(f"The key '{key}' doesn't exists.")
         else:
-            logger.debug(f"Deleting config with key '{key}'.")
+            logger.debug(f"Deleting config with key {log_key}.")
             await self.end("I'll forget that.")

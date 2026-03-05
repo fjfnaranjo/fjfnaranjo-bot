@@ -8,77 +8,67 @@ from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
-#
-# Friends conversation states
-#
-# START --> LIST       --> LIST
-#                      --> DEL_FRIEND_CONFIRM --> end
-#                      --> end
-#       --> ADD_FRIEND --> end
-#                      --> ADD_FRIEND_ID_NAME --> end
-#       --> DEL_FRIEND --> end
-#
-
 
 class Friends(ConversationHandlerMixin, BotCommand):
     permissions = BotCommand.PermissionsEnum.ONLY_OWNER
     command_name = "nfriends"
     description = "Manage friends."
-    initial_text = (
-        "You can list all your friends. "
-        "Also, you can add or remove Telegram contacts and IDs to the list. "
-        "You can also cancel the friends command at any time."
+    clean_chat_data_keys = (
+        "friends_delete_user",
+        "friends_add_user_id",
     )
-    clean_keys = ["delete_user"]
 
-    class StatesEnum:
-        LIST, DEL_FRIEND_CONFIRM, ADD_FRIEND, DEL_FRIEND, ADD_FRIEND_ID_NAME = range(
-            1, 6
-        )
+    LIST, DEL_FRIEND_CONFIRM, ADD_FRIEND, ADD_FRIEND_ID_NAME, DEL_FRIEND = range(1, 6)
 
-    def __init__(self):
-        super().__init__()
+    def build_states(self, builder):
+        """
+        START --> LIST*      --> DEL_FRIEND_CONFIRM --> end(delete)
+              --> ADD_FRIEND --> ADD_FRIEND_ID_NAME --> end(add)
+              --> DEL_FRIEND --> end(delete)
+        """
+        with builder(self.START) as state:
+            state.message = (
+                "You can list all your friends. "
+                "Also, you can add or remove Telegram contacts and IDs to the list. "
+                "You can also cancel the friends command at any time."
+            )
+            state.add_jump("List", self.LIST)
+            state.add_jump("Add", self.ADD_FRIEND)
+            state.add_jump("Delete", self.DEL_FRIEND)
 
-        # TODO: Consider default state for next state (II)
-        # add_inline_default_next()?
+        with builder(self.LIST) as state:
+            state.message = (
+                "Your friends will be listed below in pages. "
+                "You can request the next page (if apply) or "
+                "select a friend if you want to remove it."
+            )
+            state.add_paginator(
+                friends,
+                lambda item: item.id,
+                lambda item: item.username,
+                "You have no friends.",
+                "list_del_confirm",
+            )
 
-        self.states.add_cancel_inline(ConversationHandlerMixin.START)
-        self.states.add_paginator(
-            ConversationHandlerMixin.START,
-            Friends.StatesEnum.LIST,
-            "List",
-            friends,
-            "Your friends will be listed below in pages. "
-            "You can request the next page (if apply) or "
-            "select a friend if you want to remove it.",
-            "You have no friends.",
-            lambda item: item.username,
-            "list_del_confirm",
-            show_cancel_button=True,
-        )
-        self.states.add_inline(ConversationHandlerMixin.START, "add", "Add")
-        self.states.add_inline(ConversationHandlerMixin.START, "del", "Delete")
+        with builder(self.DEL_FRIEND_CONFIRM) as state:
+            state.add_inline("Confirm", "list_del_confirmed")
 
-        self.states.add_cancel_inline(Friends.StatesEnum.LIST)
+        with builder(self.ADD_FRIEND) as state:
+            state.message = (
+                "Send me the contact of the friend you want to add. Or its id."
+            )
+            state.contact_handler = "add_friend"
+            state.text_handler = "add_friend_id"
 
-        self.states.add_cancel_inline(Friends.StatesEnum.ADD_FRIEND)
-        self.states.add_contact(Friends.StatesEnum.ADD_FRIEND, "add_friend")
-        self.states.add_text(Friends.StatesEnum.ADD_FRIEND, "add_friend_id")
+        with builder(self.ADD_FRIEND_ID_NAME) as state:
+            state.text_handler = "add_friend_id_name"
 
-        self.states.add_cancel_inline(Friends.StatesEnum.ADD_FRIEND_ID_NAME)
-        self.states.add_text(
-            Friends.StatesEnum.ADD_FRIEND_ID_NAME, "add_friend_id_name"
-        )
-
-        self.states.add_cancel_inline(Friends.StatesEnum.DEL_FRIEND)
-        self.states.add_contact(Friends.StatesEnum.DEL_FRIEND, "del_friend")
-        self.states.add_text(Friends.StatesEnum.DEL_FRIEND, "del_friend_id")
-
-        # TODO: Consider generic 'confirm' state
-        self.states.add_cancel_inline(Friends.StatesEnum.DEL_FRIEND_CONFIRM)
-        self.states.add_inline(
-            Friends.StatesEnum.DEL_FRIEND_CONFIRM, "list_del_confirmed", "Confirm"
-        )
+        with builder(self.DEL_FRIEND) as state:
+            state.message = (
+                "Send me the contact of the friend you want to remove. Or its id."
+            )
+            state.contact_handler = "del_friend"
+            state.text_handler = "del_friend_id"
 
     async def list_del_confirm_handler(self, item):
         item_id = item.id
@@ -90,40 +80,23 @@ class Friends(ConversationHandlerMixin, BotCommand):
         )
 
         user_to_delete = User(item_id, item_caption)
-        self.context.chat_data["delete_user"] = (
+        self.context.chat_data["friends_delete_user"] = (
             user_to_delete.id,
             user_to_delete.username,
         )
 
-        confirm_markup = InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("Confirm", callback_data="list_del_confirmed")],
-                [InlineKeyboardButton("Cancel", callback_data="cancel")],
-            ]
-        )
-
         await self.next(
-            Friends.StatesEnum.DEL_FRIEND_CONFIRM,
+            self.DEL_FRIEND_CONFIRM,
             f"Are you sure that you want to remove '{user_to_delete.username}' as a friend.",
-            confirm_markup,
         )
 
     async def list_del_confirmed_handler(self):
         logger.debug("Received confirmation for deletion.")
 
-        delete_user = User(*self.context.chat_data["delete_user"])
-        del self.context.chat_data["delete_user"]
+        delete_user = User(*self.context.chat_data.pop("friends_delete_user"))
         friends.discard(delete_user)
 
-        await self.end("Ok.")
-
-    async def add_handler(self):
-        logger.debug("Requesting contact to add as a friend.")
-        await self.next(
-            Friends.StatesEnum.ADD_FRIEND,
-            "Send me the contact of the friend you want to add. Or its id.",
-            self.markup.cancel_inline,
-        )
+        await self.end()
 
     async def add_friend_handler(self, contact):
         contact_first_name = getattr(contact, "first_name", "")
@@ -137,11 +110,11 @@ class Friends(ConversationHandlerMixin, BotCommand):
         friends.add(user)
         await self.end(f"Added {user.username} as a friend.")
 
-    async def add_friend_id_handler(self):
+    async def add_friend_id_handler(self, text):
         try:
-            (user_id,) = self.update.message.text.split()
+            (user_id,) = text.split()
         except ValueError:
-            shown_id = quote_value_for_log(self.update.message.text)
+            shown_id = quote_value_for_log(text)
             logger.debug(f"Received and invalid id {shown_id} trying to add a friend.")
             await self.end("That's not a contact nor a single valid id.")
 
@@ -156,38 +129,28 @@ class Friends(ConversationHandlerMixin, BotCommand):
                 )
                 await self.end("That's not a contact nor a valid id.")
             else:
-                self.context.chat_data["add_user_id_int"] = user_id_int
+                self.context.chat_data["friends_add_user_id"] = user_id_int
                 await self.next(
-                    Friends.StatesEnum.ADD_FRIEND_ID_NAME,
-                    f"Send me a name for the contact.",
-                    self.markup.cancel_inline,
+                    self.ADD_FRIEND_ID_NAME,
+                    "Send me a name for the contact.",
                 )
 
-    async def add_friend_id_name_handler(self):
+    async def add_friend_id_name_handler(self, text):
         logger.debug("Received contact username.")
         try:
-            (username,) = self.update.message.text.split()
+            (username,) = text.split()
         except ValueError:
-            shown_username = quote_value_for_log(self.update.message.text)
+            shown_username = quote_value_for_log(text)
             logger.debug(
                 f"Received and invalid username {shown_username} trying to add a friend by id."
             )
             await self.end("That's not a valid contact username.")
 
-        user_id_int = self.context.chat_data["add_user_id_int"]
-        del self.context.chat_data["add_user_id_int"]
+        user_id_int = self.context.chat_data.pop("friends_add_user_id")
         user = User(user_id_int, username)
         logger.debug(f"Adding {user.username} as a friend.")
         friends.add(user)
         await self.end(f"Added {user.username} as a friend.")
-
-    async def del_handler(self):
-        logger.debug("Requesting contact to remove as a friend.")
-        await self.next(
-            Friends.StatesEnum.DEL_FRIEND,
-            "Send me the contact of the friend you want to remove. Or its id.",
-            self.markup.cancel_inline,
-        )
 
     async def del_friend_handler(self, contact):
         contact_first_name = getattr(contact, "first_name", "")
@@ -212,11 +175,11 @@ class Friends(ConversationHandlerMixin, BotCommand):
 
             await self.end(f"{user.username} isn't a friend.")
 
-    async def del_friend_id_handler(self):
+    async def del_friend_id_handler(self, text):
         try:
-            (user_id,) = self.update.message.text.split()
+            (user_id,) = text.split()
         except ValueError:
-            shown_id = quote_value_for_log(self.update.message.text)
+            shown_id = quote_value_for_log(text)
             logger.debug(
                 f"Received and invalid id {shown_id} trying to remove a friend."
             )

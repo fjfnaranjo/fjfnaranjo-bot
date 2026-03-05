@@ -14,7 +14,9 @@ Any command will need a 'command handler mixin'. This mixins connect the command
 to the updates handlers in python-telegram-bot . See each *Mixin docstring.
 """
 
+from contextlib import contextmanager
 from functools import wraps
+from math import ceil
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
 from telegram.ext import (
@@ -33,6 +35,7 @@ from telegram.ext.filters import COMMAND, CONTACT, TEXT, ChatType, Entity
 from fjfnaranjobot.auth import User, friends, get_owner_id
 from fjfnaranjobot.common import (
     CANCEL_CAPTION,
+    DEFAULT_PAGE_SIZE,
     NEXT_PAGE_CAPTION,
     RESTART_PAGINATOR_CAPTION,
     quote_value_for_log,
@@ -42,48 +45,21 @@ from fjfnaranjobot.logging import getLogger
 logger = getLogger(__name__)
 
 
-class BotCommandError(Exception):
+class BotCommandError(RuntimeError):
     pass
 
 
 # TODO: Test (and consider adding _ in lots of members...)
 # TODO: Instead of requiring class+mixin we can create the pairs ourselves
-
-
-# TODO: This probably shoul be removed
-def store_update_context(f):
-    @wraps(f)
-    def store_update_context_wrapper(instance, update, context, *args, **kwargs):
-        instance.update = update
-        instance.context = context
-        return f(instance, *args, **kwargs)
-
-    return store_update_context_wrapper
-
-
-# TODO: This decorator can be avoided if implementing a text_handler method
-def store_update_context_text_command(f, command, query):
-    @wraps(f)
-    def store_update_context_text_command_wrapper(update, context, *args, **kwargs):
-        command.update = update
-        command.context = context
-        logger.info(
-            f"Continuing conversation {command} after receiving text selection '{query}'..."
-        )
-        return f(*args, **kwargs)
-
-    return store_update_context_text_command_wrapper
-
-
 class Command:
     """Base command for all the bot commands.
 
     Parameters:
-          - dispatcher_group: python-telegram-bot priority group. See 'group' in
-                   telegram.ext.dispatcher.Dispatcher.add_handler() .
-          - permissions: Who can use this command (anyone, non-bot users,
-                        friends or the owner).
-          - allow_chats: If the command will be allowed in group chats.
+      - dispatcher_group: python-telegram-bot priority group. See 'group' in
+                          telegram.ext.dispatcher.Dispatcher.add_handler() .
+      - permissions: Who can use this command (anyone, non-bot users,
+                     friends or the owner).
+      - allow_chats: If the command will be allowed in group chats.
     """
 
     class PermissionsEnum:
@@ -100,6 +76,7 @@ class Command:
     def __str__(self):
         return f"{self.__class__.__name__}"
 
+    # TODO: This depends on classes down the hierarchy. Use cooperation.
     @staticmethod
     def extract_commands(handler):
         commands = []
@@ -147,7 +124,7 @@ class Command:
         if user is None:
             logger.warning(
                 "Message received with no user"
-                f" trying to access an ONLY_REAL command."
+                " trying to access an ONLY_REAL command."
                 f" Message text: {update_text} ."
             )
             return False
@@ -155,7 +132,7 @@ class Command:
             logger.warning(
                 "Message received from"
                 f" bot with username {user.username} and id {user.id}"
-                f" trying to access an ONLY_REAL command."
+                " trying to access an ONLY_REAL command."
                 f" Message text: {update_text} ."
             )
             return False
@@ -169,7 +146,7 @@ class Command:
             logger.warning(
                 "Message received from"
                 f" user {user.username} with id {user.id}"
-                f" trying to access an ONLY_OWNER command."
+                " trying to access an ONLY_OWNER command."
                 f" Message text: {update_text} ."
             )
             return False
@@ -184,7 +161,7 @@ class Command:
             logger.warning(
                 "Message received from"
                 f" user {user.username} with id {user.id}"
-                f" trying to access an ONLY_FRIENDS command."
+                " trying to access an ONLY_FRIENDS command."
                 f" Message text: {update_text} ."
             )
             return False
@@ -249,10 +226,11 @@ class Command:
         )
 
     async def entrypoint(self):
-        raise NotImplementedError()
+        raise NotImplementedError(f"Command {self} doesn't have an entrypoint.")
 
-    @store_update_context
-    async def handle_command(self):
+    async def handle_command(self, update, context):
+        self.update = update
+        self.context = context
         if not self.filter_command():
             return
         logger.info(f"Calling command entrypoint in {self}...")
@@ -268,6 +246,7 @@ class Command:
             )
 
 
+# TODO: Maybe call this FallbackHandler?
 class AnyHandler(BaseHandler):
     """Extra python-telegram-bot handler to select any update."""
 
@@ -301,6 +280,7 @@ class AnyHandlerMixin(Command):
         return super().handlers + new_handlers
 
 
+# TODO: Remove dev/prod distinction
 class BotCommand(Command):
     """Command notified to BotFather.
 
@@ -309,6 +289,7 @@ class BotCommand(Command):
     conversations.
 
     Parameters:
+      - command_name: Name of the command used after the / .
       - description: Little text used in the Telegram commands interface.
       - is_(dev|prod)_command: Filter to determine if the commands is meant to
                                be exposed in the dev/prod versions of the bot.
@@ -323,10 +304,13 @@ class BotCommand(Command):
 class CommandHandlerMixin(BotCommand):
     """Mixin to handle simple and single commands."""
 
+    def __init__(self):
+        super().__init__()
+        if self.command_name is None:
+            raise BotCommandError(f"Command name not defined for {self}.")
+
     @property
     def handlers(self):
-        if self.command_name is None:
-            raise BotCommandError(f"Command name not defined for {self}")
         new_handlers = [
             (
                 self.dispatcher_group,
@@ -341,24 +325,40 @@ class CommandHandlerMixin(BotCommand):
         return super().handlers + new_handlers
 
 
-# TODO: Auto insert cancel inline as command option (but allow manual insert) (I)
 class ConversationHandlerMixin(BotCommand):
     """Mixin to handle python-telegram-bot conversation."""
 
     START = 0
 
-    initial_text = "Conversation"
-    clean_keys = []
+    always_cancelable = True
 
-    _remembered_keys = []
-    _paginators = {}
+    clean_chat_data_keys = []
+    clean_user_data_keys = []
+    clean_bot_data_keys = []
 
     def __init__(self):
         super().__init__()
         if self.command_name is None:
-            raise BotCommandError(f"Conversation command name not defined")
-        self.states = StateSet(self)
-        self.markup = MarkupBuilder()
+            raise BotCommandError(f"Conversation command name not defined for {self}.")
+        self.states = {}
+        self.build_states(self.state_builder)
+        if self.START not in self.states.keys():
+            raise BotCommandError(f"Conversation START state not defined for {self}.")
+        self._clear_context()
+
+    def build_states(self, builder):
+        raise NotImplementedError(
+            f"Conversation states builder not implemented for {self}."
+        )
+
+    @contextmanager
+    def state_builder(self, state_id):
+        new_state = State()
+        new_state.id = state_id
+        if self.always_cancelable:
+            new_state.cancelable = True
+        yield new_state
+        self.states[state_id] = new_state
 
     @property
     def handlers(self):
@@ -367,7 +367,7 @@ class ConversationHandlerMixin(BotCommand):
                 self.dispatcher_group,
                 ConversationHandler(
                     [CommandHandler(self.command_name, self.start_conversation)],
-                    self.states.graph,
+                    self.states_handlers,
                     [AnyHandler(self.fallback)],
                 ),
                 self.__class__.__name__,
@@ -375,29 +375,90 @@ class ConversationHandlerMixin(BotCommand):
         ]
         return super().handlers + new_handlers
 
-    @store_update_context
-    async def start_conversation(self):
+    @property
+    def states_handlers(self):
+        states_handlers = {}  # state_id: [handler, ...]
+
+        for state_id in self.states:
+            states_handlers[state_id] = []
+            state = self.states[state_id]
+            if state.cancelable:
+                states_handlers[state_id].append(
+                    CallbackQueryHandler(
+                        self.cancel_handler,
+                        pattern=rf"^cancel$",
+                    )
+                )
+            if state.text_handler:
+                states_handlers[state_id].append(
+                    MessageHandler(
+                        TEXT,
+                        self.text_handler(
+                            getattr(self, f"{state.text_handler}_handler")
+                        ),
+                    )
+                )
+            if state.contact_handler:
+                states_handlers[state_id].append(
+                    MessageHandler(
+                        CONTACT,
+                        self.contact_handler(
+                            getattr(self, f"{state.contact_handler}_handler")
+                        ),
+                    )
+                )
+
+            for inline in state.inlines:
+                states_handlers[state_id].append(
+                    CallbackQueryHandler(
+                        self.inline_handler(getattr(self, f"{inline.handler}_handler")),
+                        pattern=rf"^{inline.handler}$",
+                    )
+                )
+
+            for jump in state.jumps:
+                states_handlers[state_id].append(
+                    CallbackQueryHandler(
+                        self.jump_handler,
+                        pattern=rf"^jump-.*$",
+                    )
+                )
+
+            if state.paginator is not None:
+                states_handlers[state_id].append(
+                    CallbackQueryHandler(
+                        self.paginator_handler, pattern=rf"^pag-{state_id}-.*$"
+                    )
+                )
+
+        return states_handlers
+
+    async def start_conversation(self, update, context):
+        self.update = update
+        self.context = context
         if not self.filter_command():
             return
-        logger.info(f"Starting conversation '{self}'...")
+        logger.info(f"Starting conversation {self}...")
         conversation_message = await self.reply(
-            self.initial_text,
-            # TODO: This call should be something like self.states.start_markup()
-            reply_markup=self.markup.from_start(
-                self.states.inlines,
-                self.states.paginators_inline_proxies,
+            (
+                self.states[self.START].message
+                if self.states[self.START].message is not None
+                else f"Starting conversation '{self.command_name}'."
             ),
+            reply_markup=self.markup_from_state(self.START),
         )
-        self.context_set("chat_id", conversation_message.chat.id)
-        self.context_set("message_id", conversation_message.message_id)
-        await self.next(self.START)
+        self.context.chat_data["chat_id"] = conversation_message.chat.id
+        self.context.chat_data["message_id"] = conversation_message.message_id
+        raise ApplicationHandlerStop(self.START)
 
-    @store_update_context
-    async def fallback(self):
+    async def fallback(self, update, context):
+        self.update = update
+        self.context = context
         warning_text = f"Conversation {self} fallback handler reached."
         try:
             query_data = self.update.callback_query.data
-            warning_text += f" Callback query data was '{query_data}'."
+            quoted = quote_value_for_log(query_data)
+            warning_text += f" Callback query data was {quoted}."
         except AttributeError:
             pass
         logger.warning(warning_text)
@@ -406,69 +467,105 @@ class ConversationHandlerMixin(BotCommand):
     async def edit_message(self, text, reply_markup=None):
         await self.context.bot.edit_message_text(
             text,
-            self.context_get("chat_id"),
-            self.context_get("message_id"),
+            self.context.chat_data.get("chat_id"),
+            self.context.chat_data.get("message_id"),
             reply_markup=reply_markup,
         )
 
-    def context_set(self, key, value):
-        old_value = (
-            self.context.chat_data.get(key) if key in self.context.chat_data else None
-        )
-        if key not in self._remembered_keys:
-            self._remembered_keys.append(key)
-        self.context.chat_data[key] = value
-        return old_value
-
-    def context_exists(self, key):
-        return key in self.context.chat_data
-
-    def context_get(self, key, default=None):
-        return self.context.chat_data.get(key, default)
-
-    def context_del(self, key):
-        old_value = self.context.chat_data[key]
-        del self.context.chat_data[key]
-        if key in self._remembered_keys:
-            self._remembered_keys.remove(key)
-        return old_value
-
     def _clear_context(self):
-        for key in self._remembered_keys + self.clean_keys:
-            if key in self.context.chat_data:
-                del self.context.chat_data[key]
+        if self.context is not None:
+            for state in self.states:
+                current_page_key = f"pag-{state}-current-page"
+                if current_page_key in self.context.chat_data:
+                    del self.context.chat_data[current_page_key]
+                last_ids_key = f"pag-{state}-last-ids"
+                if last_ids_key in self.context.chat_data:
+                    del self.context.chat_data[last_ids_key]
+
+            for key in self.clean_chat_data_keys:
+                if key in self.context.chat_data:
+                    del self.context.chat_data[key]
+            for key in self.clean_user_data_keys:
+                if key in self.context.user_data:
+                    del self.context.user_data[key]
+            for key in self.clean_bot_data_keys:
+                if key in self.context.bot_data:
+                    del self.context.bot_data[key]
 
     async def _clean(self):
-        if self.context_exists("chat_id"):
-            await self.context.bot.delete_message(
-                self.context_get("chat_id"),
-                self.context_get("message_id"),
-            )
+        if self.context is not None:
+            if "chat_id" in self.context.chat_data:
+                await self.context.bot.delete_message(
+                    self.context.chat_data.pop("chat_id"),
+                    self.context.chat_data.pop("message_id"),
+                )
         self._clear_context()
 
-    # TODO: end_message default = "Ok."
-    async def end(self, end_message=None):
+    async def end(self, end_message="Ok."):
         if end_message is not None:
             await self.reply(end_message)
         await self._clean()
-        logger.info(f"'{self}' conversation ends.")
+        logger.info(f"{self} conversation ends.")
         raise ApplicationHandlerStop(ConversationHandler.END)
 
     # TODO: Consider default state for next state (IIII)
     # TODO: Also, consider the state inlines for next states and markup
     # Move state to second position and use as kwarg
     # TODO: Command users depend on this to create 'next' markups (II)
-    async def next(self, state, new_message=None, reply_markup=None):
-        if new_message is not None:
-            await self.edit_message(new_message, reply_markup=reply_markup)
-        logger.debug(
-            f"'{self}' conversation changes state to {state} and stops the dispatcher."
-        )
-        raise ApplicationHandlerStop(state)
+    async def next(self, next_state_id, new_message=None, reply_markup=None):
+        has_to_edit = False
+        try:
+            new_state = self.states[next_state_id]
+        except KeyError:
+            raise BotCommandError(
+                f"State ID {next_state_id} doesn't exists for {self}."
+            )
 
-    async def cancel_handler(self):
-        logger.info(f"Cancelling conversation '{self}'...")
-        return await self.end("Ok.")
+        if new_message is not None:
+            has_to_edit = True
+        elif new_state.message is not None:
+            has_to_edit = True
+            new_message = new_state.message
+
+        if reply_markup is not None:
+            has_to_edit = True
+        else:
+            reply_markup = self.markup_from_state(next_state_id)
+
+        if has_to_edit:
+            await self.edit_message(new_message, reply_markup=reply_markup)
+
+        logger.debug(
+            f"{self} conversation changes state to {next_state_id} and stops the dispatcher."
+        )
+
+        raise ApplicationHandlerStop(next_state_id)
+
+    async def cancel_handler(self, update, context):
+        self.update = update
+        self.context = context
+        logger.info(f"Cancelling conversation {self}...")
+        await self.end("Ok.")
+
+    def text_handler(self, handler):
+        async def _text_handler_function(update, context):
+            self.update = update
+            self.context = context
+            return await handler(self.update.message.text)
+
+        return _text_handler_function
+
+    def contact_handler(self, handler):
+        async def _contact_handler_function(update, context):
+            self.update = update
+            self.context = context
+            contact = self.update.message.contact
+            if contact.user_id is None:
+                logger.debug("Received a contact without a Telegram ID.")
+            else:
+                return await handler(self.update.message.contact)
+
+        return _contact_handler_function
 
     def inline_handler(self, handler):
         async def _inline_handler_function(update, context):
@@ -483,339 +580,228 @@ class ConversationHandlerMixin(BotCommand):
 
         return _inline_handler_function
 
-    def paginator_handler(self):
-        async def _paginator_handler_function(update, context):
-            self.update = update
-            self.context = context
-            query = update.callback_query.data
+    async def jump_handler(self, update, context):
+        self.update = update
+        self.context = context
+        query = update.callback_query.data
+        # 'jump-0' => 0
+        state_id = int(query[5:])
+        logger.info(f"Continuing conversation {self} jumping to state {state_id}...")
+        await self.next(state_id)
 
-            # 'pag-0-4' => ("0", "4")
-            paginator, selection = (
-                query[4 : query.find("-", 4)],
-                query[query.find("-", 4) + 1 :],
+    async def paginator_handler(self, update, context):
+        self.update = update
+        self.context = context
+
+        query = update.callback_query.data
+        # 'pag-0-4' => (0, "4")
+        # 'pag-0-next' => (0, "next")
+        state_id, selection = (
+            int(query[4 : query.find("-", 4)]),
+            query[query.find("-", 4) + 1 :],
+        )
+
+        paginator = self.states[state_id].paginator
+        if paginator.count == 0:
+            await self.end(self.empty_message)
+
+        current_page = self.context.chat_data.pop(f"pag-{state_id}-current-page", 0)
+
+        if selection == "next":
+            logger.info(
+                f"Handling next page requested for paginator {state_id}"
+                f" in conversation {self} with last page {current_page}..."
             )
-            paginator_state = int(paginator)
-            next_selected, selected_index = (
-                (True, -999) if selection == "next" else (False, int(selection))
-            )
 
-            paginator_settings = self.states.paginator_settings(paginator_state)
-            get_caption_func = paginator_settings["get_caption_func"]
-
-            page_size = paginator_settings["page_size"]
-
-            sorted_items = list(paginator_settings["iterable"].sorted())
-            item_count = len(sorted_items)
-            if item_count == 0:
-                await self.end(paginator_settings["empty_message"])
-
-            offset = self.context_get(f"pag-offset-{paginator}")
-            inlines_offset = self.context_get(f"pag-inlines-offset-{paginator}")
-            item_offset = offset if offset is not None else 0
-            item_count_in_page = min(page_size, item_count - item_offset)
-
-            if not next_selected and selected_index >= item_count_in_page:
-                logger.warning(
-                    f"Invalid selection '{query}'"
-                    f" received for paginator '{paginator}'"
-                    f" with offset '{offset}'"
-                    f" in conversation {self}."
-                )
-                await self.end(
-                    f"No valid handlers for query '{query}'"
-                    f" received for paginator '{paginator}'"
-                    f" with offset '{offset}'"
-                    f" in conversation {self}."
-                )
-
+            if paginator.has_next_page(current_page):
+                current_page += 1
             else:
+                current_page = 0
+            self.context.chat_data[f"pag-{state_id}-current-page"] = current_page
+
+            await self.next(state_id)
+
+        else:
+            logger.info(
+                f"Handling selection {selection}"
+                f" received for paginator {state_id}"
+                f" in conversation {self}..."
+            )
+
+            last_ids = self.context.chat_data.pop(f"pag-{state_id}-last-ids")
+            current_ids = ",".join(
+                str(paginator.id_func(item))
+                for item in paginator.items_in_page(current_page)
+            )
+            if not last_ids == current_ids:
                 logger.info(
-                    f"Handling page requested for paginator '{paginator}'"
-                    f" in conversation {self} with offset {item_offset}..."
+                    f"Resetting paginator {state_id}" f" in conversation {self}..."
                 )
+                self.context.chat_data[f"pag-{state_id}-current-page"] = 0
+                await self.next(state_id)
 
-                show_button = None
-                if item_count <= page_size:
-                    new_offset = 0
-                else:
-                    pending_pages = (item_count - item_offset) // page_size
-                    if pending_pages > 0:
-                        show_button = "next"
-                        new_offset = item_offset + page_size
-                    else:
-                        show_button = "restart"
-                        new_offset = 0
+            # TODO: Don't impose _handler sufix to the framework user
+            await getattr(self, paginator.handler + "_handler")(
+                paginator.iterable.get_by_id(selection)
+            )
 
-                items_in_page = sorted_items[
-                    item_offset : item_offset + item_count_in_page
+    def markup_from_state(self, state_id):
+        state = self.states[state_id]
+
+        markup = []
+
+        inlines_row = list(
+            [
+                InlineKeyboardButton(inline.caption, callback_data=inline.handler)
+                for inline in state.inlines
+            ]
+            + [
+                InlineKeyboardButton(
+                    jump.caption, callback_data=f"jump-{jump.state_id}"
+                )
+                for jump in state.jumps
+            ]
+        )
+        if inlines_row:
+            markup.append(inlines_row)
+
+        if state.paginator is not None:
+            rows = self.markup_from_state_paginator(state)
+            for row in rows:
+                markup.append(row)
+
+        if state.cancelable:
+            markup.append(
+                [InlineKeyboardButton(CANCEL_CAPTION, callback_data="cancel")]
+            )
+
+        return InlineKeyboardMarkup(markup) if markup else None
+
+    def markup_from_state_paginator(self, state):
+        current_page = self.context.chat_data.get(f"pag-{state.id}-current-page", 0)
+        rows = []
+        paginator = state.paginator
+        items = paginator.items_in_page(current_page)
+
+        self.context.chat_data[f"pag-{state.id}-last-ids"] = ",".join(
+            str(paginator.id_func(item)) for item in items
+        )
+
+        for item in items:
+            rows.append(
+                [
+                    InlineKeyboardButton(
+                        paginator.caption_func(item),
+                        callback_data=f"pag-{state.id}-{paginator.id_func(item)}",
+                    )
                 ]
-
-                if next_selected:
-                    keyboard = []
-                    for item in enumerate(items_in_page):
-                        keyboard.append(
-                            [
-                                InlineKeyboardButton(
-                                    get_caption_func(item[1]),
-                                    callback_data=f"pag-{paginator}-{item[0]}",
-                                )
-                            ]
-                        )
-                    next_query = f"pag-{paginator}-next"
-                    if show_button == "restart":
-                        keyboard.append(
-                            [
-                                InlineKeyboardButton(
-                                    RESTART_PAGINATOR_CAPTION, callback_data=next_query
-                                )
-                            ]
-                        )
-                    elif show_button == "next":
-                        keyboard.append(
-                            [
-                                InlineKeyboardButton(
-                                    NEXT_PAGE_CAPTION, callback_data=next_query
-                                )
-                            ]
-                        )
-
-                    if paginator_settings["show_cancel_button"]:
-                        keyboard.append(
-                            [
-                                InlineKeyboardButton(
-                                    CANCEL_CAPTION, callback_data="cancel"
-                                )
-                            ]
-                        )
-
-                    self.context_set(f"pag-offset-{paginator}", new_offset)
-                    self.context_set(f"pag-inlines-offset-{paginator}", item_offset)
-                    await self.next(
-                        paginator_state,
-                        paginator_settings["header"],
-                        InlineKeyboardMarkup(keyboard),
+            )
+        if paginator.has_pages:
+            rows.append(
+                [
+                    InlineKeyboardButton(
+                        (
+                            NEXT_PAGE_CAPTION
+                            if paginator.has_next_page(current_page)
+                            else RESTART_PAGINATOR_CAPTION
+                        ),
+                        callback_data=f"pag-{state.id}-next",
                     )
-
-                # if not next_selected:
-                else:
-                    logger.info(
-                        f"Handling selection '{selection}'"
-                        f" received for paginator '{paginator}'"
-                        f" in conversation {self} with offset {offset}..."
-                    )
-
-                    self.context_del(f"pag-offset-{paginator}")
-                    self.context_del(f"pag-inlines-offset-{paginator}")
-
-                    # TODO: Don't impose _handler sufix to the framework user
-                    selected_item = sorted_items[inlines_offset + selected_index]
-                    return getattr(self, paginator_settings["handler"] + "_handler")(
-                        selected_item
-                    )
-
-        return _paginator_handler_function
-
-    def contact_handler(self, handler):
-        async def _contact_handler_function(update, context):
-            self.update = update
-            self.context = context
-            contact = self.update.message.contact
-            if contact.user_id is None:
-                logger.debug("Received a contact without a Telegram ID.")
-            else:
-                return await handler(self.update.message.contact)
-
-        return _contact_handler_function
+                ]
+            )
+        return rows
 
 
-# TODO: Auto insert cancel inline as command option (but allow manual insert) (II)
 # TODO: Consider default state for next state (III)
 # add_inline_default_next()?
 # TODO: Reserve certain names in inlines: like 'pag-[0-9]+-(([0-9]+)|(next))'
 # or 'paginator_proxy'
 # TODO: In fact, we can create the inlines ourselves
 # TODO: NamedTuples or classes for members with dicts
-class StateSet:
-    def __init__(self, command):
-        self.command = command
-        self.texts = {}
-        self.inlines = {}
-        self.paginators = {}
-        self.paginators_inline_proxies = {}
-        self.contacts = {}
+# TODO: Don't impose _handler sufix to the framework user
+class Inline:
+    def __init__(self, caption, handler):
+        self.caption = caption
+        self.handler = handler
 
-    # TODO: Maybe we can pass the message text to the handler
-    def add_text(self, state, handler):
-        self.texts[state] = handler
 
-    # TODO: If we stop enforcing _handler maybe we can create the inline here
-    def add_inline(self, state, handler, caption):
-        if state not in self.inlines:
-            self.inlines[state] = {}
-        self.inlines[state][handler] = caption
+class Jump:
+    def __init__(self, caption, state_id):
+        self.caption = caption
+        self.state_id = state_id
 
-    # TODO: Maybe just add_cancel()
-    def add_cancel_inline(self, state, cancel_caption=CANCEL_CAPTION):
-        self.add_inline(state, "cancel", cancel_caption)
+
+class Paginator:
+    def __init__(
+        self,
+        iterable,
+        id_func,
+        caption_func,
+        empty_message,
+        handler,
+        page_size=DEFAULT_PAGE_SIZE,
+    ):
+        self.iterable = iterable
+        self.id_func = id_func
+        self.caption_func = caption_func
+        self.empty_message = empty_message
+        self.handler = handler
+        self.page_size = page_size
+
+        if page_size is None or not self.page_size > 0:
+            raise BotCommandError("Paginator page_size must be greater than 0.")
+
+    @property
+    def count(self):
+        return len(self.iterable)
+
+    @property
+    def has_pages(self):
+        return self.count > self.page_size
+
+    def has_next_page(self, page):
+        return (page + 2) <= ceil(self.count / self.page_size)
+
+    def items_in_page(self, page):
+        page_start = page * self.page_size
+        item_count_in_page = (
+            self.page_size if self.has_next_page(page) else self.count - page_start
+        )
+        sorted_items = list(self.iterable.sorted())
+        return sorted_items[page_start : page_start + item_count_in_page]
+
+
+class State:
+    def __init__(self):
+        self.id = None
+        self.cancelable = None
+        self.message = None
+        self.text_handler = None
+        self.contact_handler = None
+        self.inlines = []
+        self.jumps = []
+        self.paginator = None
+
+    def add_jump(self, caption, state_id):
+        self.jumps.append(Jump(caption, state_id))
+
+    def add_inline(self, caption, handler):
+        self.inlines.append(Inline(caption, handler))
 
     def add_paginator(
         self,
-        state,
-        paginator_state,
-        inline_caption,
         iterable,
-        header,
+        id_func,
+        caption_func,
         empty_message,
-        get_caption_func,
         handler,
-        page_size=5,
-        show_cancel_button=False,
+        page_size=DEFAULT_PAGE_SIZE,
     ):
-        if paginator_state not in self.paginators:
-            self.paginators[paginator_state] = {}
-        # TODO: Refactor this hack
-        self.add_paginator_inline_proxy(state, paginator_state, inline_caption)
-        self.paginators[paginator_state]["iterable"] = iterable
-        self.paginators[paginator_state]["header"] = header
-        self.paginators[paginator_state]["empty_message"] = empty_message
-        self.paginators[paginator_state]["get_caption_func"] = get_caption_func
-        self.paginators[paginator_state]["handler"] = handler
-        self.paginators[paginator_state]["page_size"] = page_size
-        self.paginators[paginator_state]["show_cancel_button"] = show_cancel_button
-
-    def add_paginator_inline_proxy(self, state, paginator_state, caption):
-        if state not in self.paginators_inline_proxies:
-            self.paginators_inline_proxies[state] = {}
-        self.paginators_inline_proxies[state][paginator_state] = caption
-
-    def paginator_settings(self, paginator):
-        return self.paginators[paginator]
-
-    def add_contact(self, state, handler):
-        self.contacts[state] = handler
-
-    # TODO: Don't impose _handler sufix to the framework user
-    @property
-    def graph(self):
-        states = {}
-
-        for _id in self.texts:
-            if _id not in states:
-                states[_id] = []
-            states[_id].append(
-                MessageHandler(
-                    TEXT,
-                    store_update_context_text_command(
-                        getattr(self.command, self.texts[_id] + "_handler"),
-                        self.command,
-                        self.texts[_id],
-                    ),
-                )
-            )
-
-        for _id in self.inlines:
-            if _id not in states:
-                states[_id] = []
-            for inline in self.inlines[_id]:
-                states[_id].append(
-                    CallbackQueryHandler(
-                        self.command.inline_handler(
-                            getattr(self.command, inline + "_handler")
-                        ),
-                        pattern=rf"^{inline}$",
-                    )
-                )
-
-        for _id in self.paginators:
-            if _id not in states:
-                states[_id] = []
-            states[_id].append(
-                CallbackQueryHandler(
-                    self.command.paginator_handler(),
-                    pattern=(
-                        rf"^pag-{_id}-("
-                        + "|".join(
-                            ["next"]
-                            + [
-                                str(index)
-                                for index in range(
-                                    int(self.paginators[_id]["page_size"])
-                                )
-                            ]
-                        )
-                        + r")$"
-                    ),
-                )
-            )
-
-        for _id in self.paginators_inline_proxies:
-            if _id not in states:
-                states[_id] = []
-            for inline_proxy in self.paginators_inline_proxies[_id]:
-                states[_id].append(
-                    CallbackQueryHandler(
-                        self.command.paginator_handler(),
-                        pattern=(
-                            rf"^pag-{inline_proxy}-("
-                            + "|".join(
-                                ["next"]
-                                + [
-                                    str(index)
-                                    for index in range(
-                                        int(self.paginators[inline_proxy]["page_size"])
-                                    )
-                                ]
-                            )
-                            + r")$"
-                        ),
-                    )
-                )
-
-        for _id in self.contacts:
-            if _id not in states:
-                states[_id] = []
-            states[_id].append(
-                MessageHandler(
-                    CONTACT,
-                    self.command.contact_handler(
-                        getattr(self.command, self.contacts[_id] + "_handler")
-                    ),
-                )
-            )
-
-        return states
-
-
-class MarkupBuilder:
-    # TODO: Command users depend on this to create 'next' markups (I)
-    @property
-    def cancel_inline(self):
-        return InlineKeyboardMarkup(
-            [[InlineKeyboardButton(CANCEL_CAPTION, callback_data="cancel")]]
+        self.paginator = Paginator(
+            iterable,
+            id_func,
+            caption_func,
+            empty_message,
+            handler,
+            page_size,
         )
-
-    def from_start(self, all_inlines, all_inline_proxies):
-        inlines = all_inlines[ConversationHandlerMixin.START]
-        inline_proxies = (
-            all_inline_proxies[ConversationHandlerMixin.START]
-            if ConversationHandlerMixin.START in all_inline_proxies
-            else []
-        )
-        markup = [
-            list(
-                InlineKeyboardButton(inlines[handler], callback_data=handler)
-                for handler in inlines
-                if handler != "cancel"
-            )
-            + list(
-                InlineKeyboardButton(
-                    inline_proxies[paginator], callback_data=f"pag-{paginator}-next"
-                )
-                for paginator in inline_proxies
-            )
-        ]
-        if "cancel" in inlines:
-            markup.append(
-                [InlineKeyboardButton(inlines["cancel"], callback_data="cancel")]
-            )
-        return InlineKeyboardMarkup(markup)

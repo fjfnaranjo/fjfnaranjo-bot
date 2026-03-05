@@ -7,6 +7,7 @@ _BOT_COMPONENTS_DEFAULT = "nstart,nconfig,nfriends,ncommands,nsorry"
 SORRY_TEXT = "I don't know what to do about that. Sorry :("
 NEXT_PAGE_CAPTION = "Next page"
 RESTART_PAGINATOR_CAPTION = "Start again"
+DEFAULT_PAGE_SIZE = 5
 CANCEL_CAPTION = "Cancel"
 
 LOG_VALUE_MAX_LENGHT = 16
