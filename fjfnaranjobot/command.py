@@ -446,6 +446,7 @@ class ConversationHandlerMixin(BotCommand):
             )
         self._clear_context()
 
+    # TODO: end_message default = "Ok."
     async def end(self, end_message=None):
         if end_message is not None:
             await self.reply(end_message)
