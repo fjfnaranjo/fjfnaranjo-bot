@@ -11,12 +11,12 @@ logger = getLogger(__name__)
 #
 # Friends conversation states
 #
-# cmd --> START --> LIST       --> LIST
-#                              --> DEL_FRIEND_CONFIRM --> end
-#                              --> end
-#               --> ADD_FRIEND --> end
-#                              --> ADD_FRIEND_ID_NAME --> end
-#               --> DEL_FRIEND --> end
+# START --> LIST       --> LIST
+#                      --> DEL_FRIEND_CONFIRM --> end
+#                      --> end
+#       --> ADD_FRIEND --> end
+#                      --> ADD_FRIEND_ID_NAME --> end
+#       --> DEL_FRIEND --> end
 #
 
 

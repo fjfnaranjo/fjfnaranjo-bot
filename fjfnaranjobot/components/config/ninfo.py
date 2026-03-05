@@ -9,9 +9,9 @@ logger = getLogger(__name__)
 #
 # Config conversation states
 #
-# cmd --> START --> GET_VAR --> end
-#               --> SET_VAR --> SET_VALUE --> end
-#               --> DEL_VAR --> end
+# START --> GET_VAR --> end
+#       --> SET_VAR --> SET_VALUE --> end
+#       --> DEL_VAR --> end
 #
 
 
