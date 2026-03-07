@@ -51,6 +51,10 @@ class BotCommandError(RuntimeError):
 
 # TODO: Test (and consider adding _ in lots of members...)
 # TODO: Instead of requiring class+mixin we can create the pairs ourselves
+#       Move this classes to a "base" module, and we can have here
+#       Command(CommandHandlerMixin, BotCommand)
+#       Conversation(ConversationHandlerMixin, BotCommand)
+#       ...
 class Command:
     """Base command for all the bot commands.
 
@@ -246,7 +250,6 @@ class Command:
             )
 
 
-# TODO: Maybe call this FallbackHandler?
 class AnyHandler(BaseHandler):
     """Extra python-telegram-bot handler to select any update."""
 
