@@ -193,16 +193,15 @@ class Bot:
 
             members = getmembers(info, predicate=predicate)
             for _, member in members:
-                if issubclass(member, BotCommand):
-                    command = member()
-                    command_list.append(command)
-                    try:
-                        self._n_register_command(command)
-                    except BotCommandError:
-                        raise RuntimeError(
-                            "BotCommandError raised trying to register "
-                            f"'{component}' component handlers."
-                        )
+                command = member()
+                command_list.append(command)
+                try:
+                    self._n_register_command(command)
+                except BotCommandError:
+                    raise RuntimeError(
+                        "BotCommandError raised trying to register "
+                        f"'{component}' component handlers."
+                    )
 
     async def process_request(self, url_path, update):
         # Root URL

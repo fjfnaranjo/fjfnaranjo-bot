@@ -300,14 +300,14 @@ class BotCommand(Command):
     is_dev_command = True
     is_prod_command = False
 
-
-class CommandHandlerMixin(BotCommand):
-    """Mixin to handle simple and single commands."""
-
     def __init__(self):
         super().__init__()
         if self.command_name is None:
             raise BotCommandError(f"Command name not defined for {self}.")
+
+
+class CommandHandlerMixin(BotCommand):
+    """Mixin to handle simple and single commands."""
 
     @property
     def handlers(self):
@@ -338,8 +338,6 @@ class ConversationHandlerMixin(BotCommand):
 
     def __init__(self):
         super().__init__()
-        if self.command_name is None:
-            raise BotCommandError(f"Conversation command name not defined for {self}.")
         self.states = {}
         self.build_states(self.state_builder)
         if self.START not in self.states.keys():
