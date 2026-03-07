@@ -24,9 +24,9 @@ from telegram.ext import (
     BaseHandler,
     CallbackQueryHandler,
     CommandHandler,
+    ConversationHandler,
+    MessageHandler,
 )
-from telegram.ext import ConversationHandler as ConversationHandler
-from telegram.ext import MessageHandler
 
 # TODO: Find a different way to allow a default group in commands
 from telegram.ext._application import DEFAULT_GROUP
