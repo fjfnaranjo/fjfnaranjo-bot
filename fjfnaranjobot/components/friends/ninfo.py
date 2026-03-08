@@ -13,10 +13,6 @@ class Friends(ConversationHandlerMixin, BotCommand):
     permissions = BotCommand.PermissionsEnum.ONLY_OWNER
     command_name = "nfriends"
     description = "Manage friends."
-    clean_chat_data_keys = (
-        "friends_delete_user",
-        "friends_add_user_id",
-    )
 
     LIST, DEL_FRIEND_CONFIRM, ADD_FRIEND, ADD_FRIEND_ID_NAME, DEL_FRIEND = range(1, 6)
 

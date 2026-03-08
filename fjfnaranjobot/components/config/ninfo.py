@@ -11,7 +11,6 @@ class Config(ConversationHandlerMixin, BotCommand):
     permissions = BotCommand.PermissionsEnum.ONLY_OWNER
     command_name = "nconfig"
     description = "Edit bot configuration."
-    clean_chat_data_keys = ("config_del_key",)
 
     GET_VAR, SET_VAR, SET_VALUE, DEL_VAR = range(1, 5)
 

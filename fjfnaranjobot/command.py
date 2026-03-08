@@ -14,8 +14,8 @@ Any command will need a 'command handler mixin'. This mixins connect the command
 to the updates handlers in python-telegram-bot . See each *Mixin docstring.
 """
 
+from collections.abc import MutableMapping
 from contextlib import contextmanager
-from functools import wraps
 from math import ceil
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
@@ -328,6 +328,30 @@ class CommandHandlerMixin(BotCommand):
         return super().handlers + new_handlers
 
 
+class CommandDataProxy(MutableMapping):
+    def __init__(self, prefix, real, key_list):
+        self.prefix = prefix
+        self.real = real
+        self.key_list = key_list
+
+    def __setitem__(self, key, value):
+        self.real.__setitem__(f"{self.prefix}-{key}", value)
+        self.key_list.append(f"{self.prefix}-{key}")
+
+    def __delitem__(self, key):
+        self.real.__delitem__(f"{self.prefix}-{key}")
+        self.key_list.remove(f"{self.prefix}-{key}")
+
+    def __getitem__(self, key):
+        return self.real.__getitem__(f"{self.prefix}-{key}")
+
+    def __iter__(self):
+        yield self.real.__iter__()
+
+    def __len__(self):
+        return self.real.__len__()
+
+
 class ConversationHandlerMixin(BotCommand):
     """Mixin to handle python-telegram-bot conversation."""
 
@@ -341,6 +365,9 @@ class ConversationHandlerMixin(BotCommand):
 
     def __init__(self):
         super().__init__()
+        self.chat_data_remembered_keys = []
+        self.user_data_remembered_keys = []
+        self.bot_data_remembered_keys = []
         self.states = {}
         self.build_states(self.state_builder)
         if self.START not in self.states.keys():
@@ -434,9 +461,27 @@ class ConversationHandlerMixin(BotCommand):
 
         return states_handlers
 
-    async def start_conversation(self, update, context):
+    def unpack_update_context(self, update, context):
         self.update = update
         self.context = context
+        self.chat_data = CommandDataProxy(
+            str(self),
+            self.context.chat_data,
+            self.chat_data_remembered_keys,
+        )
+        self.user_data = CommandDataProxy(
+            str(self),
+            self.context.user_data,
+            self.user_data_remembered_keys,
+        )
+        self.bot_data = CommandDataProxy(
+            str(self),
+            self.context.bot_data,
+            self.bot_data_remembered_keys,
+        )
+
+    async def start_conversation(self, update, context):
+        self.unpack_update_context(update, context)
         if not self.filter_command():
             return
         logger.info(f"Starting conversation {self}...")
@@ -448,13 +493,12 @@ class ConversationHandlerMixin(BotCommand):
             ),
             reply_markup=self.markup_from_state(self.START),
         )
-        self.context.chat_data["chat_id"] = conversation_message.chat.id
-        self.context.chat_data["message_id"] = conversation_message.message_id
+        self.chat_data["chat_id"] = conversation_message.chat.id
+        self.chat_data["message_id"] = conversation_message.message_id
         raise ApplicationHandlerStop(self.START)
 
     async def fallback(self, update, context):
-        self.update = update
-        self.context = context
+        self.unpack_update_context(update, context)
         warning_text = f"Conversation {self} fallback handler reached."
         try:
             query_data = self.update.callback_query.data
@@ -468,8 +512,8 @@ class ConversationHandlerMixin(BotCommand):
     async def edit_message(self, text, reply_markup=None):
         await self.context.bot.edit_message_text(
             text,
-            self.context.chat_data.get("chat_id"),
-            self.context.chat_data.get("message_id"),
+            self.chat_data["chat_id"],
+            self.chat_data["message_id"],
             reply_markup=reply_markup,
         )
 
@@ -477,28 +521,28 @@ class ConversationHandlerMixin(BotCommand):
         if self.context is not None:
             for state in self.states:
                 current_page_key = f"pag-{state}-current-page"
-                if current_page_key in self.context.chat_data:
-                    del self.context.chat_data[current_page_key]
+                if current_page_key in self.chat_data:
+                    del self.chat_data[current_page_key]
                 last_ids_key = f"pag-{state}-last-ids"
-                if last_ids_key in self.context.chat_data:
-                    del self.context.chat_data[last_ids_key]
+                if last_ids_key in self.chat_data:
+                    del self.chat_data[last_ids_key]
 
-            for key in self.clean_chat_data_keys:
-                if key in self.context.chat_data:
-                    del self.context.chat_data[key]
-            for key in self.clean_user_data_keys:
-                if key in self.context.user_data:
-                    del self.context.user_data[key]
-            for key in self.clean_bot_data_keys:
-                if key in self.context.bot_data:
-                    del self.context.bot_data[key]
+            for key in self.clean_chat_data_keys + self.chat_data_remembered_keys:
+                if key in self.chat_data:
+                    del self.chat_data[key]
+            for key in self.clean_user_data_keys + self.user_data_remembered_keys:
+                if key in self.user_data:
+                    del self.user_data[key]
+            for key in self.clean_bot_data_keys + self.bot_data_remembered_keys:
+                if key in self.bot_data:
+                    del self.bot_data[key]
 
     async def _clean(self):
         if self.context is not None:
-            if "chat_id" in self.context.chat_data:
+            if "chat_id" in self.chat_data:
                 await self.context.bot.delete_message(
-                    self.context.chat_data.pop("chat_id"),
-                    self.context.chat_data.pop("message_id"),
+                    self.chat_data.pop("chat_id"),
+                    self.chat_data.pop("message_id"),
                 )
         self._clear_context()
 
@@ -543,23 +587,20 @@ class ConversationHandlerMixin(BotCommand):
         raise ApplicationHandlerStop(next_state_id)
 
     async def cancel_handler(self, update, context):
-        self.update = update
-        self.context = context
+        self.unpack_update_context(update, context)
         logger.info(f"Cancelling conversation {self}...")
         await self.end("Ok.")
 
     def text_handler(self, handler):
         async def _text_handler_function(update, context):
-            self.update = update
-            self.context = context
+            self.unpack_update_context(update, context)
             return await handler(self.update.message.text)
 
         return _text_handler_function
 
     def contact_handler(self, handler):
         async def _contact_handler_function(update, context):
-            self.update = update
-            self.context = context
+            self.unpack_update_context(update, context)
             contact = self.update.message.contact
             if contact.user_id is None:
                 logger.debug("Received a contact without a Telegram ID.")
@@ -570,9 +611,8 @@ class ConversationHandlerMixin(BotCommand):
 
     def inline_handler(self, handler):
         async def _inline_handler_function(update, context):
-            self.update = update
-            self.context = context
-            query = update.callback_query.data
+            self.unpack_update_context(update, context)
+            query = self.update.callback_query.data
             if query != "cancel":
                 logger.info(
                     f"Continuing conversation {self} after receiving inline selection '{query}'..."
@@ -582,19 +622,16 @@ class ConversationHandlerMixin(BotCommand):
         return _inline_handler_function
 
     async def jump_handler(self, update, context):
-        self.update = update
-        self.context = context
-        query = update.callback_query.data
+        self.unpack_update_context(update, context)
+        query = self.update.callback_query.data
         # 'jump-0' => 0
         state_id = int(query[5:])
         logger.info(f"Continuing conversation {self} jumping to state {state_id}...")
         await self.next(state_id)
 
     async def paginator_handler(self, update, context):
-        self.update = update
-        self.context = context
-
-        query = update.callback_query.data
+        self.unpack_update_context(update, context)
+        query = self.update.callback_query.data
         # 'pag-0-4' => (0, "4")
         # 'pag-0-next' => (0, "next")
         state_id, selection = (
@@ -606,7 +643,7 @@ class ConversationHandlerMixin(BotCommand):
         if paginator.count == 0:
             await self.end(self.empty_message)
 
-        current_page = self.context.chat_data.pop(f"pag-{state_id}-current-page", 0)
+        current_page = self.chat_data.pop(f"pag-{state_id}-current-page", 0)
 
         if selection == "next":
             logger.info(
@@ -618,7 +655,7 @@ class ConversationHandlerMixin(BotCommand):
                 current_page += 1
             else:
                 current_page = 0
-            self.context.chat_data[f"pag-{state_id}-current-page"] = current_page
+            self.chat_data[f"pag-{state_id}-current-page"] = current_page
 
             await self.next(state_id)
 
@@ -629,7 +666,7 @@ class ConversationHandlerMixin(BotCommand):
                 f" in conversation {self}..."
             )
 
-            last_ids = self.context.chat_data.pop(f"pag-{state_id}-last-ids")
+            last_ids = self.chat_data.pop(f"pag-{state_id}-last-ids")
             current_ids = ",".join(
                 str(paginator.id_func(item))
                 for item in paginator.items_in_page(current_page)
@@ -638,7 +675,7 @@ class ConversationHandlerMixin(BotCommand):
                 logger.info(
                     f"Resetting paginator {state_id}" f" in conversation {self}..."
                 )
-                self.context.chat_data[f"pag-{state_id}-current-page"] = 0
+                self.chat_data[f"pag-{state_id}-current-page"] = 0
                 await self.next(state_id)
 
             # TODO: Don't impose _handler sufix to the framework user
@@ -679,12 +716,12 @@ class ConversationHandlerMixin(BotCommand):
         return InlineKeyboardMarkup(markup) if markup else None
 
     def markup_from_state_paginator(self, state):
-        current_page = self.context.chat_data.get(f"pag-{state.id}-current-page", 0)
+        current_page = self.chat_data.get(f"pag-{state.id}-current-page", 0)
         rows = []
         paginator = state.paginator
         items = paginator.items_in_page(current_page)
 
-        self.context.chat_data[f"pag-{state.id}-last-ids"] = ",".join(
+        self.chat_data[f"pag-{state.id}-last-ids"] = ",".join(
             str(paginator.id_func(item)) for item in items
         )
 
