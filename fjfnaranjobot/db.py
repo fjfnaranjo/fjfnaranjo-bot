@@ -1,3 +1,4 @@
+# TODO: The ORM has to make a distinction between "relations" and "objects"
 from fjfnaranjobot.backends import sqldb
 from fjfnaranjobot.logging import getLogger
 
@@ -146,3 +147,12 @@ class DbRelation:
                 setattr(relation, field[0].name, field[1])
             all_values.append(relation)
         return all_values
+
+
+class IterableDbRelation:
+    def __init__(self, relation_cls):
+        self.relation_cls = relation_cls
+
+    def __iter__(self):
+        for row in self.relation_cls.all():
+            yield row
