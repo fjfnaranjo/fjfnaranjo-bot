@@ -1,6 +1,4 @@
 from asyncio import run
-from collections import namedtuple
-from os import environ
 from warnings import filterwarnings
 
 from telegram.warnings import PTBUserWarning

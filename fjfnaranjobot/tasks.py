@@ -1,12 +1,14 @@
 from importlib import import_module
+from warnings import filterwarnings
 
 from celery import Celery
 
 from fjfnaranjobot.common import ScheduleEntry, get_bot_components
 from fjfnaranjobot.logging import getLogger
 
-logger = getLogger(__name__)
+filterwarnings("ignore", ".*per_message=False.*CallbackQueryHandler.*", UserWarning)
 
+logger = getLogger(__name__)
 
 _COMPONENTS_TEMPLATE = "fjfnaranjobot.components.{}"
 _TASKS_COMPONENTS_TEMPLATE = "fjfnaranjobot.components.{}.tasks"

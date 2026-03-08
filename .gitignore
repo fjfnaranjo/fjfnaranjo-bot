@@ -102,3 +102,4 @@ ENV/
 
 # fjfnaranjo-bot
 /.pytest_cache/
+/docs/botdata
