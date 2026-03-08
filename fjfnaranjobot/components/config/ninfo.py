@@ -72,7 +72,7 @@ class Config(ConversationHandlerMixin, BotCommand):
             await self.end(f"The key '{key}' is not a valid key.")
         except KeyError:
             pass
-        self.context.chat_data["config_del_key"] = key
+        self.chat_data["config_del_key"] = key
         logger.debug("Requesting value to set the key.")
         await self.next(
             self.SET_VALUE,
@@ -82,7 +82,7 @@ class Config(ConversationHandlerMixin, BotCommand):
     async def set_value_handler(self, value):
         log_value = quote_value_for_log(value)
         logger.debug(f"Received value {log_value}.")
-        key = self.context.chat_data.pop("config_del_key")
+        key = self.chat_data["config_del_key"]
         log_key = quote_value_for_log(key)
         config[key] = value
         logger.debug(f"Stored {log_value} in key {log_key}.")

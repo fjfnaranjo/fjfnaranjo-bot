@@ -76,7 +76,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
         )
 
         user_to_delete = User(item_id, item_caption)
-        self.context.chat_data["friends_delete_user"] = (
+        self.chat_data["friends_delete_user"] = (
             user_to_delete.id,
             user_to_delete.username,
         )
@@ -89,7 +89,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
     async def list_del_confirmed_handler(self):
         logger.debug("Received confirmation for deletion.")
 
-        delete_user = User(*self.context.chat_data.pop("friends_delete_user"))
+        delete_user = User(*self.chat_data["friends_delete_user"])
         friends.discard(delete_user)
 
         await self.end()
@@ -125,7 +125,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
                 )
                 await self.end("That's not a contact nor a valid id.")
             else:
-                self.context.chat_data["friends_add_user_id"] = user_id_int
+                self.chat_data["friends_add_user_id"] = user_id_int
                 await self.next(
                     self.ADD_FRIEND_ID_NAME,
                     "Send me a name for the contact.",
@@ -142,7 +142,7 @@ class Friends(ConversationHandlerMixin, BotCommand):
             )
             await self.end("That's not a valid contact username.")
 
-        user_id_int = self.context.chat_data.pop("friends_add_user_id")
+        user_id_int = self.chat_data["friends_add_user_id"]
         user = User(user_id_int, username)
         logger.debug(f"Adding {user.username} as a friend.")
         friends.add(user)
