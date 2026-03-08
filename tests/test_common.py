@@ -2,7 +2,6 @@ from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, sentinel
 
 from fjfnaranjobot.common import (
-    Command,
     ScheduleEntry,
     User,
     get_bot_components,
@@ -18,7 +17,7 @@ MODULE_PATH = "fjfnaranjobot.common"
 BOT_OWNER_NAME_DEFAULT = "fjfnaranjo"
 BOT_OWNER_NAME_TEST = "owner"
 
-BOT_COMPONENTS_DEFAULT = "nstart,nconfig,nfriends,ncommands,nsorry"
+BOT_COMPONENTS_DEFAULT = "start,config,friends,commands,sorry"
 BOT_COMPONENTS_TEST = "comp1,comp2"
 
 
@@ -55,14 +54,6 @@ class UserTests(TestCase):
     def test_init_friend_not_int(self):
         with self.assertRaises(ValueError):
             User("i", "a")
-
-
-class CommandTests(TestCase):
-    def test_init_command(self):
-        command = Command("desc", "prod", "dev")
-        assert "desc" == command.description
-        assert "prod" == command.prod_command
-        assert "dev" == command.dev_command
 
 
 class ScheduleEntryTests(TestCase):

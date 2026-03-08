@@ -1,7 +1,7 @@
 from os import environ
 
 _BOT_OWNER_NAME_DEFAULT = "fjfnaranjo"
-_BOT_COMPONENTS_DEFAULT = "nstart,nconfig,nfriends,ncommands,nsorry"
+_BOT_COMPONENTS_DEFAULT = "start,config,friends,commands,sorry"
 
 # TODO: This can be a class or another single import definition
 SORRY_TEXT = "I don't know what to do about that. Sorry :("
@@ -28,14 +28,6 @@ class User:
     def __init__(self, id_, username):
         self.id = int(id_)
         self.username = username
-
-
-# TODO: Remove when old commands are deprecated
-class Command:
-    def __init__(self, description, prod_command, dev_command):
-        self.description = description
-        self.prod_command = prod_command
-        self.dev_command = dev_command
 
 
 class ScheduleEntry:

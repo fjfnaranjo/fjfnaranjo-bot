@@ -1,4 +1,3 @@
-# TODO: Clean _n and _N
 from importlib import import_module
 from inspect import getmembers, isclass
 from json import JSONDecodeError, loads
@@ -14,11 +13,7 @@ from telegram.ext import (
     StringCommandHandler,
 )
 
-# TODO: Find a different way to allow a default group in commands
-from telegram.ext._application import DEFAULT_GROUP
-
 from fjfnaranjobot.command import BotCommand, BotCommandError, Command
-from fjfnaranjobot.common import Command as OldCommand
 from fjfnaranjobot.common import command_list, get_bot_components
 from fjfnaranjobot.logging import getLogger
 
@@ -31,7 +26,6 @@ BOT_WEBHOOK_CERT = environ.get("BOT_WEBHOOK_CERT", "")
 
 
 _BOT_COMPONENTS_TEMPLATE = "fjfnaranjobot.components.{}.info"
-_N_BOT_COMPONENTS_TEMPLATE = "fjfnaranjobot.components.{}.ninfo"
 
 _state = {"bot": None}
 
@@ -42,15 +36,6 @@ class BotJSONError(Exception):
 
 class BotTokenError(Exception):
     pass
-
-
-def _get_handler_callback_name(handler):
-    callback_function = getattr(handler, "callback", None)
-    return (
-        callback_function.__name__
-        if callback_function is not None and callable(callback_function)
-        else "<unknown callback>"
-    )
 
 
 # TODO: Check and test BOT_TOKEN not defined
@@ -65,13 +50,8 @@ class Bot:
         logger.debug("Bot init done.")
         self.application.add_error_handler(self._log_error_from_context)
         for component in get_bot_components().split(","):
-            if component.startswith("n"):
-                logger.debug(f"Parsing component {component} with new parser.")
-                self._n_parse_component_info(component)
-            else:
-                logger.debug(f"Parsing component {component} with old parser.")
-                self._parse_component_info(component)
-
+            logger.debug(f"Parsing component {component}.")
+            self._parse_component_info(component)
         logger.debug("Bot handlers registered.")
 
     def _log_error_from_context(self, _update, context):
@@ -80,103 +60,15 @@ class Bot:
             exc_info=context.error,
         )
 
-    def _get_names_callbacks(self, handler):
-        names_callbacks = []
-
-        if isinstance(handler, ConversationHandler):
-            for entry_point in handler.entry_points:
-                return self._get_names_callbacks(entry_point)
-        else:
-            callback_name = _get_handler_callback_name(handler)
-            if isinstance(handler, CommandHandler):
-                for command in handler.commands:
-                    names_callbacks.append(
-                        (
-                            command,
-                            callback_name,
-                        )
-                    )
-            elif isinstance(handler, StringCommandHandler):
-                names_callbacks.append(
-                    (
-                        handler.command,
-                        callback_name,
-                    )
-                )
-            elif isinstance(handler, MessageHandler):
-                names_callbacks.append(
-                    (
-                        "<message>",
-                        callback_name,
-                    )
-                )
-            else:
-                names_callbacks.append(
-                    (
-                        "<unknown command>",
-                        callback_name,
-                    )
-                )
-
-        return names_callbacks
-
-    def _parse_component_handlers(self, component, info, group):
-        try:
-            handlers = list(info.handlers)
-        except AttributeError:
-            pass
-        except TypeError:
-            raise ValueError(
-                f"Invalid handlers definition for component '{component}'."
-            )
-        else:
-            for handler in handlers:
-                if not isinstance(handler, BaseHandler):
-                    raise ValueError(f"Invalid handler for component '{component}'.")
-                else:
-                    self.application.add_handler(handler, group)
-                    callback_names = self._get_names_callbacks(handler)
-                    for command, callback in callback_names:
-                        logger.debug(
-                            f"Registered command '{command}' "
-                            f"with callback '{callback}' "
-                            f"for component '{component}' "
-                            f"and group number {group}."
-                        )
-
-    def _parse_component_commands(self, component, info):
-        try:
-            commands = info.commands
-        except AttributeError:
-            pass
-        else:
-            for command in commands:
-                if not isinstance(command, OldCommand):
-                    raise ValueError(f"Invalid command for component '{component}'.")
-                command_list.append(command)
-
-    def _parse_component_info(self, component):
-        try:
-            info = import_module(_BOT_COMPONENTS_TEMPLATE.format(component))
-        except ModuleNotFoundError:
-            pass
-        else:
-            try:
-                group = int(getattr(info, "group", DEFAULT_GROUP))
-            except ValueError:
-                raise ValueError(f"Invalid group for component '{component}'.")
-            self._parse_component_handlers(component, info, group)
-            self._parse_component_commands(component, info)
-
-    def _n_register_command(self, command):
+    def _register_command(self, command):
         for group, handler, class_name in command.handlers:
             command.log_handler(group, handler)
             # TODO: Remove this log and 3rd component in handlers (not used anymore)
             logger.debug(f"Adding handler {class_name}.")
             self.application.add_handler(handler, group)
 
-    def _n_parse_component_info(self, component):
-        component_module = _N_BOT_COMPONENTS_TEMPLATE.format(component[1:])
+    def _parse_component_info(self, component):
+        component_module = _BOT_COMPONENTS_TEMPLATE.format(component)
         try:
             info = import_module(component_module)
         except ModuleNotFoundError:
@@ -196,7 +88,7 @@ class Bot:
                 command = member()
                 command_list.append(command)
                 try:
-                    self._n_register_command(command)
+                    self._register_command(command)
                 except BotCommandError:
                     raise RuntimeError(
                         "BotCommandError raised trying to register "

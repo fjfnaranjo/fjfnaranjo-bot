@@ -1,297 +1,105 @@
-# TODO: Review all tests
-# TODO: Generalize conversation end
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    CallbackQueryHandler,
-    CommandHandler,
-    ConversationHandler,
-    MessageHandler,
-)
-from telegram.ext.filters import TEXT
-
-from fjfnaranjobot.auth import only_owner
+# TODO: Tests
 from fjfnaranjobot.backends import config
-from fjfnaranjobot.common import Command, inline_handler, quote_value_for_log
+from fjfnaranjobot.command import BotCommand, ConversationHandlerMixin
+from fjfnaranjobot.common import quote_value_for_log
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
-#
-# config_handler states
-#
-# cmd --> GET_SET_OR_DEL --> GET_VAR --> end
-#                        --> SET_VAR --> SET_VALUE --> end
-#                        --> DEL_VAR --> end
-#
-# * --> end
-#
 
-GET_SET_OR_DEL, GET_VAR, SET_VAR, DEL_VAR, SET_VALUE = range(5)
+class Config(ConversationHandlerMixin, BotCommand):
+    permissions = BotCommand.PermissionsEnum.ONLY_OWNER
+    command_name = "config"
+    description = "Edit bot configuration."
 
+    GET_VAR, SET_VAR, SET_VALUE, DEL_VAR = range(1, 5)
 
-def _clear_context_data(context):
-    chat_data_known_keys = ["chat_id", "message_id", "key"]
-    for key in chat_data_known_keys:
-        if key in context.chat_data:
-            del context.chat_data[key]
-
-
-_cancel_markup = InlineKeyboardMarkup(
-    [[InlineKeyboardButton("Cancel", callback_data="cancel")]]
-)
-
-
-@only_owner
-async def config_handler(update, context):
-    logger.info("Entering 'config' conversation.")
-
-    keyboard = [
-        [
-            InlineKeyboardButton("Get", callback_data="get"),
-            InlineKeyboardButton("Set", callback_data="set"),
-            InlineKeyboardButton("Delete", callback_data="del"),
-        ],
-        [InlineKeyboardButton("Cancel", callback_data="cancel")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    reply = await update.message.reply_text(
-        "You can get the value for a configuration key, "
-        "set it of change it if exists, or clear the key. "
-        "You can also cancel the config command at any time.",
-        reply_markup=reply_markup,
-    )
-    context.chat_data["chat_id"] = reply.chat.id
-    context.chat_data["message_id"] = reply.message_id
-    return GET_SET_OR_DEL
-
-
-async def get_handler(_update, context):
-    logger.info("Requesting key name to get its value.")
-
-    await context.bot.edit_message_text(
-        "Tell me what key do you want to get.",
-        context.chat_data["chat_id"],
-        context.chat_data["message_id"],
-        reply_markup=_cancel_markup,
-    )
-    return GET_VAR
-
-
-async def get_var_handler(update, context):
-    key = update.message.text
-    shown_key = quote_value_for_log(key)
-    logger.info(f"Received key name {shown_key}.")
-
-    try:
-        result = config[key]
-    except (ValueError, KeyError) as e:
-        await context.bot.delete_message(
-            context.chat_data["chat_id"], context.chat_data["message_id"]
-        )
-        if isinstance(e, ValueError):
-            logger.info("Key was invalid.")
-            await context.bot.send_message(
-                context.chat_data["chat_id"],
-                f"The key '{key}' is not a valid key.",
+    def build_states(self, builder):
+        """
+        START --> GET_VAR --> end(show)
+              --> SET_VAR --> SET_VALUE --> end(set)
+              --> DEL_VAR --> end(delete)
+        """
+        with builder(self.START) as state:
+            state.message = (
+                "You can get the value for a configuration key, "
+                "set it of change it if exists, or clear the key. "
+                "You can also cancel the config command at any time."
             )
+            state.add_jump("Get", self.GET_VAR)
+            state.add_jump("Set", self.SET_VAR)
+            state.add_jump("Del", self.DEL_VAR)
+
+        with builder(self.GET_VAR) as state:
+            state.message = "Tell me what key do you want to get."
+            state.text_handler = "get_var"
+
+        with builder(self.SET_VAR) as state:
+            state.message = "Tell me what key do you want to set."
+            state.text_handler = "set_var"
+
+        with builder(self.SET_VALUE) as state:
+            state.text_handler = "set_value"
+
+        with builder(self.DEL_VAR) as state:
+            state.message = "Tell me what key do you want to clear."
+            state.text_handler = "del_var"
+
+    async def get_var_handler(self, key):
+        log_key = quote_value_for_log(key)
+        logger.debug(f"Received key name {log_key}.")
+        try:
+            result = config[key]
+        except (ValueError, KeyError) as e:
+            if isinstance(e, ValueError):
+                logger.debug("Key was invalid.")
+                await self.end(f"The key '{key}' is not a valid key.")
+            else:
+                logger.debug("Key doesn't exists.")
+                await self.end(f"The key '{key}' doesn't exists.")
         else:
-            logger.info("Key doesn't exists.")
-            await context.bot.send_message(
-                context.chat_data["chat_id"],
-                f"The key '{key}' doesn't exists.",
-            )
-        _clear_context_data(context)
-        return ConversationHandler.END
+            log_result = quote_value_for_log(result)
+            logger.debug(f"Replying with result {log_result}.")
+            await self.end(f"The value for key '{key}' is '{result}'.")
 
-    else:
-        shown_result = quote_value_for_log(result)
-        logger.info(f"Replying with result {shown_result}.")
-
-        await context.bot.delete_message(
-            context.chat_data["chat_id"], context.chat_data["message_id"]
+    async def set_var_handler(self, key):
+        log_key = quote_value_for_log(key)
+        logger.debug(f"Received key name {log_key}.")
+        try:
+            config[key]
+        except ValueError:
+            logger.debug("Can't set invalid config key 'invalid-key'.")
+            await self.end(f"The key '{key}' is not a valid key.")
+        except KeyError:
+            pass
+        self.chat_data["config_del_key"] = key
+        logger.debug("Requesting value to set the key.")
+        await self.next(
+            self.SET_VALUE,
+            f"Tell me what value do you want to put in the key '{key}'.",
         )
-        await context.bot.send_message(
-            context.chat_data["chat_id"], f"The value for key '{key}' is '{result}'."
-        )
-        _clear_context_data(context)
-        return ConversationHandler.END
 
+    async def set_value_handler(self, value):
+        log_value = quote_value_for_log(value)
+        logger.debug(f"Received value {log_value}.")
+        key = self.chat_data["config_del_key"]
+        log_key = quote_value_for_log(key)
+        config[key] = value
+        logger.debug(f"Stored {log_value} in key {log_key}.")
+        await self.end("I'll remember that.")
 
-async def set_handler(_update, context):
-    logger.info("Requesting key name to set its value.")
-
-    await context.bot.edit_message_text(
-        "Tell me what key do you want to set.",
-        context.chat_data["chat_id"],
-        context.chat_data["message_id"],
-        reply_markup=_cancel_markup,
-    )
-    return SET_VAR
-
-
-async def set_var_handler(update, context):
-    key = update.message.text
-    shown_key = quote_value_for_log(key)
-    logger.info(f"Received key name {shown_key}.")
-
-    try:
-        config[key]
-    except ValueError:
-        logger.info("Can't set invalid config key 'invalid-key'.")
-
-        await context.bot.delete_message(
-            context.chat_data["chat_id"],
-            context.chat_data["message_id"],
-        )
-        await context.bot.send_message(
-            context.chat_data["chat_id"], f"The key '{key}' is not a valid key."
-        )
-        _clear_context_data(context)
-        return ConversationHandler.END
-
-    except KeyError:
-        pass
-
-    context.chat_data["key"] = key
-
-    logger.info("Requesting value to set the key.")
-
-    await context.bot.edit_message_text(
-        f"Tell me what value do you want to put in the key '{key}'.",
-        context.chat_data["chat_id"],
-        context.chat_data["message_id"],
-        reply_markup=_cancel_markup,
-    )
-    return SET_VALUE
-
-
-async def set_value_handler(update, context):
-    value = update.message.text
-    shown_value = quote_value_for_log(value)
-    logger.info(f"Received value {shown_value}.")
-
-    key = context.chat_data["key"]
-    del context.chat_data["key"]
-    config[key] = value
-
-    logger.info(f"Stored {shown_value} in key '{key}'.")
-
-    await context.bot.delete_message(
-        context.chat_data["chat_id"],
-        context.chat_data["message_id"],
-    )
-    await context.bot.send_message(context.chat_data["chat_id"], "I'll remember that.")
-    _clear_context_data(context)
-    return ConversationHandler.END
-
-
-async def del_handler(_update, context):
-    logger.info("Requesting key name to clear its value.")
-
-    await context.bot.edit_message_text(
-        "Tell me what key do you want to clear.",
-        context.chat_data["chat_id"],
-        context.chat_data["message_id"],
-        reply_markup=_cancel_markup,
-    )
-    return DEL_VAR
-
-
-async def del_var_handler(update, context):
-    key = update.message.text
-    shown_key = quote_value_for_log(key)
-    logger.info(f"Received key name {shown_key}.")
-
-    try:
-        del config[key]
-    except (ValueError, KeyError) as e:
-        await context.bot.delete_message(
-            context.chat_data["chat_id"], context.chat_data["message_id"]
-        )
-        if isinstance(e, ValueError):
-            logger.info("Key was invalid.")
-            await context.bot.send_message(
-                context.chat_data["chat_id"],
-                f"The key '{key}' is not a valid key.",
-            )
+    async def del_var_handler(self, key):
+        log_key = quote_value_for_log(key)
+        logger.debug(f"Received key name {log_key}.")
+        try:
+            del config[key]
+        except (ValueError, KeyError) as e:
+            if isinstance(e, ValueError):
+                logger.debug("Key was invalid.")
+                await self.end(f"The key '{key}' is not a valid key.")
+            else:
+                logger.debug("Key doesn't exists.")
+                await self.end(f"The key '{key}' doesn't exists.")
         else:
-            logger.info("Key doesn't exists.")
-            await context.bot.send_message(
-                context.chat_data["chat_id"],
-                f"The key '{key}' doesn't exists.",
-            )
-        _clear_context_data(context)
-        return ConversationHandler.END
-
-    else:
-        logger.info(f"Deleting config with key '{key}'.")
-
-        await context.bot.delete_message(
-            context.chat_data["chat_id"], context.chat_data["message_id"]
-        )
-        await context.bot.send_message(
-            context.chat_data["chat_id"], "I'll forget that."
-        )
-        _clear_context_data(context)
-        return ConversationHandler.END
-
-
-async def cancel_handler(_update, context):
-    logger.info("Aborting 'config' conversation.")
-
-    if "message_id" in context.chat_data:
-        await context.bot.delete_message(
-            context.chat_data["chat_id"], context.chat_data["message_id"]
-        )
-    await context.bot.send_message(context.chat_data["chat_id"], "Ok.")
-    _clear_context_data(context)
-    return ConversationHandler.END
-
-
-cancel_inlines = {
-    "cancel": cancel_handler,
-}
-action_inlines = {
-    "get": get_handler,
-    "set": set_handler,
-    "del": del_handler,
-    "cancel": cancel_handler,
-}
-
-
-# TODO: Debug
-handlers = tuple()  # (
-#    ConversationHandler(
-#        entry_points=[CommandHandler("config", config_handler)],
-#        states={
-#            GET_SET_OR_DEL: [
-#                CallbackQueryHandler(inline_handler(action_inlines, logger)),
-#            ],
-#            GET_VAR: [
-#                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-#                MessageHandler(TEXT, get_var_handler),
-#            ],
-#            SET_VAR: [
-#                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-#                MessageHandler(TEXT, set_var_handler),
-#            ],
-#            SET_VALUE: [
-#                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-#                MessageHandler(TEXT, set_value_handler),
-#            ],
-#            DEL_VAR: [
-#                CallbackQueryHandler(inline_handler(cancel_inlines, logger)),
-#                MessageHandler(TEXT, del_var_handler),
-#            ],
-#        },
-#        fallbacks=[],
-#    ),
-# )
-
-commands = tuple()  # (
-#    Command(
-#        "Edit bot configuration.",
-#        None,
-#        "config",
-#    ),
-# )
+            logger.debug(f"Deleting config with key {log_key}.")
+            await self.end("I'll forget that.")
