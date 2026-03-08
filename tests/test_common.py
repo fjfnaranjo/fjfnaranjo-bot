@@ -6,7 +6,6 @@ from fjfnaranjobot.common import (
     User,
     get_bot_components,
     get_bot_owner_name,
-    inline_handler,
     quote_value_for_log,
 )
 
@@ -70,45 +69,6 @@ class ScheduleEntryTests(TestCase):
         assert "s" == entry.schedule
         assert "si" == entry.signature
         assert {"extra_arg": "extra_value"} == entry.extra_args
-
-
-class InlineHandlerTests(TestCase):
-    def test_inline_handler_has_query(self):
-        mocked_logger = MagicMock()
-        mocker_update = MagicMock()
-        mocker_update.callback_query.data = "data"
-
-        def handler(_update=None, _context=None):
-            return sentinel.handler_return
-
-        result_function = inline_handler({"data": handler}, mocked_logger)
-        result = result_function(mocker_update, None)
-        mocked_logger.debug.assert_has_calls(
-            [
-                call("Received inline selection."),
-                call("Inline selection was 'data'."),
-            ]
-        )
-        assert sentinel.handler_return == result
-
-    def test_inline_handler_hasnt_query(self):
-        mocked_logger = MagicMock()
-        mocker_update = MagicMock()
-        mocker_update.callback_query.data = "other"
-
-        result_function = inline_handler(
-            {"data": lambda _update, _context: None},
-            mocked_logger,
-        )
-        with self.assertRaises(ValueError) as e:
-            result_function(mocker_update, None)
-        mocked_logger.debug.assert_has_calls(
-            [
-                call("Received inline selection."),
-                call("Inline selection was 'other'."),
-            ]
-        )
-        assert "No valid handlers for query 'other'." == e.exception.args[0]
 
 
 @patch(f"{MODULE_PATH}.LOG_VALUE_MAX_LENGHT", 6)

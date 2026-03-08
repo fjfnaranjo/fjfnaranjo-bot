@@ -4,16 +4,9 @@ from json import JSONDecodeError, loads
 from os import environ
 
 from telegram import Update
-from telegram.ext import (
-    Application,
-    BaseHandler,
-    CommandHandler,
-    ConversationHandler,
-    MessageHandler,
-    StringCommandHandler,
-)
+from telegram.ext import Application
 
-from fjfnaranjobot.command import BotCommand, BotCommandError, Command
+from fjfnaranjobot.command import BotCommandError, Command
 from fjfnaranjobot.common import command_list, get_bot_components
 from fjfnaranjobot.logging import getLogger
 

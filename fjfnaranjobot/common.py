@@ -38,19 +38,6 @@ class ScheduleEntry:
         self.extra_args = kwargs
 
 
-def inline_handler(inlines, logger):
-    def inline_handler_function(update, context):
-        logger.debug("Received inline selection.")
-        query = update.callback_query.data
-        logger.debug(f"Inline selection was '{query}'.")
-        if query in inlines:
-            return inlines[query](update, context)
-        else:
-            raise ValueError(f"No valid handlers for query '{query}'.")
-
-    return inline_handler_function
-
-
 def quote_value_for_log(value):
     if len(value) <= LOG_VALUE_MAX_LENGHT:
         return f"'{value}'"
