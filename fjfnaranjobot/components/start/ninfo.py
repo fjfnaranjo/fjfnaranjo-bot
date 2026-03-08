@@ -10,7 +10,7 @@ class Start(CommandHandlerMixin, BotCommand):
     command_name = "nstart"
     description = "Starts the bot."
 
-    async def entrypoint(self):
+    async def handle(self):
         logger.debug(f"Greeting a new user with id {self.update.effective_user.id}.")
 
         owner_name = get_bot_owner_name()

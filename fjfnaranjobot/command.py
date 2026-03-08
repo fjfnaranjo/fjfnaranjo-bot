@@ -49,6 +49,30 @@ class BotCommandError(RuntimeError):
     pass
 
 
+class CommandDataProxy(MutableMapping):
+    def __init__(self, prefix, real, key_list):
+        self.prefix = prefix
+        self.real = real
+        self.key_list = key_list
+
+    def __setitem__(self, key, value):
+        self.real.__setitem__(f"{self.prefix}-{key}", value)
+        self.key_list.append(f"{self.prefix}-{key}")
+
+    def __delitem__(self, key):
+        self.real.__delitem__(f"{self.prefix}-{key}")
+        self.key_list.remove(f"{self.prefix}-{key}")
+
+    def __getitem__(self, key):
+        return self.real.__getitem__(f"{self.prefix}-{key}")
+
+    def __iter__(self):
+        yield self.real.__iter__()
+
+    def __len__(self):
+        return self.real.__len__()
+
+
 # TODO: Test (and consider adding _ in lots of members...)
 # TODO: Instead of requiring class+mixin we can create the pairs ourselves
 #       Move this classes to a "base" module, and we can have here
@@ -76,9 +100,31 @@ class Command:
     def __init__(self):
         self.update = None
         self.context = None
+        self.chat_data_remembered_keys = []
+        self.user_data_remembered_keys = []
+        self.bot_data_remembered_keys = []
 
     def __str__(self):
         return f"{self.__class__.__name__}"
+
+    def unpack_update_context(self, update, context):
+        self.update = update
+        self.context = context
+        self.chat_data = CommandDataProxy(
+            str(self),
+            self.context.chat_data,
+            self.chat_data_remembered_keys,
+        )
+        self.user_data = CommandDataProxy(
+            str(self),
+            self.context.user_data,
+            self.user_data_remembered_keys,
+        )
+        self.bot_data = CommandDataProxy(
+            str(self),
+            self.context.bot_data,
+            self.bot_data_remembered_keys,
+        )
 
     # TODO: This depends on classes down the hierarchy. Use cooperation.
     @staticmethod
@@ -229,16 +275,15 @@ class Command:
             else True
         )
 
-    async def entrypoint(self):
+    async def handle(self):
         raise NotImplementedError(f"Command {self} doesn't have an entrypoint.")
 
-    async def handle_command(self, update, context):
-        self.update = update
-        self.context = context
+    async def command_handler(self, update, context):
+        self.unpack_update_context(update, context)
         if not self.filter_command():
             return
         logger.info(f"Calling command entrypoint in {self}...")
-        await self.entrypoint()
+        await self.handle()
         raise ApplicationHandlerStop()
 
     async def reply(self, *args, **kwargs):
@@ -275,7 +320,7 @@ class AnyHandlerMixin(Command):
             (
                 self.dispatcher_group,
                 AnyHandler(
-                    self.handle_command,
+                    self.command_handler,
                 ),
                 self.__class__.__name__,
             )
@@ -319,37 +364,13 @@ class CommandHandlerMixin(BotCommand):
                 self.dispatcher_group,
                 CommandHandler(
                     self.command_name,
-                    self.handle_command,
+                    self.command_handler,
                     filters=COMMAND,
                 ),
                 self.__class__.__name__,
             )
         ]
         return super().handlers + new_handlers
-
-
-class CommandDataProxy(MutableMapping):
-    def __init__(self, prefix, real, key_list):
-        self.prefix = prefix
-        self.real = real
-        self.key_list = key_list
-
-    def __setitem__(self, key, value):
-        self.real.__setitem__(f"{self.prefix}-{key}", value)
-        self.key_list.append(f"{self.prefix}-{key}")
-
-    def __delitem__(self, key):
-        self.real.__delitem__(f"{self.prefix}-{key}")
-        self.key_list.remove(f"{self.prefix}-{key}")
-
-    def __getitem__(self, key):
-        return self.real.__getitem__(f"{self.prefix}-{key}")
-
-    def __iter__(self):
-        yield self.real.__iter__()
-
-    def __len__(self):
-        return self.real.__len__()
 
 
 class ConversationHandlerMixin(BotCommand):
@@ -365,9 +386,6 @@ class ConversationHandlerMixin(BotCommand):
 
     def __init__(self):
         super().__init__()
-        self.chat_data_remembered_keys = []
-        self.user_data_remembered_keys = []
-        self.bot_data_remembered_keys = []
         self.states = {}
         self.build_states(self.state_builder)
         if self.START not in self.states.keys():
@@ -460,25 +478,6 @@ class ConversationHandlerMixin(BotCommand):
                 )
 
         return states_handlers
-
-    def unpack_update_context(self, update, context):
-        self.update = update
-        self.context = context
-        self.chat_data = CommandDataProxy(
-            str(self),
-            self.context.chat_data,
-            self.chat_data_remembered_keys,
-        )
-        self.user_data = CommandDataProxy(
-            str(self),
-            self.context.user_data,
-            self.user_data_remembered_keys,
-        )
-        self.bot_data = CommandDataProxy(
-            str(self),
-            self.context.bot_data,
-            self.bot_data_remembered_keys,
-        )
 
     async def start_conversation(self, update, context):
         self.unpack_update_context(update, context)

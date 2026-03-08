@@ -28,7 +28,7 @@ class Terraria(CommandHandlerMixin, BotCommand):
     description = "Manage Terraria servers."
     allow_chats = True
 
-    async def entrypoint(self):
+    async def handle(self):
         reply = "The 'terraria' command is not implemented."
         logger.warning(reply)
         await self.reply(reply)

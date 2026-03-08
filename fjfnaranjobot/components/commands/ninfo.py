@@ -12,7 +12,7 @@ class Commands(CommandHandlerMixin, BotCommand):
     description = "Print the list of bot commands."
     is_dev_command = True
 
-    async def entrypoint(self):
+    async def handle(self):
         logger.debug("Sending list of commands.")
 
         # TODO: When old commands removed, remove double parser

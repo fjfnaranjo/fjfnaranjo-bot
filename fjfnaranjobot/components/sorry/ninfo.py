@@ -10,6 +10,6 @@ class Sorry(AnyHandlerMixin, Command):
     dispatcher_group = 65536
     allow_chats = True
 
-    async def entrypoint(self):
+    async def handle(self):
         logger.debug("Sending 'sorry' back to the user.")
         await self.reply(SORRY_TEXT)
