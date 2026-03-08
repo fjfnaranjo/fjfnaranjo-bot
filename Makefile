@@ -27,12 +27,12 @@ test:
 .PHONY: test-cov
 test-cov:
 	@$(run) pytest --cov=fjfnaranjobot --cov-report html tests/
-	@$(run) pytest --cov=fjfnaranjobot --cov-report html tests_new/
+	@$(run) pytest --cov=fjfnaranjobot --cov-append --cov-report html tests_new/
 
 .PHONY: test-cov-full
 test-cov-full:
 	@$(run) pytest --cov=fjfnaranjobot --cov=tests --cov-report html tests/
-	@$(run) pytest --cov=fjfnaranjobot --cov=tests_new --cov-report html tests_new/
+	@$(run) pytest --cov=fjfnaranjobot --cov-append --cov=tests_new --cov-report html tests_new/
 
 .PHONY: debug-bot
 debug-bot: bot-stop
