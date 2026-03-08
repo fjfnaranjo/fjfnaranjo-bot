@@ -543,6 +543,12 @@ class ConversationHandlerMixin(BotCommand):
                     self.chat_data.pop("chat_id"),
                     self.chat_data.pop("message_id"),
                 )
+
+        for state_id in self.states:
+            state = self.states[state_id]
+            if state.paginator is not None:
+                state.paginator.reset_items()
+
         self._clear_context()
 
     async def end(self, end_message="Ok."):
@@ -674,13 +680,14 @@ class ConversationHandlerMixin(BotCommand):
                 logger.info(
                     f"Resetting paginator {state_id}" f" in conversation {self}..."
                 )
+                paginator.reset_items()
                 self.chat_data[f"pag-{state_id}-current-page"] = 0
                 await self.next(state_id)
 
+            item = paginator.get_by_id(int(selection))
+            paginator.reset_items()
             # TODO: Don't impose _handler sufix to the framework user
-            await getattr(self, paginator.handler + "_handler")(
-                paginator.iterable.get_by_id(selection)
-            )
+            await getattr(self, paginator.handler + "_handler")(item)
 
     def markup_from_state(self, state_id):
         state = self.states[state_id]
@@ -768,6 +775,7 @@ class Jump:
         self.state_id = state_id
 
 
+# TODO: Forcing the iterable into a list looks wasteful
 class Paginator:
     def __init__(
         self,
@@ -785,12 +793,18 @@ class Paginator:
         self.handler = handler
         self.page_size = page_size
 
+        self.items = []
+        self.reset_items()
+
         if page_size is None or not self.page_size > 0:
             raise BotCommandError("Paginator page_size must be greater than 0.")
 
+    def reset_items(self):
+        self.items = list(self.iterable)
+
     @property
     def count(self):
-        return len(self.iterable)
+        return len(self.items)
 
     @property
     def has_pages(self):
@@ -804,8 +818,13 @@ class Paginator:
         item_count_in_page = (
             self.page_size if self.has_next_page(page) else self.count - page_start
         )
-        sorted_items = list(self.iterable.sorted())
-        return sorted_items[page_start : page_start + item_count_in_page]
+        return self.items[page_start : page_start + item_count_in_page]
+
+    def get_by_id(self, selection):
+        for item in self.items:
+            if self.id_func(item) == selection:
+                return item
+        return
 
 
 class State:
