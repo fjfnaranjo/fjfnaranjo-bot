@@ -1,0 +1,63 @@
+---
+version: "3"
+services:
+  nginx:
+    image: docker.io/library/nginx:alpine
+    volumes:
+      - ./botdata/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./botdata/nginx/certs:/certs
+    ports:
+      - "${BOT_PORT}:443"
+    links:
+      - bot
+  bot:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: localhost/fjfnaranjo-bot
+    volumes:
+      - celery-schedule:/schedule
+      - ./botdata/nginx/certs:/certs
+      - ./botdata/db:/db
+      - .:/bot
+    working_dir: /bot
+    env_file: .env
+    command: python -m fjfnaranjobot.server
+    links:
+      - redis
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: localhost/fjfnaranjo-bot
+    volumes:
+      - celery-schedule:/schedule
+      - ./botdata/db:/db
+      - .:/bot
+    working_dir: /bot
+    env_file: .env
+    command: celery -A fjfnaranjobot.tasks worker --loglevel=debug
+    links:
+      - redis
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: localhost/fjfnaranjo-bot
+    volumes:
+      - celery-schedule:/schedule
+      - ./botdata/db:/db
+      - .:/bot
+    working_dir: /bot
+    env_file: .env
+    command: celery -A fjfnaranjobot.tasks beat --loglevel=debug -s /celerybeat-schedule --pidfile=/celerybeat.pid
+    links:
+      - redis
+  redis:
+    image: docker.io/library/redis:6.0-alpine
+    volumes:
+      - redis-data:/data
+
+volumes:
+  celery-schedule:
+  redis-data:

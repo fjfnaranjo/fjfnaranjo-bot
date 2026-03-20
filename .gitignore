@@ -101,10 +101,5 @@ ENV/
 .mypy_cache/
 
 # fjfnaranjo-bot
-/.project
-/.pydevproject
-/nginx.conf
-/certs
-/botdata
-/.settings
-/.dbeaver
+/.pytest_cache/
+/docs/botdata

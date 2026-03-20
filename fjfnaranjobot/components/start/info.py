@@ -1,17 +1,17 @@
-from telegram.ext import CommandHandler, DispatcherHandlerStop
-
+# TODO: Tests
+from fjfnaranjobot.command import BotCommand, CommandHandlerMixin
 from fjfnaranjobot.common import get_bot_owner_name
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
 
 
-def start_handler(update, _context):
-    logger.info(f"Greeting a new user with id {update.effective_user.id}.")
+class Start(CommandHandlerMixin, BotCommand):
+    command_name = "start"
+    description = "Starts the bot."
 
-    owner_name = get_bot_owner_name()
-    update.message.reply_text(f"Welcome. I'm {owner_name}'s bot. How can I help you?")
-    raise DispatcherHandlerStop()
+    async def handle(self):
+        logger.debug(f"Greeting a new user with id {self.update.effective_user.id}.")
 
-
-handlers = (CommandHandler('start', start_handler),)
+        owner_name = get_bot_owner_name()
+        await self.reply(f"Welcome. I'm {owner_name}'s bot. How can I help you?")

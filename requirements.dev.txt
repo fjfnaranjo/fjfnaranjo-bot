@@ -1,4 +1,7 @@
-pytest-cov~=2.10
-Sphinx~=3.2
-python-dotenv~=0.14
-uWSGI~=2.0
+python-dotenv~=1.2.2
+pytest~=9.0.2
+pytest-env~=1.5.0
+pytest-subtests~=0.15.0
+pytest-cov~=7.0.0
+black==26.1.0
+isort==8.0.1

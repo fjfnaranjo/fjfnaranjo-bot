@@ -1,6 +1,5 @@
-from telegram.ext import DispatcherHandlerStop
-
-from fjfnaranjobot.auth import only_real
+# TODO: Tests
+from fjfnaranjobot.command import BotCommand, CommandHandlerMixin
 from fjfnaranjobot.logging import getLogger
 
 logger = getLogger(__name__)
@@ -24,8 +23,12 @@ logger = getLogger(__name__)
 #
 
 
-@only_real
-def terraria_handler(_update, _context):
-    logger.warning("The 'terraria' command is not implemented.")
+class Terraria(CommandHandlerMixin, BotCommand):
+    command_name = "terraria"
+    description = "Manage Terraria servers."
+    allow_chats = True
 
-    raise DispatcherHandlerStop()
+    async def handle(self):
+        reply = "The 'terraria' command is not implemented."
+        logger.warning(reply)
+        await self.reply(reply)

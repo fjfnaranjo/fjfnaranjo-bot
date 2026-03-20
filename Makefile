@@ -1,29 +1,40 @@
-.PHONY: all isort test cov cov-full black docs up down restart
+run := podman run --rm -ti -v "$$(pwd):/bot" -w /bot localhost/fjfnaranjo-bot:dev
 
+.PHONY: all
 all:
+	@echo Default target is empty.
 
+.PHONY: build-dev
+build-dev:
+	@podman build -f Containerfile.dev -t localhost/fjfnaranjo-bot:dev .
+
+.PHONY: isort
 isort:
-	@isort fjfnaranjobot tests
+	@$(run) isort fjfnaranjobot tests tests_new
 
-test:
-	@pytest
-
-cov:
-	@pytest --cov=fjfnaranjobot --cov-report html tests/
-
-cov-full:
-	@pytest --cov=fjfnaranjobot --cov=tests --cov-report html tests/
-
+.PHONY: black
 black:
-	@black -S fjfnaranjobot tests
+	@$(run) black fjfnaranjobot tests tests_new
 
-docs:
-	$(MAKE) -C $@ html
+.PHONY: checks
+checks: isort black
 
-up:
-	@docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml up -d
+.PHONY: test
+test:
+	@$(run) pytest tests/
+	@$(run) pytest tests_new/
 
-down:
-	@docker-compose -f docker-compose.yml -f docker-compose.override.dev.yml down
+.PHONY: test-cov
+test-cov:
+	@$(run) pytest --cov=fjfnaranjobot --cov-report html tests/
+	@$(run) pytest --cov=fjfnaranjobot --cov-append --cov-report html tests_new/
 
-restart: down up
+.PHONY: test-cov-full
+test-cov-full:
+	@$(run) pytest --cov=fjfnaranjobot --cov=tests --cov-report html tests/
+	@$(run) pytest --cov=fjfnaranjobot --cov-append --cov=tests_new --cov-report html tests_new/
+
+.PHONY: debug-bot
+debug-bot: bot-stop
+	-@podman-compose stop bot
+	-@podman-compose run bot python3 -m fjfnaranjobot.server
