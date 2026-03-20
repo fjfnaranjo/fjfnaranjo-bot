@@ -1,0 +1,31 @@
+---
+name: Publish the container
+on:
+  release:
+    types: [created]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Compute version
+        run: echo "RELEASE_VERSION=${GITHUB_REF_NAME#release-}" >> "$GITHUB_ENV"
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          file: Containerfile
+          push: true
+          tags: ghcr.io/fjfnaranjo/fjfnaranjo-bot:${{ env.RELEASE_VERSION }}
