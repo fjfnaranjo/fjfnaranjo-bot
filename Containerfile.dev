@@ -1,3 +1,5 @@
-FROM localhost/fjfnaranjo-bot
-COPY requirements.dev.txt /bot/requirements.dev.txt
-RUN pip install --no-cache-dir -r /bot/requirements.dev.txt
+FROM docker.io/python:3.11-slim
+COPY requirements.txt requirements.dev.txt /bot/
+RUN pip install --no-cache-dir \
+	-r /bot/requirements.txt \
+	-r /bot/requirements.dev.txt
